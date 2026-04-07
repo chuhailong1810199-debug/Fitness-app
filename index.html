@@ -9,41 +9,57 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:#0d0d0d;color:#f0f0f0;padding:1rem;min-height:100vh;}
 .app{max-width:500px;margin:0 auto;}
+
+/* CLIENT SELECTOR */
+.client-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;background:#161616;border:1px solid #222;border-radius:8px;padding:10px 14px;}
+.client-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:700;white-space:nowrap;}
+.client-select{flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;padding:6px 10px;cursor:pointer;}
+.client-select:focus{outline:none;border-color:#e8ff00;}
+.client-badge{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;border-radius:3px;background:#1e1e00;color:#e8ff00;border:1px solid #3a3a00;white-space:nowrap;}
+
+/* NAV */
 .nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid #222;}
 .nav-tab{flex:1;padding:10px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#555;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .nav-tab.active{color:#e8ff00;border-bottom-color:#e8ff00;}
+
+/* HEADER */
 .header{margin-bottom:1.5rem;}
 h1{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#fff;}
 h1 span{color:#e8ff00;}
 .subtitle{font-size:13px;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+
+/* STATS */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
 .stat{background:#161616;border:1px solid #222;border-radius:10px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#e8ff00;}
 .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#e8ff00;}
 .stat-label{font-size:10px;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+
+/* DAY TABS */
 .day-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
-.day-tab{padding:6px 14px;border-radius:4px;border:1px solid #2a2a2a;background:#161616;font-size:12px;font-weight:700;cursor:pointer;color:#555;text-transform:uppercase;letter-spacing:.5px;transition:all .15s;}
+.day-tab{padding:6px 14px;border-radius:4px;border:1px solid #2a2a2a;background:#161616;font-size:12px;font-weight:700;cursor:pointer;color:#555;text-transform:uppercase;transition:all .15s;}
 .day-tab:hover{border-color:#444;color:#aaa;}
 .day-tab.active{background:#e8ff00;color:#0d0d0d;border-color:#e8ff00;}
+
+/* PROGRESS */
 .progress-wrap{margin-bottom:1.5rem;}
 .progress-bar{height:3px;background:#1e1e1e;border-radius:2px;overflow:hidden;}
 .progress-fill{height:100%;background:#e8ff00;border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
 .progress-label{font-size:11px;color:#444;text-align:right;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
 
-/* PHASE HEADER */
+/* PHASE */
 .phase-header{display:flex;align-items:center;gap:10px;margin:1.25rem 0 .75rem;}
 .phase-tag{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:4px 10px;border-radius:3px;}
 .phase-warmup{background:#1a2e1a;color:#44cc66;border:1px solid #2a4e2a;}
 .phase-core{background:#1a1a2e;color:#6688ff;border:1px solid #2a2a4e;}
 .phase-strength{background:#2e1a00;color:#ff9933;border:1px solid #4e3000;}
 .phase-accessories{background:#2e1a2e;color:#cc66ff;border:1px solid #4e2a4e;}
-.phase-note{font-size:11px;color:#444;flex:1;}
-.phase-line{flex:1;height:1px;background:#1e1e1e;}
+.phase-note{font-size:11px;color:#444;}
 
 /* EXERCISE CARD */
 .exercise-card{background:#161616;border:1px solid #222;border-left:3px solid #2a2a2a;border-radius:8px;padding:14px 16px;margin-bottom:6px;transition:border-left-color .2s;}
 .exercise-card.done-card{border-left-color:#e8ff00;}
-.exercise-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.exercise-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .checkbox{width:22px;height:22px;border-radius:4px;border:2px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;transition:all .15s;}
 .checkbox:hover{border-color:#e8ff00;}
 .checkbox.done{background:#e8ff00;border-color:#e8ff00;color:#0d0d0d;}
@@ -52,34 +68,12 @@ h1 span{color:#e8ff00;}
 .exercise-name.done{color:#444;text-decoration:line-through;}
 .info-btn{width:20px;height:20px;border-radius:50%;border:1px solid #2a2a2a;background:transparent;color:#555;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .info-btn:hover{border-color:#e8ff00;color:#e8ff00;}
-.badge{font-size:10px;padding:3px 7px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.badge-cardio{background:#2e1a1a;color:#ff6644;border:1px solid #4e2a2a;}
-.badge-mobility{background:#1a2a2e;color:#44cccc;border:1px solid #1a4a4e;}
-.badge-activation{background:#1a2e1a;color:#44cc66;border:1px solid #2a4e2a;}
-.badge-power{background:#2e2000;color:#ffcc00;border:1px solid #4e3800;}
-.badge-anti-ext{background:#1a1a2e;color:#6688ff;border:1px solid #2a2a4e;}
-.badge-anti-rot{background:#1a1a2e;color:#8866ff;border:1px solid #2a2a4e;}
-.badge-lateral{background:#1a1a2e;color:#aa88ff;border:1px solid #2a2a4e;}
-.badge-primary{background:#2e1a00;color:#ff9933;border:1px solid #4e3000;}
-.badge-hinge{background:#2e1500;color:#ffaa44;border:1px solid #4e2800;}
-.badge-unilateral{background:#2e1a2e;color:#cc66ff;border:1px solid #4e2a4e;}
-.badge-eccentric{background:#2e2a1a;color:#ffdd44;border:1px solid #4e4a2a;}
-.badge-rotational{background:#2e1a1a;color:#ff8855;border:1px solid #4e2a2a;}
-.badge-rehab{background:#2a2000;color:#ffaa00;border:1px solid #4a3800;}
-.badge-pull{background:#1a2e1a;color:#66cc88;border:1px solid #2a4e2a;}
-.badge-push{background:#2e1a00;color:#ff9933;border:1px solid #4e3000;}
-.badge-bracing{background:#1a1a2e;color:#7799ff;border:1px solid #2a2a4e;}
-.badge-carry{background:#2e2a1a;color:#ccbb44;border:1px solid #4e4a2a;}
-.badge-arm{background:#2a1a2e;color:#bb66ff;border:1px solid #4a2a4e;}
-.badge-isometric{background:#1a2a2e;color:#55bbcc;border:1px solid #2a4a4e;}
-
+.badge{font-size:10px;padding:3px 7px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;background:#1e1e1e;color:#666;border:1px solid #2a2a2a;}
 .sets-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.set-input{display:flex;flex-direction:column;gap:3px;}
-.set-input label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-.set-input input{width:60px;padding:6px 8px;border:1px solid #2a2a2a;border-radius:4px;background:#0d0d0d;color:#f0f0f0;font-size:14px;font-weight:600;font-family:'Barlow',sans-serif;}
-.set-input input:focus{outline:none;border-color:#e8ff00;}
 .sets-text{font-size:13px;color:#888;font-weight:600;}
-.volume-text{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:#e8ff00;font-weight:700;margin-left:auto;}
+.tempo-text{font-size:12px;color:#555;}
+
+/* FINISH BTN */
 .finish-btn{width:100%;padding:16px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;cursor:pointer;margin-top:1.25rem;text-transform:uppercase;letter-spacing:2px;transition:all .15s;}
 .finish-btn:hover{background:#f5ff4d;transform:translateY(-1px);}
 
@@ -88,9 +82,8 @@ h1 span{color:#e8ff00;}
 .modal-overlay.open{display:flex;}
 .modal{background:#161616;border:1px solid #2a2a2a;border-top:3px solid #e8ff00;border-radius:10px;padding:1.5rem;max-width:420px;width:100%;}
 .modal-name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.2rem;}
-.modal-purpose{font-size:12px;color:#e8ff00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;}
+.modal-phase{font-size:12px;color:#e8ff00;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;}
 .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
-.modal-section{margin-bottom:.75rem;}
 .modal-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;}
 .modal-value{font-size:14px;color:#ccc;line-height:1.6;}
 .modal-close{width:100%;padding:10px;border-radius:6px;background:transparent;border:1px solid #333;color:#aaa;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;margin-top:1rem;}
@@ -120,6 +113,9 @@ h1 span{color:#e8ff00;}
 .week-stat-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:#555;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;display:flex;align-items:center;gap:8px;}
 .section-title::after{content:'';flex:1;height:1px;background:#1e1e1e;}
+
+/* LOADING */
+.loading{text-align:center;padding:3rem;color:#444;font-size:14px;text-transform:uppercase;letter-spacing:1px;}
 </style>
 </head>
 <body>
@@ -128,6 +124,16 @@ h1 span{color:#e8ff00;}
     <h1>Fitness <span>Tracker</span></h1>
     <p class="subtitle" id="date-display"></p>
   </div>
+
+  <!-- CLIENT SELECTOR -->
+  <div class="client-bar">
+    <span class="client-label">Client</span>
+    <select class="client-select" id="client-select" onchange="switchClient()">
+      <option value="">Loading...</option>
+    </select>
+    <span class="client-badge" id="client-level">—</span>
+  </div>
+
   <div class="nav">
     <div class="nav-tab active" onclick="showPage('workout')">Workout</div>
     <div class="nav-tab" onclick="showPage('progress')">Progress</div>
@@ -145,7 +151,7 @@ h1 span{color:#e8ff00;}
       <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
       <div class="progress-label" id="progress-label">0% complete</div>
     </div>
-    <div id="exercise-list"></div>
+    <div id="exercise-list"><div class="loading">Loading program...</div></div>
     <button class="finish-btn" onclick="finishWorkout()">Complete Workout ✓</button>
   </div>
 
@@ -168,218 +174,85 @@ h1 span{color:#e8ff00;}
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-name" id="modal-name"></div>
-    <div class="modal-purpose" id="modal-purpose"></div>
+    <div class="modal-phase" id="modal-phase"></div>
     <div class="modal-row">
-      <div>
-        <div class="modal-label">Tempo</div>
-        <div class="modal-value" id="modal-tempo"></div>
-      </div>
-      <div>
-        <div class="modal-label">Type</div>
-        <div class="modal-value" id="modal-type"></div>
-      </div>
+      <div><div class="modal-label">Sets × Reps</div><div class="modal-value" id="modal-setsreps"></div></div>
+      <div><div class="modal-label">Tempo</div><div class="modal-value" id="modal-tempo"></div></div>
     </div>
-    <div class="modal-section">
-      <div class="modal-label">Notes / Cue</div>
-      <div class="modal-value" id="modal-cue"></div>
-    </div>
+    <div><div class="modal-label">Coaching Cue</div><div class="modal-value" id="modal-cue"></div></div>
     <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">Close</button>
   </div>
 </div>
 
 <script>
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const phaseTagClass = { warmup:'phase-warmup', core:'phase-core', strength:'phase-strength', accessories:'phase-accessories' };
 
-const PROGRAMS = {
-  Mon: {
-    label: 'Day A — Lower Power + Core',
-    phases: [
-      {
-        name: '01 — Warm-Up', tag: 'warmup', note: '8–10 min',
-        exercises: [
-          { name: 'Rowing Machine / Jump Rope', setsReps: '1 × 4 min', tempo: 'Steady', type: 'cardio', sets: 1, reps: 4, weight: 0, cue: 'Low intensity, elevate heart rate' },
-          { name: 'Hip 90/90 + Thoracic Rotation', setsReps: '1 × 10', tempo: 'Slow', type: 'mobility', sets: 1, reps: 10, weight: 0, cue: '5 each side — open hips and t-spine' },
-          { name: 'Cossack Squat', setsReps: '1 × 8', tempo: '3-1-1', type: 'mobility', sets: 1, reps: 8, weight: 0, cue: 'Controlled, full range, hold at bottom' },
-          { name: 'Banded Hip Circles + Glute Kickbacks', setsReps: '1 × 12', tempo: 'Controlled', type: 'activation', sets: 1, reps: 12, weight: 0, cue: 'Activate glute med and max before squatting' },
-          { name: 'Box Jump or Med Ball Slam (light)', setsReps: '1 × 3', tempo: 'Explosive', type: 'power', sets: 1, reps: 3, weight: 0, cue: 'Wake up CNS — max intent' },
-        ]
-      },
-      {
-        name: '02 — Core Activation', tag: 'core', note: '8–10 min',
-        exercises: [
-          { name: 'Dead Bug (contralateral)', setsReps: '3 × 8/side', tempo: '4-1-4', type: 'anti-ext', sets: 3, reps: 8, weight: 0, cue: 'Press lower back firmly into floor — no arch' },
-          { name: 'Pallof Press (cable or band)', setsReps: '3 × 10/side', tempo: '2-2-2', type: 'anti-rot', sets: 3, reps: 10, weight: 15, cue: 'Resist rotation — pause at full extension 2s' },
-          { name: 'Copenhagen Plank', setsReps: '3 × 20s/side', tempo: 'Isometric', type: 'lateral', sets: 3, reps: 20, weight: 0, cue: 'Adductor strength for footwork stability' },
-        ]
-      },
-      {
-        name: '03 — Strength Phase', tag: 'strength', note: '25–30 min · Rest: 2–3 min · RPE 7–8',
-        exercises: [
-          { name: 'Back Squat', setsReps: '4 × 4–5', tempo: '3-1-X', type: 'primary', sets: 4, reps: 5, weight: 80, cue: 'Comp. depth, brace hard. Alternate with Front Squat every 2 weeks' },
-          { name: 'Romanian Deadlift (RDL)', setsReps: '3 × 6', tempo: '4-1-2', type: 'hinge', sets: 3, reps: 6, weight: 70, cue: 'Hinge focus, feel hamstring tension throughout' },
-          { name: 'Trap Bar Jump Deadlift', setsReps: '3 × 4', tempo: 'Explosive', type: 'power', sets: 3, reps: 4, weight: 50, cue: '~50% 1RM — max intent, power carry-over to boxing' },
-        ]
-      },
-      {
-        name: '04 — Accessories', tag: 'accessories', note: '15–20 min · Rest: 60–90s',
-        exercises: [
-          { name: 'A1. Bulgarian Split Squat', setsReps: '3 × 8/leg', tempo: '3-1-2', type: 'unilateral', sets: 3, reps: 8, weight: 20, cue: 'Rear foot elevated — unilateral leg + hip flexor stretch' },
-          { name: 'A2. Nordic Hamstring Curl', setsReps: '3 × 5–6', tempo: 'Eccentric', type: 'eccentric', sets: 3, reps: 5, weight: 0, cue: 'Lower slowly 3–4s. Injury prevention for boxing footwork' },
-          { name: 'Rotational Med Ball Slam', setsReps: '3 × 8/side', tempo: 'Max power', type: 'rotational', sets: 3, reps: 8, weight: 10, cue: 'Rotate fully — mimic cross/hook mechanics. ~10kg ball' },
-          { name: 'Band Pull-Apart', setsReps: '3 × 15', tempo: 'Controlled', type: 'rehab', sets: 3, reps: 15, weight: 0, cue: 'Shoulder health — horizontal abduction. Pain-free range only' },
-        ]
-      },
-    ]
-  },
-  Tue: {
-    label: 'Boxing Day',
-    phases: [
-      {
-        name: 'Boxing Session', tag: 'strength', note: '60–90 min',
-        exercises: [
-          { name: 'Shadow Boxing', setsReps: '3 × 3 min', tempo: 'Rounds', type: 'cardio', sets: 3, reps: 3, weight: 0, cue: 'Stay relaxed. Move feet. Visualize opponent.' },
-          { name: 'Bag Work', setsReps: '4 × 3 min', tempo: 'Rounds', type: 'power', sets: 4, reps: 3, weight: 0, cue: 'Rotate hips fully. Reset guard after every combo.' },
-          { name: 'Pad Work', setsReps: '3 × 2 min', tempo: 'Rounds', type: 'cardio', sets: 3, reps: 2, weight: 0, cue: 'Precision over power. Sharp combinations.' },
-          { name: 'Jump Rope', setsReps: '3 × 3 min', tempo: 'Rounds', type: 'cardio', sets: 3, reps: 3, weight: 0, cue: 'Stay light on feet. Consistent rhythm.' },
-        ]
-      },
-    ]
-  },
-  Wed: {
-    label: 'Rest + Shoulder Rehab',
-    phases: [
-      {
-        name: 'Daily Rehab Routine', tag: 'warmup', note: '10 min every morning',
-        exercises: [
-          { name: 'Pec Minor Stretch (corner/doorway)', setsReps: '3 × 45–60s', tempo: 'Hold', type: 'rehab', sets: 3, reps: 1, weight: 0, cue: 'Hands at shoulder height. Lean in gently. Most tight structure in boxers.' },
-          { name: 'Thoracic Extension (foam roller)', setsReps: '3 positions × 60s', tempo: 'Passive hold', type: 'mobility', sets: 3, reps: 1, weight: 0, cue: 'Upper / mid / lower T-spine. Poor T-mob forces shoulder to compensate.' },
-          { name: 'Sleeper Stretch', setsReps: '3 × 30s/side', tempo: 'Hold', type: 'rehab', sets: 3, reps: 1, weight: 0, cue: 'Lie on affected side, arm at 90°, rotate wrist toward floor. Stop at pain onset.' },
-          { name: 'Band External Rotation', setsReps: '3 × 15/side', tempo: 'Controlled', type: 'rehab', sets: 3, reps: 15, weight: 0, cue: 'Elbow at 90°, band at elbow height. Strengthens infraspinatus + teres minor.' },
-          { name: 'Wall Angels', setsReps: '3 × 10', tempo: 'Slow', type: 'activation', sets: 3, reps: 10, weight: 0, cue: 'Back flat against wall, goalpost arms — slide overhead without losing contact.' },
-          { name: 'Chin Tuck + Neck Reset', setsReps: '3 × 10 (hold 3s)', tempo: 'Hold 3s', type: 'rehab', sets: 3, reps: 10, weight: 0, cue: 'Double chin action — retract head back. Do every hour when sitting too.' },
-        ]
-      },
-    ]
-  },
-  Thu: {
-    label: 'Day B — Upper Push / Pull',
-    phases: [
-      {
-        name: '01 — Warm-Up', tag: 'warmup', note: '8–10 min',
-        exercises: [
-          { name: 'Bike / Shadow Boxing (light)', setsReps: '1 × 4 min', tempo: 'Easy', type: 'cardio', sets: 1, reps: 4, weight: 0, cue: 'Easy pace — increase blood flow' },
-          { name: 'Shoulder CARs', setsReps: '2 × 5/side', tempo: 'Very slow', type: 'rehab', sets: 2, reps: 5, weight: 0, cue: 'Full circumduction — SLOW, pain-free range only' },
-          { name: 'Wall Slide + Lift Off', setsReps: '2 × 10', tempo: 'Controlled', type: 'activation', sets: 2, reps: 10, weight: 0, cue: 'Serratus activation — arms against wall, slide up, lift hands off' },
-          { name: 'Band Face Pull + External Rotation', setsReps: '2 × 15', tempo: 'Controlled', type: 'activation', sets: 2, reps: 15, weight: 0, cue: 'Light band, elbows high — warm up rotator cuff' },
-          { name: 'Thoracic Extension over Foam Roller', setsReps: '1 × 90s', tempo: 'Passive hold', type: 'mobility', sets: 1, reps: 1, weight: 0, cue: '3 positions: upper, mid, lower T-spine — 30s each' },
-        ]
-      },
-      {
-        name: '02 — Core Activation', tag: 'core', note: '8 min',
-        exercises: [
-          { name: 'Hollow Body Hold', setsReps: '3 × 30s', tempo: 'Isometric', type: 'anti-ext', sets: 3, reps: 30, weight: 0, cue: 'Arms by sides to regress — breathe through it' },
-          { name: 'Cable Woodchop (high to low)', setsReps: '3 × 10/side', tempo: '2-0-2', type: 'rotational', sets: 3, reps: 10, weight: 15, cue: 'Mimic hook / overhand pattern — rotate fully' },
-          { name: 'RKC Plank', setsReps: '3 × 20s', tempo: 'Max tension', type: 'bracing', sets: 3, reps: 20, weight: 0, cue: 'Squeeze everything — glutes, quads, abs. Max effort' },
-        ]
-      },
-      {
-        name: '03 — Strength Phase', tag: 'strength', note: '25–30 min · Rest: 2–3 min · RPE 7–8',
-        exercises: [
-          { name: 'Weighted Pull-Up', setsReps: '4 × 4–6', tempo: '3-1-2', type: 'pull', sets: 4, reps: 5, weight: 10, cue: 'Full ROM — dead hang to chin over bar' },
-          { name: 'Landmine Press (single arm)', setsReps: '4 × 6/side', tempo: '2-1-2', type: 'push', sets: 4, reps: 6, weight: 30, cue: 'Neutral grip, arc motion — safer than barbell overhead' },
-          { name: 'Barbell Row', setsReps: '3 × 5–6', tempo: '2-1-X', type: 'pull', sets: 3, reps: 6, weight: 70, cue: 'Heavy. Squeeze scapula at top — build the back that protects shoulder' },
-        ]
-      },
-      {
-        name: '04 — Accessories', tag: 'accessories', note: '15–20 min · Rest: 60–90s · Superset A1/A2, B1/B2',
-        exercises: [
-          { name: 'A1. Incline DB Press (30–45°)', setsReps: '3 × 8–10', tempo: '3-1-2', type: 'push', sets: 3, reps: 9, weight: 22, cue: 'Neutral or slight supination grip — reduces front delt stress' },
-          { name: 'A2. Cable Face Pull', setsReps: '3 × 15', tempo: 'Controlled', type: 'rehab', sets: 3, reps: 15, weight: 15, cue: 'Rope at eye level — external rotation at end range' },
-          { name: 'B1. Single Arm Cable Row (half-kneeling)', setsReps: '3 × 10/side', tempo: '2-1-2', type: 'pull', sets: 3, reps: 10, weight: 20, cue: 'Rotate into the pull — boxing specificity' },
-          { name: 'B2. Suitcase Carry (heavy DB)', setsReps: '3 × 50m/side', tempo: 'Braced', type: 'carry', sets: 3, reps: 50, weight: 0, cue: '50m each side — oblique and lat strength, posture under load' },
-          { name: 'Tricep Pushdown (cable, rope)', setsReps: '3 × 12–15', tempo: '2-0-2', type: 'arm', sets: 3, reps: 13, weight: 20, cue: 'Punch finishing strength — no shoulder involvement' },
-        ]
-      },
-    ]
-  },
-  Fri: {
-    label: 'Boxing Day',
-    phases: [
-      {
-        name: 'Boxing Session', tag: 'strength', note: '60–90 min',
-        exercises: [
-          { name: 'Shadow Boxing', setsReps: '3 × 3 min', tempo: 'Rounds', type: 'cardio', sets: 3, reps: 3, weight: 0, cue: 'Focus on head movement and angles. Mix up rhythm.' },
-          { name: 'Pad Work', setsReps: '4 × 2 min', tempo: 'Rounds', type: 'cardio', sets: 4, reps: 2, weight: 0, cue: 'Precision combinations. Reduce power shots 30% (shoulder protocol).' },
-          { name: 'Core Circuit (Med Ball / Woodchop)', setsReps: '3 × 10/side', tempo: 'Max power', type: 'rotational', sets: 3, reps: 10, weight: 10, cue: 'Rotate fully. These directly transfer to punching power.' },
-        ]
-      },
-    ]
-  },
-  Sat: {
-    label: 'Active Rest',
-    phases: [
-      {
-        name: 'Active Recovery', tag: 'warmup', note: 'Easy pace only',
-        exercises: [
-          { name: 'Walking', setsReps: '1 × 30 min', tempo: 'Easy', type: 'cardio', sets: 1, reps: 30, weight: 0, cue: 'Keep it easy. This is recovery, not training.' },
-          { name: 'Full Body Stretch', setsReps: '30s per stretch', tempo: 'Hold', type: 'mobility', sets: 1, reps: 1, weight: 0, cue: 'Focus on hips, t-spine, and shoulders. Breathe deeply.' },
-        ]
-      },
-    ]
-  },
-  Sun: {
-    label: 'Rest Day',
-    phases: [
-      {
-        name: 'Maintenance', tag: 'warmup', note: '10 min',
-        exercises: [
-          { name: 'Shoulder Rehab Routine', setsReps: '10 min', tempo: 'Controlled', type: 'rehab', sets: 1, reps: 1, weight: 0, cue: '10 minutes every morning. Skipping when pain-free is how problems return.' },
-        ]
-      },
-    ]
-  },
-};
+let clientsData = [];
+let activeClient = null;
+let activeDay = DAYS[new Date().getDay()===0?6:new Date().getDay()-1];
+let state = {};
 
-let state = JSON.parse(localStorage.getItem('fitness_v4') || '{"sessions":0,"checked":{},"inputs":{},"history":[]}');
-let activeDay = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+// Load clients.json
+async function loadClients() {
+  try {
+    const res = await fetch('clients.json');
+    const data = await res.json();
+    clientsData = data.clients;
+    populateClientSelect();
+    switchClient();
+  } catch(e) {
+    document.getElementById('exercise-list').innerHTML = '<div class="loading">Error loading clients.json</div>';
+  }
+}
 
-function save() { localStorage.setItem('fitness_v4', JSON.stringify(state)); }
+function populateClientSelect() {
+  const sel = document.getElementById('client-select');
+  sel.innerHTML = clientsData.map(c =>
+    `<option value="${c.id}">${c.name}</option>`
+  ).join('');
+}
 
-function showPage(page) {
-  document.getElementById('workout-page').className = 'workout-page' + (page==='workout' ? '' : ' hidden');
-  document.getElementById('progress-page').className = 'progress-page' + (page==='progress' ? ' active' : '');
-  document.querySelectorAll('.nav-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&page==='workout')||(i===1&&page==='progress')));
-  if (page==='progress') renderProgress();
+function switchClient() {
+  const id = document.getElementById('client-select').value;
+  activeClient = clientsData.find(c => c.id === id);
+  if (!activeClient) return;
+
+  // Load state for this client
+  const saved = localStorage.getItem('fitness_'+id);
+  state = saved ? JSON.parse(saved) : { sessions:0, checked:{}, history:[] };
+
+  document.getElementById('client-level').textContent = activeClient.level;
+  renderTabs();
+  renderExercises();
+}
+
+function save() {
+  localStorage.setItem('fitness_'+activeClient.id, JSON.stringify(state));
+}
+
+function getProgram() {
+  return activeClient.program[activeDay];
 }
 
 function allExercises() {
-  return PROGRAMS[activeDay].phases.flatMap(p => p.exercises);
+  const prog = getProgram();
+  if (!prog) return [];
+  return prog.phases.flatMap(p => p.exercises);
 }
 
-function exKey(phaseIdx, exIdx) { return activeDay+'_'+phaseIdx+'_'+exIdx; }
-
-function calcVolume() {
-  let vol = 0;
-  PROGRAMS[activeDay].phases.forEach((ph, pi) => {
-    ph.exercises.forEach((ex, ei) => {
-      const id = pi+'_'+ei;
-      const s = parseFloat(document.getElementById('sets_'+id)?.value || ex.sets);
-      const r = parseFloat(document.getElementById('reps_'+id)?.value || ex.reps);
-      const w = parseFloat(document.getElementById('weight_'+id)?.value || ex.weight);
-      if (w > 0) vol += s * r * w;
-    });
-  });
-  return Math.round(vol);
-}
+function exKey(pi, ei) { return activeDay+'_'+pi+'_'+ei; }
 
 function updateStats() {
-  const allEx = allExercises();
-  const totalDone = PROGRAMS[activeDay].phases.reduce((acc, ph, pi) =>
-    acc + ph.exercises.filter((_, ei) => state.checked[exKey(pi,ei)]).length, 0);
+  const prog = getProgram();
+  if (!prog) return;
+  const total = allExercises().length;
+  const done = prog.phases.reduce((acc,ph,pi) =>
+    acc + ph.exercises.filter((_,ei) => state.checked[exKey(pi,ei)]).length, 0);
   document.getElementById('sessions').textContent = state.sessions;
-  document.getElementById('done-count').textContent = totalDone+'/'+allEx.length;
-  document.getElementById('total-vol').textContent = calcVolume();
-  const pct = allEx.length ? Math.round(totalDone/allEx.length*100) : 0;
+  document.getElementById('done-count').textContent = done+'/'+total;
+  document.getElementById('total-vol').textContent = 0;
+  const pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('progress').style.width = pct+'%';
   document.getElementById('progress-label').textContent = pct+'% complete';
 }
@@ -390,14 +263,14 @@ function toggleCheck(pi, ei) {
   save(); renderExercises();
 }
 
-function saveInput(key, val) { state.inputs[key] = val; save(); }
-
 function openInfo(pi, ei) {
-  const ex = PROGRAMS[activeDay].phases[pi].exercises[ei];
+  const prog = getProgram();
+  const phase = prog.phases[pi];
+  const ex = phase.exercises[ei];
   document.getElementById('modal-name').textContent = ex.name;
-  document.getElementById('modal-purpose').textContent = PROGRAMS[activeDay].phases[pi].name;
+  document.getElementById('modal-phase').textContent = phase.name;
+  document.getElementById('modal-setsreps').textContent = ex.setsReps;
   document.getElementById('modal-tempo').textContent = ex.tempo;
-  document.getElementById('modal-type').textContent = ex.type;
   document.getElementById('modal-cue').textContent = ex.cue;
   document.getElementById('modal').classList.add('open');
 }
@@ -406,60 +279,50 @@ function closeModal(e) {
   if (e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open');
 }
 
-const phaseTagClass = { warmup:'phase-warmup', core:'phase-core', strength:'phase-strength', accessories:'phase-accessories' };
-
 function renderExercises() {
-  const prog = PROGRAMS[activeDay];
+  const prog = getProgram();
   const list = document.getElementById('exercise-list');
-  list.innerHTML = '';
+  if (!prog) { list.innerHTML = '<div class="loading">Rest Day 💤</div>'; updateStats(); return; }
 
+  list.innerHTML = '';
   prog.phases.forEach((phase, pi) => {
     const phaseDiv = document.createElement('div');
-
     const header = document.createElement('div');
     header.className = 'phase-header';
     header.innerHTML = `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span><span class="phase-note">${phase.note}</span>`;
     phaseDiv.appendChild(header);
 
     phase.exercises.forEach((ex, ei) => {
-      const key = exKey(pi, ei);
+      const key = exKey(pi,ei);
       const done = !!state.checked[key];
-      const sv = state.inputs[key+'_s'] || ex.sets;
-      const rv = state.inputs[key+'_r'] || ex.reps;
-      const wv = state.inputs[key+'_w'] || ex.weight;
-      const vol = ex.weight > 0 ? Math.round(sv*rv*wv)+' kg' : '';
-      const badgeClass = 'badge-'+ex.type.replace('.','-').replace('/','-');
-      const id = pi+'_'+ei;
-
       const card = document.createElement('div');
       card.className = 'exercise-card'+(done?' done-card':'');
       card.innerHTML = `
         <div class="exercise-header">
           <div class="checkbox ${done?'done':''}" onclick="toggleCheck(${pi},${ei})">${done?'✓':''}</div>
           <span class="exercise-name ${done?'done':''}" onclick="openInfo(${pi},${ei})">${ex.name}</span>
-          <span class="badge ${badgeClass}">${ex.type}</span>
+          <span class="badge">${ex.type}</span>
           <button class="info-btn" onclick="openInfo(${pi},${ei})">i</button>
         </div>
         <div class="sets-row">
           <span class="sets-text">${ex.setsReps}</span>
-          <span style="font-size:12px;color:#444;margin:0 2px;">·</span>
-          <span style="font-size:12px;color:#555;">${ex.tempo}</span>
-          ${ex.weight>0?`<span class="volume-text" id="vol_${id}">${vol}</span>`:''}
+          <span style="color:#333;margin:0 4px;">·</span>
+          <span class="tempo-text">${ex.tempo}</span>
         </div>`;
       phaseDiv.appendChild(card);
     });
-
     list.appendChild(phaseDiv);
   });
-
   updateStats();
 }
 
 function finishWorkout() {
-  const allEx = allExercises();
-  const totalDone = PROGRAMS[activeDay].phases.reduce((acc,ph,pi) =>
+  const total = allExercises().length;
+  const prog = getProgram();
+  if (!prog) return;
+  const done = prog.phases.reduce((acc,ph,pi) =>
     acc + ph.exercises.filter((_,ei) => state.checked[exKey(pi,ei)]).length, 0);
-  if (totalDone===0) { alert('Please tick at least 1 exercise first!'); return; }
+  if (done===0) { alert('Please tick at least 1 exercise first!'); return; }
   state.sessions++;
   const today = new Date().toISOString().split('T')[0];
   if (!state.history.includes(today)) state.history.push(today);
@@ -467,18 +330,41 @@ function finishWorkout() {
   alert('Workout complete! Total sessions: '+state.sessions+' 🎉');
 }
 
+function renderTabs() {
+  const tabs = document.getElementById('day-tabs');
+  tabs.innerHTML = '';
+  DAYS.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'day-tab'+(d===activeDay?' active':'');
+    btn.textContent = d;
+    btn.onclick = () => { activeDay=d; renderTabs(); renderExercises(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function showPage(page) {
+  document.getElementById('workout-page').className = 'workout-page'+(page==='workout'?'':' hidden');
+  document.getElementById('progress-page').className = 'progress-page'+(page==='progress'?' active':'');
+  document.querySelectorAll('.nav-tab').forEach((t,i) =>
+    t.classList.toggle('active',(i===0&&page==='workout')||(i===1&&page==='progress')));
+  if (page==='progress') renderProgress();
+}
+
 function renderProgress() {
   let streak=0;
   const today=new Date();
-  for(let i=0;i<30;i++){const d=new Date(today);d.setDate(d.getDate()-i);if(state.history.includes(d.toISOString().split('T')[0]))streak++;else if(i>0)break;}
+  for(let i=0;i<30;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    if(state.history.includes(d.toISOString().split('T')[0]))streak++;
+    else if(i>0)break;
+  }
   document.getElementById('streak-num').textContent=streak;
 
   const now=new Date(),year=now.getFullYear(),month=now.getMonth();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const firstDay=(new Date(year,month,1).getDay()+6)%7;
   document.getElementById('month-title').textContent=now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  const grid=document.getElementById('month-grid');
-  grid.innerHTML='';
+  const grid=document.getElementById('month-grid');grid.innerHTML='';
   ['M','T','W','T','F','S','S'].forEach(d=>{const el=document.createElement('div');el.className='day-dot';el.style.background='transparent';el.style.color='#333';el.textContent=d;grid.appendChild(el);});
   for(let i=0;i<firstDay;i++){const el=document.createElement('div');el.className='day-dot';grid.appendChild(el);}
   for(let d=1;d<=daysInMonth;d++){
@@ -489,9 +375,9 @@ function renderProgress() {
   }
 
   const container=document.getElementById('weekly-log');container.innerHTML='';
-  const today2=new Date(),dow=(today2.getDay()+6)%7;
+  const dow=(today.getDay()+6)%7;
   for(let w=0;w<8;w++){
-    const mon=new Date(today2);mon.setDate(today2.getDate()-dow-w*7);
+    const mon=new Date(today);mon.setDate(today.getDate()-dow-w*7);
     const days=[];
     for(let d=0;d<7;d++){const day=new Date(mon);day.setDate(mon.getDate()+d);days.push(day.toISOString().split('T')[0]);}
     const sessions=days.filter(d=>state.history.includes(d)).length;
@@ -512,20 +398,8 @@ function renderProgress() {
   }
 }
 
-function renderTabs() {
-  const tabs=document.getElementById('day-tabs');tabs.innerHTML='';
-  DAYS.forEach(d=>{
-    const btn=document.createElement('button');
-    btn.className='day-tab'+(d===activeDay?' active':'');
-    btn.textContent=d;
-    btn.onclick=()=>{activeDay=d;renderTabs();renderExercises();};
-    tabs.appendChild(btn);
-  });
-}
-
-document.getElementById('date-display').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-renderTabs();
-renderExercises();
+document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+loadClients();
 </script>
 </body>
 </html>
