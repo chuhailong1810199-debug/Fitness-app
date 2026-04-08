@@ -158,6 +158,29 @@ h1 span{color:#e8ff00;}
 .add-phase-btn:hover{border-color:#e8ff00;color:#e8ff00;}
 .add-phase-form{background:#111a11;border:1px solid #2a4e2a;border-radius:8px;padding:14px;margin-top:8px;display:none;}
 .add-phase-form.show{display:block;}
+
+/* WELCOME SCREEN */
+.welcome-screen{position:fixed;inset:0;background:#0d0d0d;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+.welcome-screen.hidden{display:none;}
+.welcome-logo{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.25rem;}
+.welcome-logo span{color:#e8ff00;}
+.welcome-greeting{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;color:#e8ff00;text-transform:uppercase;letter-spacing:3px;margin-bottom:3rem;text-align:center;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.85;transform:scale(1.03);}}
+.welcome-card{background:#161616;border:1px solid #222;border-radius:12px;padding:2rem;width:100%;max-width:360px;}
+.welcome-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.5rem;}
+.welcome-subtitle{font-size:13px;color:#555;margin-bottom:1.5rem;line-height:1.5;}
+.welcome-input{width:100%;padding:12px 14px;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:6px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-size:16px;font-weight:600;margin-bottom:1rem;}
+.welcome-input:focus{outline:none;border-color:#e8ff00;}
+.welcome-error{font-size:12px;color:#ff4444;margin-bottom:.75rem;display:none;}
+.welcome-error.show{display:block;}
+.welcome-btn{width:100%;padding:14px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .15s;}
+.welcome-btn:hover{background:#f5ff4d;transform:translateY(-1px);}
+.welcome-footer{font-size:11px;color:#333;margin-top:1.5rem;text-align:center;text-transform:uppercase;letter-spacing:1px;}
+
+/* BACK BUTTON */
+.back-btn{display:flex;align-items:center;gap:6px;background:transparent;border:none;color:#555;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;padding:0;margin-bottom:1rem;transition:all .15s;}
+.back-btn:hover{color:#e8ff00;}
+.back-btn::before{content:'←';font-size:16px;}
 </style>
 </head>
 <body>
@@ -167,7 +190,7 @@ h1 span{color:#e8ff00;}
     <p class="subtitle" id="date-display"></p>
   </div>
 
-  <div class="client-bar">
+  <div class="client-bar" id="client-bar">
     <span class="client-label">Client</span>
     <select class="client-select" id="client-select" onchange="switchClient()">
       <option value="">Loading...</option>
@@ -175,6 +198,7 @@ h1 span{color:#e8ff00;}
     <span class="client-badge" id="client-level">—</span>
   </div>
 
+  <button class="back-btn" id="back-btn" onclick="goBack()" style="display:none">Back</button>
   <div class="nav">
     <div class="nav-tab active" onclick="showPage('workout')">Workout</div>
     <div class="nav-tab" onclick="showPage('progress')">Progress</div>
@@ -221,6 +245,21 @@ h1 span{color:#e8ff00;}
     <div class="section-title">Weekly Log</div>
     <div id="weekly-log"></div>
   </div>
+
+<!-- WELCOME SCREEN -->
+<div class="welcome-screen" id="welcome-screen">
+  <div class="welcome-logo">Fitness <span>Tracker</span></div>
+  <div class="welcome-greeting" id="welcome-greeting">Good morning</div>
+  <div class="welcome-card">
+    <div class="welcome-title">Welcome! 👋</div>
+    <div class="welcome-subtitle">Enter your name to access your personal training program.</div>
+    <input class="welcome-input" id="welcome-input" type="text" placeholder="Your name..." autocomplete="off" onkeydown="if(event.key==='Enter')loginClient()">
+    <div class="welcome-error" id="welcome-error">Name not found. Please check with your coach.</div>
+    <button class="welcome-btn" onclick="loginClient()">Start Training →</button>
+  </div>
+  <div class="welcome-footer">Powered by your Coach 💪</div>
+</div>
+
 </div>
 
 <!-- INFO MODAL -->
@@ -248,6 +287,47 @@ let state = {};
 let editMode = false;
 let customPrograms = {};
 
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'Good Morning ☀️';
+  if (h >= 12 && h < 18) return 'Good Afternoon 🌤️';
+  if (h >= 18 && h < 22) return 'Good Evening 🌙';
+  return 'Good Night 🌙';
+}
+
+
+function goBack() {
+  document.getElementById('welcome-screen').classList.remove('hidden');
+  document.getElementById('client-bar').style.setProperty('display', 'none', 'important');
+  document.getElementById('back-btn').style.display = 'flex';
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('welcome-input').value = '';
+  document.getElementById('welcome-error').classList.remove('show');
+}
+
+function loginClient() {
+  const input = document.getElementById('welcome-input').value.trim().toLowerCase();
+  const match = clientsData.find(c => {
+    const fullName = c.name.toLowerCase();
+    const firstName = fullName.split(' ')[0];
+    return fullName === input || firstName === input;
+  });
+  if (!match) {
+    document.getElementById('welcome-error').classList.add('show');
+    document.getElementById('welcome-input').focus();
+    return;
+  }
+  document.getElementById('welcome-error').classList.remove('show');
+  document.getElementById('welcome-screen').classList.add('hidden');
+  document.getElementById('client-bar').style.setProperty('display', 'none', 'important');
+  document.getElementById('back-btn').style.display = 'flex';
+
+  // Set client in dropdown
+  document.getElementById('client-select').value = match.id;
+  switchClient();
+}
+
 async function loadClients() {
   try {
     const res = await fetch('clients.json');
@@ -255,6 +335,8 @@ async function loadClients() {
     clientsData = data.clients;
     populateClientSelect();
     switchClient();
+    // Set greeting
+    document.getElementById('welcome-greeting').textContent = getGreeting();
   } catch(e) {
     document.getElementById('exercise-list').innerHTML = '<div class="loading">Error loading clients.json</div>';
   }
