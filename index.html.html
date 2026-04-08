@@ -9,56 +9,43 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Barlow',sans-serif;background:#0d0d0d;color:#f0f0f0;padding:1rem;min-height:100vh;}
 .app{max-width:500px;margin:0 auto;}
-
-/* CLIENT SELECTOR */
 .client-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;background:#161616;border:1px solid #222;border-radius:8px;padding:10px 14px;}
 .client-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:700;white-space:nowrap;}
 .client-select{flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-family:'Barlow',sans-serif;font-size:14px;font-weight:700;padding:6px 10px;cursor:pointer;}
 .client-select:focus{outline:none;border-color:#e8ff00;}
 .client-badge{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;border-radius:3px;background:#1e1e00;color:#e8ff00;border:1px solid #3a3a00;white-space:nowrap;}
-
-/* NAV */
 .nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid #222;}
 .nav-tab{flex:1;padding:10px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#555;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .nav-tab.active{color:#e8ff00;border-bottom-color:#e8ff00;}
-
-/* HEADER */
 .header{margin-bottom:1.5rem;}
 h1{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#fff;}
 h1 span{color:#e8ff00;}
 .subtitle{font-size:13px;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
-
-/* STATS */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
 .stat{background:#161616;border:1px solid #222;border-radius:10px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
 .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#e8ff00;}
 .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#e8ff00;}
 .stat-label{font-size:10px;color:#555;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
-
-/* DAY TABS */
 .day-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
 .day-tab{padding:6px 14px;border-radius:4px;border:1px solid #2a2a2a;background:#161616;font-size:12px;font-weight:700;cursor:pointer;color:#555;text-transform:uppercase;transition:all .15s;}
 .day-tab:hover{border-color:#444;color:#aaa;}
 .day-tab.active{background:#e8ff00;color:#0d0d0d;border-color:#e8ff00;}
-
-/* PROGRESS */
 .progress-wrap{margin-bottom:1.5rem;}
 .progress-bar{height:3px;background:#1e1e1e;border-radius:2px;overflow:hidden;}
 .progress-fill{height:100%;background:#e8ff00;border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
 .progress-label{font-size:11px;color:#444;text-align:right;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-
-/* PHASE */
 .phase-header{display:flex;align-items:center;gap:10px;margin:1.25rem 0 .75rem;}
 .phase-tag{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:4px 10px;border-radius:3px;}
 .phase-warmup{background:#1a2e1a;color:#44cc66;border:1px solid #2a4e2a;}
 .phase-core{background:#1a1a2e;color:#6688ff;border:1px solid #2a2a4e;}
 .phase-strength{background:#2e1a00;color:#ff9933;border:1px solid #4e3000;}
 .phase-accessories{background:#2e1a2e;color:#cc66ff;border:1px solid #4e2a4e;}
-.phase-note{font-size:11px;color:#444;}
+.phase-note{font-size:11px;color:#444;flex:1;}
 
 /* EXERCISE CARD */
-.exercise-card{background:#161616;border:1px solid #222;border-left:3px solid #2a2a2a;border-radius:8px;padding:14px 16px;margin-bottom:6px;transition:border-left-color .2s;}
+.exercise-card{background:#161616;border:1px solid #222;border-left:3px solid #2a2a2a;border-radius:8px;padding:12px 14px;margin-bottom:6px;transition:border-left-color .2s;}
 .exercise-card.done-card{border-left-color:#e8ff00;}
+.exercise-card.editing{border-left-color:#6688ff;background:#111122;}
 .exercise-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .checkbox{width:22px;height:22px;border-radius:4px;border:2px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;transition:all .15s;}
 .checkbox:hover{border-color:#e8ff00;}
@@ -68,12 +55,59 @@ h1 span{color:#e8ff00;}
 .exercise-name.done{color:#444;text-decoration:line-through;}
 .info-btn{width:20px;height:20px;border-radius:50%;border:1px solid #2a2a2a;background:transparent;color:#555;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .info-btn:hover{border-color:#e8ff00;color:#e8ff00;}
-.badge{font-size:10px;padding:3px 7px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;background:#1e1e1e;color:#666;border:1px solid #2a2a2a;}
+
+/* EDIT ACTIONS */
+.edit-actions{display:none;gap:6px;margin-top:8px;}
+.edit-actions.show{display:flex;flex-wrap:wrap;}
+.action-btn{padding:5px 10px;border-radius:4px;border:1px solid #2a2a2a;background:transparent;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
+.btn-move{color:#6688ff;border-color:#2a2a4e;}
+.btn-move:hover{background:#1a1a2e;}
+.btn-delete{color:#ff4444;border-color:#4e2a2a;}
+.btn-delete:hover{background:#2e1a1a;}
+.btn-cancel{color:#555;border-color:#2a2a2a;}
+.btn-cancel:hover{color:#aaa;}
+
+/* MOVE DROPDOWN */
+.move-row{display:none;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;}
+.move-row.show{display:flex;}
+.move-select{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:12px;padding:5px 8px;font-family:'Barlow',sans-serif;}
+.move-confirm{padding:5px 12px;border-radius:4px;background:#e8ff00;color:#0d0d0d;border:none;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;}
+
 .sets-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .sets-text{font-size:13px;color:#888;font-weight:600;}
 .tempo-text{font-size:12px;color:#555;}
+.badge{font-size:10px;padding:3px 7px;border-radius:3px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;background:#1e1e1e;color:#666;border:1px solid #2a2a2a;}
 
-/* FINISH BTN */
+/* EDIT MODE TOGGLE */
+.edit-mode-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:8px 12px;background:#161616;border:1px solid #222;border-radius:6px;}
+.edit-mode-label{font-size:12px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.edit-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:#222;border:1px solid #333;position:relative;transition:background .2s;}
+.toggle-track.on{background:#1e1e00;border-color:#e8ff00;}
+.toggle-thumb{width:14px;height:14px;border-radius:50%;background:#555;position:absolute;top:2px;left:2px;transition:all .2s;}
+.toggle-track.on .toggle-thumb{left:18px;background:#e8ff00;}
+.edit-mode-text{font-size:12px;color:#555;font-weight:700;}
+.edit-mode-text.on{color:#e8ff00;}
+
+/* ADD EXERCISE */
+.add-exercise-btn{width:100%;padding:10px;border-radius:6px;background:transparent;border:1px dashed #2a2a2a;color:#555;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;margin-top:6px;transition:all .15s;}
+.add-exercise-btn:hover{border-color:#e8ff00;color:#e8ff00;}
+
+/* ADD FORM */
+.add-form{background:#111122;border:1px solid #2a2a4e;border-radius:8px;padding:14px;margin-top:6px;display:none;}
+.add-form.show{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.form-input{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:13px;padding:7px 10px;font-family:'Barlow',sans-serif;}
+.form-input:focus{outline:none;border-color:#6688ff;}
+.form-select{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:13px;padding:7px 10px;font-family:'Barlow',sans-serif;cursor:pointer;}
+.form-actions{display:flex;gap:8px;margin-top:10px;}
+.btn-save{flex:1;padding:9px;border-radius:4px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.btn-discard{padding:9px 14px;border-radius:4px;background:transparent;border:1px solid #2a2a2a;color:#555;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;}
+.btn-discard:hover{color:#aaa;}
+
 .finish-btn{width:100%;padding:16px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;cursor:pointer;margin-top:1.25rem;text-transform:uppercase;letter-spacing:2px;transition:all .15s;}
 .finish-btn:hover{background:#f5ff4d;transform:translateY(-1px);}
 
@@ -113,9 +147,17 @@ h1 span{color:#e8ff00;}
 .week-stat-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:#555;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px;display:flex;align-items:center;gap:8px;}
 .section-title::after{content:'';flex:1;height:1px;background:#1e1e1e;}
-
-/* LOADING */
 .loading{text-align:center;padding:3rem;color:#444;font-size:14px;text-transform:uppercase;letter-spacing:1px;}
+
+/* PHASE MANAGEMENT */
+.phase-edit-bar{display:flex;align-items:center;gap:6px;margin-bottom:.5rem;}
+.btn-delete-phase{padding:4px 10px;border-radius:4px;border:1px solid #4e2a2a;background:transparent;color:#ff4444;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
+.btn-delete-phase:hover{background:#2e1a1a;}
+.add-phase-section{margin:1.5rem 0 .5rem;}
+.add-phase-btn{width:100%;padding:10px;border-radius:6px;background:transparent;border:1px dashed #444;color:#888;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.add-phase-btn:hover{border-color:#e8ff00;color:#e8ff00;}
+.add-phase-form{background:#111a11;border:1px solid #2a4e2a;border-radius:8px;padding:14px;margin-top:8px;display:none;}
+.add-phase-form.show{display:block;}
 </style>
 </head>
 <body>
@@ -125,7 +167,6 @@ h1 span{color:#e8ff00;}
     <p class="subtitle" id="date-display"></p>
   </div>
 
-  <!-- CLIENT SELECTOR -->
   <div class="client-bar">
     <span class="client-label">Client</span>
     <select class="client-select" id="client-select" onchange="switchClient()">
@@ -146,6 +187,18 @@ h1 span{color:#e8ff00;}
       <div class="stat"><div class="stat-num" id="done-count">0/0</div><div class="stat-label">Completed</div></div>
       <div class="stat"><div class="stat-num" id="total-vol">0</div><div class="stat-label">Volume kg</div></div>
     </div>
+
+    <!-- EDIT MODE TOGGLE -->
+    <div class="edit-mode-bar">
+      <span class="edit-mode-label">Edit Program</span>
+      <div class="edit-toggle" onclick="toggleEditMode()">
+        <div class="toggle-track" id="toggle-track">
+          <div class="toggle-thumb"></div>
+        </div>
+        <span class="edit-mode-text" id="edit-mode-text">Off</span>
+      </div>
+    </div>
+
     <div class="day-tabs" id="day-tabs"></div>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
@@ -170,7 +223,7 @@ h1 span{color:#e8ff00;}
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- INFO MODAL -->
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-name" id="modal-name"></div>
@@ -192,8 +245,9 @@ let clientsData = [];
 let activeClient = null;
 let activeDay = DAYS[new Date().getDay()===0?6:new Date().getDay()-1];
 let state = {};
+let editMode = false;
+let customPrograms = {};
 
-// Load clients.json
 async function loadClients() {
   try {
     const res = await fetch('clients.json');
@@ -208,31 +262,48 @@ async function loadClients() {
 
 function populateClientSelect() {
   const sel = document.getElementById('client-select');
-  sel.innerHTML = clientsData.map(c =>
-    `<option value="${c.id}">${c.name}</option>`
-  ).join('');
+  sel.innerHTML = clientsData.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function switchClient() {
   const id = document.getElementById('client-select').value;
   activeClient = clientsData.find(c => c.id === id);
   if (!activeClient) return;
-
-  // Load state for this client
   const saved = localStorage.getItem('fitness_'+id);
   state = saved ? JSON.parse(saved) : { sessions:0, checked:{}, history:[] };
-
+  const savedProgram = localStorage.getItem('program_'+id);
+  if (savedProgram) {
+    customPrograms[id] = JSON.parse(savedProgram);
+  } else {
+    customPrograms[id] = JSON.parse(JSON.stringify(activeClient.program));
+  }
   document.getElementById('client-level').textContent = activeClient.level;
   renderTabs();
   renderExercises();
+}
+
+function getProgram() {
+  if (!activeClient) return null;
+  const prog = customPrograms[activeClient.id];
+  return prog ? prog[activeDay] : null;
+}
+
+function saveProgram() {
+  localStorage.setItem('program_'+activeClient.id, JSON.stringify(customPrograms[activeClient.id]));
 }
 
 function save() {
   localStorage.setItem('fitness_'+activeClient.id, JSON.stringify(state));
 }
 
-function getProgram() {
-  return activeClient.program[activeDay];
+function toggleEditMode() {
+  editMode = !editMode;
+  const track = document.getElementById('toggle-track');
+  const text = document.getElementById('edit-mode-text');
+  track.classList.toggle('on', editMode);
+  text.textContent = editMode ? 'On' : 'Off';
+  text.classList.toggle('on', editMode);
+  renderExercises();
 }
 
 function allExercises() {
@@ -258,12 +329,14 @@ function updateStats() {
 }
 
 function toggleCheck(pi, ei) {
+  if (editMode) return;
   const key = exKey(pi,ei);
   state.checked[key] = !state.checked[key];
   save(); renderExercises();
 }
 
 function openInfo(pi, ei) {
+  if (editMode) return;
   const prog = getProgram();
   const phase = prog.phases[pi];
   const ex = phase.exercises[ei];
@@ -279,6 +352,89 @@ function closeModal(e) {
   if (e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open');
 }
 
+// ── EDIT FUNCTIONS ──
+
+function deletePhase(pi) {
+  const prog = customPrograms[activeClient.id][activeDay];
+  if (prog.phases.length <= 1) { alert("Cannot delete the last phase!"); return; }
+  if (!confirm("Delete this phase and all its exercises?")) return;
+  prog.phases.splice(pi, 1);
+  saveProgram();
+  renderExercises();
+}
+
+function addPhase() {
+  const name = document.getElementById("new-phase-name").value.trim();
+  const tag = document.getElementById("new-phase-tag").value;
+  const note = document.getElementById("new-phase-note").value.trim();
+  if (!name) { alert("Please enter a phase name!"); return; }
+  const newPhase = { name, tag, note, exercises: [] };
+  customPrograms[activeClient.id][activeDay].phases.push(newPhase);
+  saveProgram();
+  renderExercises();
+}
+
+function toggleAddPhaseForm() {
+  const form = document.getElementById("add-phase-form");
+  form.classList.toggle("show");
+}
+
+
+function deleteExercise(pi, ei) {
+  const prog = customPrograms[activeClient.id][activeDay];
+  prog.phases[pi].exercises.splice(ei, 1);
+  saveProgram();
+  renderExercises();
+}
+
+function showMoveOptions(pi, ei, cardId) {
+  const row = document.getElementById('move-row-'+cardId);
+  row.classList.toggle('show');
+}
+
+function moveExercise(pi, ei, cardId) {
+  const targetDay = document.getElementById('move-day-'+cardId).value;
+  const targetPhaseIdx = parseInt(document.getElementById('move-phase-'+cardId).value);
+  if (!targetDay || isNaN(targetPhaseIdx)) return;
+
+  const prog = customPrograms[activeClient.id];
+  const ex = prog[activeDay].phases[pi].exercises.splice(ei, 1)[0];
+
+  if (!prog[targetDay]) {
+    prog[targetDay] = { label: targetDay, phases: [{ name: 'Moved Exercises', tag: 'accessories', note: '', exercises: [] }] };
+  }
+  if (!prog[targetDay].phases[targetPhaseIdx]) targetPhaseIdx = 0;
+  prog[targetDay].phases[targetPhaseIdx].exercises.push(ex);
+
+  saveProgram();
+  renderExercises();
+}
+
+function addExercise(pi) {
+  const name = document.getElementById('add-name-'+pi).value.trim();
+  const setsReps = document.getElementById('add-setsreps-'+pi).value.trim();
+  const tempo = document.getElementById('add-tempo-'+pi).value.trim();
+  const type = document.getElementById('add-type-'+pi).value;
+  const cue = document.getElementById('add-cue-'+pi).value.trim();
+  if (!name) { alert('Please enter exercise name!'); return; }
+  const newEx = {
+    name: name,
+    setsReps: setsReps || '3 × 10',
+    tempo: tempo || 'Controlled',
+    type: type || 'primary',
+    cue: cue || ''
+  };
+  customPrograms[activeClient.id][activeDay].phases[pi].exercises.push(newEx);
+  saveProgram();
+  renderExercises();
+}
+
+function getMovePhaseOptions(targetDay) {
+  const prog = customPrograms[activeClient.id];
+  if (!prog[targetDay]) return '<option value="0">New Phase</option>';
+  return prog[targetDay].phases.map((ph,i) => `<option value="${i}">${ph.name}</option>`).join('');
+}
+
 function renderExercises() {
   const prog = getProgram();
   const list = document.getElementById('exercise-list');
@@ -287,37 +443,155 @@ function renderExercises() {
   list.innerHTML = '';
   prog.phases.forEach((phase, pi) => {
     const phaseDiv = document.createElement('div');
+
     const header = document.createElement('div');
     header.className = 'phase-header';
-    header.innerHTML = `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span><span class="phase-note">${phase.note}</span>`;
+    header.innerHTML = `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span><span class="phase-note">${phase.note}</span>${editMode?`<button class="btn-delete-phase" onclick="deletePhase(${pi})">Delete Phase</button>`:''}`;
     phaseDiv.appendChild(header);
 
     phase.exercises.forEach((ex, ei) => {
       const key = exKey(pi,ei);
       const done = !!state.checked[key];
+      const cardId = `${pi}_${ei}`;
+
       const card = document.createElement('div');
-      card.className = 'exercise-card'+(done?' done-card':'');
+      card.className = 'exercise-card'+(done&&!editMode?' done-card':'')+(editMode?' editing':'');
+
+      const otherDays = DAYS.filter(d=>d!==activeDay);
+      const dayOptions = otherDays.map(d=>`<option value="${d}">${d}</option>`).join('');
+
       card.innerHTML = `
         <div class="exercise-header">
-          <div class="checkbox ${done?'done':''}" onclick="toggleCheck(${pi},${ei})">${done?'✓':''}</div>
-          <span class="exercise-name ${done?'done':''}" onclick="openInfo(${pi},${ei})">${ex.name}</span>
+          <div class="checkbox ${done&&!editMode?'done':''}" onclick="toggleCheck(${pi},${ei})">${done&&!editMode?'✓':''}</div>
+          <span class="exercise-name ${done&&!editMode?'done':''}" onclick="openInfo(${pi},${ei})">${ex.name}</span>
           <span class="badge">${ex.type}</span>
-          <button class="info-btn" onclick="openInfo(${pi},${ei})">i</button>
+          ${!editMode?`<button class="info-btn" onclick="openInfo(${pi},${ei})">i</button>`:''}
         </div>
         <div class="sets-row">
           <span class="sets-text">${ex.setsReps}</span>
           <span style="color:#333;margin:0 4px;">·</span>
           <span class="tempo-text">${ex.tempo}</span>
-        </div>`;
+        </div>
+        ${editMode?`
+        <div class="edit-actions show">
+          <button class="action-btn btn-move" onclick="showMoveOptions(${pi},${ei},'${cardId}')">Move to Day</button>
+          <button class="action-btn btn-delete" onclick="deleteExercise(${pi},${ei})">Delete</button>
+        </div>
+        <div class="move-row" id="move-row-${cardId}">
+          <select class="move-select" id="move-day-${cardId}" onchange="document.getElementById('move-phase-${cardId}').innerHTML=getMovePhaseOptions(this.value)">
+            <option value="">Select day</option>
+            ${dayOptions}
+          </select>
+          <select class="move-select" id="move-phase-${cardId}"><option value="">Phase</option></select>
+          <button class="move-confirm" onclick="moveExercise(${pi},${ei},'${cardId}')">Move ✓</button>
+        </div>`:''}`;
       phaseDiv.appendChild(card);
     });
+
+    if (editMode) {
+      const addFormId = `add-form-${pi}`;
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-exercise-btn';
+      addBtn.textContent = '+ Add Exercise';
+      addBtn.onclick = () => {
+        const form = document.getElementById(addFormId);
+        form.classList.toggle('show');
+      };
+      phaseDiv.appendChild(addBtn);
+
+      const form = document.createElement('div');
+      form.className = 'add-form';
+      form.id = addFormId;
+      form.innerHTML = `
+        <div class="form-row">
+          <div class="form-group full">
+            <label class="form-label">Exercise Name *</label>
+            <input class="form-input" id="add-name-${pi}" placeholder="e.g. Back Squat">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sets × Reps</label>
+            <input class="form-input" id="add-setsreps-${pi}" placeholder="3 × 10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tempo</label>
+            <input class="form-input" id="add-tempo-${pi}" placeholder="2-1-2">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="add-type-${pi}">
+              <option value="primary">Primary</option>
+              <option value="hinge">Hinge</option>
+              <option value="push">Push</option>
+              <option value="pull">Pull</option>
+              <option value="cardio">Cardio</option>
+              <option value="mobility">Mobility</option>
+              <option value="rehab">Rehab</option>
+              <option value="power">Power</option>
+              <option value="unilateral">Unilateral</option>
+              <option value="bracing">Bracing</option>
+              <option value="anti-ext">Anti-ext</option>
+              <option value="rotational">Rotational</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Coaching Cue</label>
+            <input class="form-input" id="add-cue-${pi}" placeholder="Key cue...">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="addExercise(${pi})">Save Exercise</button>
+          <button class="btn-discard" onclick="document.getElementById('${addFormId}').classList.remove('show')">Cancel</button>
+        </div>`;
+      phaseDiv.appendChild(form);
+    }
+
     list.appendChild(phaseDiv);
   });
+
+  // Add Phase button at bottom (edit mode only)
+  if (editMode) {
+    const addPhaseSec = document.createElement('div');
+    addPhaseSec.className = 'add-phase-section';
+    addPhaseSec.innerHTML = `
+      <button class="add-phase-btn" onclick="toggleAddPhaseForm()">+ Add New Phase</button>
+      <div class="add-phase-form" id="add-phase-form">
+        <div class="form-row">
+          <div class="form-group full">
+            <label class="form-label">Phase Name *</label>
+            <input class="form-input" id="new-phase-name" placeholder="e.g. 05 — Extra Work">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tag / Color</label>
+            <select class="form-select" id="new-phase-tag">
+              <option value="warmup">Warm-Up (Green)</option>
+              <option value="core">Core (Blue)</option>
+              <option value="strength">Strength (Orange)</option>
+              <option value="accessories">Accessories (Purple)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Note</label>
+            <input class="form-input" id="new-phase-note" placeholder="e.g. 10 min · Rest: 60s">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" onclick="addPhase()">Add Phase</button>
+          <button class="btn-discard" onclick="toggleAddPhaseForm()">Cancel</button>
+        </div>
+      </div>`;
+    list.appendChild(addPhaseSec);
+  }
+
   updateStats();
 }
 
 function finishWorkout() {
-  const total = allExercises().length;
   const prog = getProgram();
   if (!prog) return;
   const done = prog.phases.reduce((acc,ph,pi) =>
@@ -359,7 +633,6 @@ function renderProgress() {
     else if(i>0)break;
   }
   document.getElementById('streak-num').textContent=streak;
-
   const now=new Date(),year=now.getFullYear(),month=now.getMonth();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const firstDay=(new Date(year,month,1).getDay()+6)%7;
@@ -373,7 +646,6 @@ function renderProgress() {
     el.className='day-dot'+(state.history.includes(dk)?' worked':'')+(d===now.getDate()?' today':'');
     el.textContent=d;grid.appendChild(el);
   }
-
   const container=document.getElementById('weekly-log');container.innerHTML='';
   const dow=(today.getDay()+6)%7;
   for(let w=0;w<8;w++){

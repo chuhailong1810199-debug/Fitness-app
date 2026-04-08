@@ -11,38 +11,136 @@
           "label": "Day A — Lower Power + Core",
           "phases": [
             {
-              "name": "01 — Warm-Up", "tag": "warmup", "note": "8–10 min",
+              "name": "01 — Warm-Up",
+              "tag": "warmup",
+              "note": "8–10 min",
               "exercises": [
-                { "name": "Rowing Machine / Jump Rope", "setsReps": "1 × 4 min", "tempo": "Steady", "type": "cardio", "cue": "Low intensity, elevate heart rate" },
-                { "name": "Hip 90/90 + Thoracic Rotation", "setsReps": "1 × 10", "tempo": "Slow", "type": "mobility", "cue": "5 each side — open hips and t-spine" },
-                { "name": "Cossack Squat", "setsReps": "1 × 8", "tempo": "3-1-1", "type": "mobility", "cue": "Controlled, full range, hold at bottom" },
-                { "name": "Banded Hip Circles + Glute Kickbacks", "setsReps": "1 × 12", "tempo": "Controlled", "type": "activation", "cue": "Activate glute med and max before squatting" },
-                { "name": "Box Jump or Med Ball Slam", "setsReps": "1 × 3", "tempo": "Explosive", "type": "power", "cue": "Wake up CNS — max intent" }
+                {
+                  "name": "Rowing Machine / Jump Rope",
+                  "setsReps": "1 × 4 min",
+                  "tempo": "Steady",
+                  "type": "cardio",
+                  "cue": "Low intensity, elevate heart rate"
+                },
+                {
+                  "name": "Hip 90/90 + Thoracic Rotation",
+                  "setsReps": "1 × 10",
+                  "tempo": "Slow",
+                  "type": "mobility",
+                  "cue": "5 each side — open hips and t-spine"
+                },
+                {
+                  "name": "Cossack Squat",
+                  "setsReps": "1 × 8",
+                  "tempo": "3-1-1",
+                  "type": "mobility",
+                  "cue": "Controlled, full range, hold at bottom"
+                },
+                {
+                  "name": "Banded Hip Circles + Glute Kickbacks",
+                  "setsReps": "1 × 12",
+                  "tempo": "Controlled",
+                  "type": "activation",
+                  "cue": "Activate glute med and max before squatting"
+                },
+                {
+                  "name": "Box Jump or Med Ball Slam",
+                  "setsReps": "1 × 3",
+                  "tempo": "Explosive",
+                  "type": "power",
+                  "cue": "Wake up CNS — max intent"
+                }
               ]
             },
             {
-              "name": "02 — Core Activation", "tag": "core", "note": "8–10 min",
+              "name": "02 — Core Activation",
+              "tag": "core",
+              "note": "8–10 min",
               "exercises": [
-                { "name": "Dead Bug (contralateral)", "setsReps": "3 × 8/side", "tempo": "4-1-4", "type": "anti-ext", "cue": "Press lower back firmly into floor — no arch" },
-                { "name": "Pallof Press", "setsReps": "3 × 10/side", "tempo": "2-2-2", "type": "anti-rot", "cue": "Resist rotation — pause at full extension 2s" },
-                { "name": "Copenhagen Plank", "setsReps": "3 × 20s/side", "tempo": "Isometric", "type": "lateral", "cue": "Adductor strength for footwork stability" }
+                {
+                  "name": "Dead Bug (contralateral)",
+                  "setsReps": "3 × 8/side",
+                  "tempo": "4-1-4",
+                  "type": "anti-ext",
+                  "cue": "Press lower back firmly into floor — no arch"
+                },
+                {
+                  "name": "Pallof Press",
+                  "setsReps": "3 × 10/side",
+                  "tempo": "2-2-2",
+                  "type": "anti-rot",
+                  "cue": "Resist rotation — pause at full extension 2s"
+                },
+                {
+                  "name": "Copenhagen Plank",
+                  "setsReps": "3 × 20s/side",
+                  "tempo": "Isometric",
+                  "type": "lateral",
+                  "cue": "Adductor strength for footwork stability"
+                }
               ]
             },
             {
-              "name": "03 — Strength Phase", "tag": "strength", "note": "25–30 min · Rest: 2–3 min · RPE 7–8",
+              "name": "03 — Strength Phase",
+              "tag": "strength",
+              "note": "25–30 min · Rest: 2–3 min · RPE 7–8",
               "exercises": [
-                { "name": "Back Squat", "setsReps": "4 × 4–5", "tempo": "3-1-X", "type": "primary", "cue": "Comp. depth, brace hard" },
-                { "name": "Romanian Deadlift", "setsReps": "3 × 6", "tempo": "4-1-2", "type": "hinge", "cue": "Feel hamstring tension throughout" },
-                { "name": "Trap Bar Jump Deadlift", "setsReps": "3 × 4", "tempo": "Explosive", "type": "power", "cue": "~50% 1RM — max intent" }
+                {
+                  "name": "Back Squat",
+                  "setsReps": "4 × 4–5",
+                  "tempo": "3-1-X",
+                  "type": "primary",
+                  "cue": "Comp. depth, brace hard"
+                },
+                {
+                  "name": "Romanian Deadlift",
+                  "setsReps": "3 × 6",
+                  "tempo": "4-1-2",
+                  "type": "hinge",
+                  "cue": "Feel hamstring tension throughout"
+                },
+                {
+                  "name": "Trap Bar Jump Deadlift",
+                  "setsReps": "3 × 4",
+                  "tempo": "Explosive",
+                  "type": "power",
+                  "cue": "~50% 1RM — max intent"
+                }
               ]
             },
             {
-              "name": "04 — Accessories", "tag": "accessories", "note": "15–20 min · Rest: 60–90s",
+              "name": "04 — Accessories",
+              "tag": "accessories",
+              "note": "15–20 min · Rest: 60–90s",
               "exercises": [
-                { "name": "A1. Bulgarian Split Squat", "setsReps": "3 × 8/leg", "tempo": "3-1-2", "type": "unilateral", "cue": "Rear foot elevated — control the descent" },
-                { "name": "A2. Nordic Hamstring Curl", "setsReps": "3 × 5–6", "tempo": "Eccentric", "type": "eccentric", "cue": "Lower slowly 3–4s. Injury prevention" },
-                { "name": "Rotational Med Ball Slam", "setsReps": "3 × 8/side", "tempo": "Max power", "type": "rotational", "cue": "Rotate fully — mimic cross/hook mechanics" },
-                { "name": "Band Pull-Apart", "setsReps": "3 × 15", "tempo": "Controlled", "type": "rehab", "cue": "Shoulder health — pain-free range only" }
+                {
+                  "name": "A1. Bulgarian Split Squat",
+                  "setsReps": "3 × 8/leg",
+                  "tempo": "3-1-2",
+                  "type": "unilateral",
+                  "cue": "Rear foot elevated — control the descent"
+                },
+                {
+                  "name": "A2. Nordic Hamstring Curl",
+                  "setsReps": "3 × 5–6",
+                  "tempo": "Eccentric",
+                  "type": "eccentric",
+                  "cue": "Lower slowly 3–4s. Injury prevention"
+                },
+                {
+                  "name": "Rotational Med Ball Slam",
+                  "setsReps": "3 × 8/side",
+                  "tempo": "Max power",
+                  "type": "rotational",
+                  "cue": "Rotate fully — mimic cross/hook mechanics"
+                },
+                {
+                  "name": "Band Pull-Apart",
+                  "setsReps": "3 × 15",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "Shoulder health — pain-free range only"
+                }
               ]
             }
           ]
@@ -51,143 +149,748 @@
           "label": "Day B — Upper Push / Pull",
           "phases": [
             {
-              "name": "01 — Warm-Up", "tag": "warmup", "note": "8–10 min",
+              "name": "01 — Warm-Up",
+              "tag": "warmup",
+              "note": "8–10 min",
               "exercises": [
-                { "name": "Bike / Shadow Boxing (light)", "setsReps": "1 × 4 min", "tempo": "Easy", "type": "cardio", "cue": "Easy pace — increase blood flow" },
-                { "name": "Shoulder CARs", "setsReps": "2 × 5/side", "tempo": "Very slow", "type": "rehab", "cue": "Full circumduction — SLOW, pain-free range only" },
-                { "name": "Wall Slide + Lift Off", "setsReps": "2 × 10", "tempo": "Controlled", "type": "activation", "cue": "Serratus activation" },
-                { "name": "Band Face Pull + External Rotation", "setsReps": "2 × 15", "tempo": "Controlled", "type": "activation", "cue": "Light band, elbows high" },
-                { "name": "Thoracic Extension over Foam Roller", "setsReps": "1 × 90s", "tempo": "Passive hold", "type": "mobility", "cue": "3 positions: upper, mid, lower T-spine" }
+                {
+                  "name": "Bike / Shadow Boxing (light)",
+                  "setsReps": "1 × 4 min",
+                  "tempo": "Easy",
+                  "type": "cardio",
+                  "cue": "Easy pace — increase blood flow"
+                },
+                {
+                  "name": "Shoulder CARs",
+                  "setsReps": "2 × 5/side",
+                  "tempo": "Very slow",
+                  "type": "rehab",
+                  "cue": "Full circumduction — SLOW, pain-free range only"
+                },
+                {
+                  "name": "Wall Slide + Lift Off",
+                  "setsReps": "2 × 10",
+                  "tempo": "Controlled",
+                  "type": "activation",
+                  "cue": "Serratus activation"
+                },
+                {
+                  "name": "Band Face Pull + External Rotation",
+                  "setsReps": "2 × 15",
+                  "tempo": "Controlled",
+                  "type": "activation",
+                  "cue": "Light band, elbows high"
+                },
+                {
+                  "name": "Thoracic Extension over Foam Roller",
+                  "setsReps": "1 × 90s",
+                  "tempo": "Passive hold",
+                  "type": "mobility",
+                  "cue": "3 positions: upper, mid, lower T-spine"
+                }
               ]
             },
             {
-              "name": "02 — Core Activation", "tag": "core", "note": "8 min",
+              "name": "02 — Core Activation",
+              "tag": "core",
+              "note": "8 min",
               "exercises": [
-                { "name": "Hollow Body Hold", "setsReps": "3 × 30s", "tempo": "Isometric", "type": "anti-ext", "cue": "Arms by sides to regress — breathe through it" },
-                { "name": "Cable Woodchop (high to low)", "setsReps": "3 × 10/side", "tempo": "2-0-2", "type": "rotational", "cue": "Mimic hook / overhand pattern — rotate fully" },
-                { "name": "RKC Plank", "setsReps": "3 × 20s", "tempo": "Max tension", "type": "bracing", "cue": "Squeeze everything — glutes, quads, abs" }
+                {
+                  "name": "Hollow Body Hold",
+                  "setsReps": "3 × 30s",
+                  "tempo": "Isometric",
+                  "type": "anti-ext",
+                  "cue": "Arms by sides to regress — breathe through it"
+                },
+                {
+                  "name": "Cable Woodchop (high to low)",
+                  "setsReps": "3 × 10/side",
+                  "tempo": "2-0-2",
+                  "type": "rotational",
+                  "cue": "Mimic hook / overhand pattern — rotate fully"
+                },
+                {
+                  "name": "RKC Plank",
+                  "setsReps": "3 × 20s",
+                  "tempo": "Max tension",
+                  "type": "bracing",
+                  "cue": "Squeeze everything — glutes, quads, abs"
+                }
               ]
             },
             {
-              "name": "03 — Strength Phase", "tag": "strength", "note": "25–30 min · Rest: 2–3 min · RPE 7–8",
+              "name": "03 — Strength Phase",
+              "tag": "strength",
+              "note": "25–30 min · Rest: 2–3 min · RPE 7–8",
               "exercises": [
-                { "name": "Weighted Pull-Up", "setsReps": "4 × 4–6", "tempo": "3-1-2", "type": "pull", "cue": "Full ROM — dead hang to chin over bar" },
-                { "name": "Landmine Press (single arm)", "setsReps": "4 × 6/side", "tempo": "2-1-2", "type": "push", "cue": "Neutral grip, arc motion" },
-                { "name": "Barbell Row", "setsReps": "3 × 5–6", "tempo": "2-1-X", "type": "pull", "cue": "Squeeze scapula at top" }
+                {
+                  "name": "Weighted Pull-Up",
+                  "setsReps": "4 × 4–6",
+                  "tempo": "3-1-2",
+                  "type": "pull",
+                  "cue": "Full ROM — dead hang to chin over bar"
+                },
+                {
+                  "name": "Landmine Press (single arm)",
+                  "setsReps": "4 × 6/side",
+                  "tempo": "2-1-2",
+                  "type": "push",
+                  "cue": "Neutral grip, arc motion"
+                },
+                {
+                  "name": "Barbell Row",
+                  "setsReps": "3 × 5–6",
+                  "tempo": "2-1-X",
+                  "type": "pull",
+                  "cue": "Squeeze scapula at top"
+                }
               ]
             },
             {
-              "name": "04 — Accessories", "tag": "accessories", "note": "15–20 min · Superset A1/A2, B1/B2",
+              "name": "04 — Accessories",
+              "tag": "accessories",
+              "note": "15–20 min · Superset A1/A2, B1/B2",
               "exercises": [
-                { "name": "A1. Incline DB Press (30–45°)", "setsReps": "3 × 8–10", "tempo": "3-1-2", "type": "push", "cue": "Neutral grip — reduces front delt stress" },
-                { "name": "A2. Cable Face Pull", "setsReps": "3 × 15", "tempo": "Controlled", "type": "rehab", "cue": "Rope at eye level — external rotation at end range" },
-                { "name": "B1. Single Arm Cable Row", "setsReps": "3 × 10/side", "tempo": "2-1-2", "type": "pull", "cue": "Rotate into the pull — boxing specificity" },
-                { "name": "B2. Suitcase Carry", "setsReps": "3 × 50m/side", "tempo": "Braced", "type": "carry", "cue": "50m each side — oblique and lat strength" },
-                { "name": "Tricep Pushdown", "setsReps": "3 × 12–15", "tempo": "2-0-2", "type": "arm", "cue": "Punch finishing strength" }
+                {
+                  "name": "A1. Incline DB Press (30–45°)",
+                  "setsReps": "3 × 8–10",
+                  "tempo": "3-1-2",
+                  "type": "push",
+                  "cue": "Neutral grip — reduces front delt stress"
+                },
+                {
+                  "name": "A2. Cable Face Pull",
+                  "setsReps": "3 × 15",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "Rope at eye level — external rotation at end range"
+                },
+                {
+                  "name": "B1. Single Arm Cable Row",
+                  "setsReps": "3 × 10/side",
+                  "tempo": "2-1-2",
+                  "type": "pull",
+                  "cue": "Rotate into the pull — boxing specificity"
+                },
+                {
+                  "name": "B2. Suitcase Carry",
+                  "setsReps": "3 × 50m/side",
+                  "tempo": "Braced",
+                  "type": "carry",
+                  "cue": "50m each side — oblique and lat strength"
+                },
+                {
+                  "name": "Tricep Pushdown",
+                  "setsReps": "3 × 12–15",
+                  "tempo": "2-0-2",
+                  "type": "arm",
+                  "cue": "Punch finishing strength"
+                }
               ]
             }
           ]
         },
-        "Tue": { "label": "Boxing", "phases": [{ "name": "Boxing Session", "tag": "strength", "note": "60–90 min", "exercises": [{ "name": "Shadow Boxing", "setsReps": "3 × 3 min", "tempo": "Rounds", "type": "cardio", "cue": "Stay relaxed. Move feet." }, { "name": "Bag Work", "setsReps": "4 × 3 min", "tempo": "Rounds", "type": "power", "cue": "Rotate hips fully. Reset guard." }, { "name": "Pad Work", "setsReps": "3 × 2 min", "tempo": "Rounds", "type": "cardio", "cue": "Precision over power." }] }] },
-        "Fri": { "label": "Boxing", "phases": [{ "name": "Boxing Session", "tag": "strength", "note": "60–90 min", "exercises": [{ "name": "Shadow Boxing", "setsReps": "3 × 3 min", "tempo": "Rounds", "type": "cardio", "cue": "Focus on head movement." }, { "name": "Pad Work", "setsReps": "4 × 2 min", "tempo": "Rounds", "type": "cardio", "cue": "Reduce power shots 30%." }] }] },
-        "Wed": { "label": "Rest + Shoulder Rehab", "phases": [{ "name": "Rehab Routine", "tag": "warmup", "note": "10 min daily", "exercises": [{ "name": "Pec Minor Stretch", "setsReps": "3 × 45–60s", "tempo": "Hold", "type": "rehab", "cue": "Hands at shoulder height. Lean gently." }, { "name": "Band External Rotation", "setsReps": "3 × 15/side", "tempo": "Controlled", "type": "rehab", "cue": "Elbow at 90°." }, { "name": "Wall Angels", "setsReps": "3 × 10", "tempo": "Slow", "type": "activation", "cue": "Back flat against wall." }] }] },
-        "Sat": { "label": "Active Rest", "phases": [{ "name": "Recovery", "tag": "warmup", "note": "Easy only", "exercises": [{ "name": "Walking", "setsReps": "30 min", "tempo": "Easy", "type": "cardio", "cue": "Recovery, not training." }] }] },
-        "Sun": { "label": "Rest Day", "phases": [{ "name": "Rest", "tag": "warmup", "note": "", "exercises": [{ "name": "Shoulder Rehab Routine", "setsReps": "10 min", "tempo": "Controlled", "type": "rehab", "cue": "10 min every morning." }] }] }
-      }
-    },
-    {
-      "id": "client2",
-      "name": "Nguyen Van A",
-      "level": "Beginner",
-      "goal": "Weight Loss + Fitness",
-      "sessionsPerWeek": 3,
-      "program": {
-        "Mon": {
-          "label": "Full Body A",
+        "Tue": {
+          "label": "Boxing",
           "phases": [
             {
-              "name": "01 — Warm-Up", "tag": "warmup", "note": "5–8 min",
+              "name": "Boxing Session",
+              "tag": "strength",
+              "note": "60–90 min",
               "exercises": [
-                { "name": "Treadmill Walk", "setsReps": "1 × 5 min", "tempo": "Easy", "type": "cardio", "cue": "Elevate heart rate gradually" },
-                { "name": "Hip Circles", "setsReps": "1 × 10/side", "tempo": "Controlled", "type": "mobility", "cue": "Loosen up hips" }
-              ]
-            },
-            {
-              "name": "02 — Main Work", "tag": "strength", "note": "30–35 min · Rest: 90s",
-              "exercises": [
-                { "name": "Goblet Squat", "setsReps": "3 × 12", "tempo": "3-1-2", "type": "primary", "cue": "Chest up, knees out. Light weight first." },
-                { "name": "Dumbbell Romanian Deadlift", "setsReps": "3 × 12", "tempo": "3-1-2", "type": "hinge", "cue": "Push hips back, feel hamstring stretch." },
-                { "name": "Push Up (knee if needed)", "setsReps": "3 × 10", "tempo": "3-1-2", "type": "push", "cue": "Straight line from head to knees/toes." },
-                { "name": "Dumbbell Row", "setsReps": "3 × 12/side", "tempo": "2-1-2", "type": "pull", "cue": "Elbow to hip. Squeeze at top." }
-              ]
-            },
-            {
-              "name": "03 — Conditioning", "tag": "accessories", "note": "10 min",
-              "exercises": [
-                { "name": "Jump Rope or Jumping Jacks", "setsReps": "3 × 1 min", "tempo": "Moderate", "type": "cardio", "cue": "Keep moving. Rest 30s between sets." },
-                { "name": "Plank Hold", "setsReps": "3 × 20–30s", "tempo": "Isometric", "type": "bracing", "cue": "Squeeze glutes and abs. Breathe." }
-              ]
-            }
-          ]
-        },
-        "Wed": {
-          "label": "Full Body B",
-          "phases": [
-            {
-              "name": "01 — Warm-Up", "tag": "warmup", "note": "5–8 min",
-              "exercises": [
-                { "name": "Bike or Row", "setsReps": "1 × 5 min", "tempo": "Easy", "type": "cardio", "cue": "Easy warm up pace" },
-                { "name": "World's Greatest Stretch", "setsReps": "1 × 5/side", "tempo": "Slow", "type": "mobility", "cue": "Full body mobility in one move" }
-              ]
-            },
-            {
-              "name": "02 — Main Work", "tag": "strength", "note": "30–35 min · Rest: 90s",
-              "exercises": [
-                { "name": "Leg Press", "setsReps": "3 × 15", "tempo": "3-1-2", "type": "primary", "cue": "Full range, don't lock knees at top." },
-                { "name": "Dumbbell Bench Press", "setsReps": "3 × 12", "tempo": "3-1-2", "type": "push", "cue": "Control the descent. Light weight." },
-                { "name": "Lat Pulldown", "setsReps": "3 × 12", "tempo": "2-1-2", "type": "pull", "cue": "Pull to chest. Squeeze lats." },
-                { "name": "Dumbbell Lunge", "setsReps": "3 × 10/leg", "tempo": "Controlled", "type": "unilateral", "cue": "Step forward, knee doesn't pass toes." }
-              ]
-            },
-            {
-              "name": "03 — Core + Stretch", "tag": "accessories", "note": "10 min",
-              "exercises": [
-                { "name": "Dead Bug", "setsReps": "3 × 8/side", "tempo": "4-1-4", "type": "anti-ext", "cue": "Lower back flat. Move slow." },
-                { "name": "Full Body Stretch", "setsReps": "5 min", "tempo": "Hold 30s", "type": "mobility", "cue": "Focus on hips and chest." }
+                {
+                  "name": "Shadow Boxing",
+                  "setsReps": "3 × 3 min",
+                  "tempo": "Rounds",
+                  "type": "cardio",
+                  "cue": "Stay relaxed. Move feet."
+                },
+                {
+                  "name": "Bag Work",
+                  "setsReps": "4 × 3 min",
+                  "tempo": "Rounds",
+                  "type": "power",
+                  "cue": "Rotate hips fully. Reset guard."
+                },
+                {
+                  "name": "Pad Work",
+                  "setsReps": "3 × 2 min",
+                  "tempo": "Rounds",
+                  "type": "cardio",
+                  "cue": "Precision over power."
+                }
               ]
             }
           ]
         },
         "Fri": {
-          "label": "Full Body C + Cardio",
+          "label": "Boxing",
           "phases": [
             {
-              "name": "01 — Warm-Up", "tag": "warmup", "note": "5 min",
+              "name": "Boxing Session",
+              "tag": "strength",
+              "note": "60–90 min",
               "exercises": [
-                { "name": "Jump Rope", "setsReps": "1 × 3 min", "tempo": "Easy", "type": "cardio", "cue": "Easy rhythm to warm up" }
-              ]
-            },
-            {
-              "name": "02 — Circuit Training", "tag": "strength", "note": "3 rounds · Rest: 2 min between rounds",
-              "exercises": [
-                { "name": "Bodyweight Squat", "setsReps": "3 × 15", "tempo": "Controlled", "type": "primary", "cue": "Full depth. Chest up." },
-                { "name": "Push Up", "setsReps": "3 × 10", "tempo": "Controlled", "type": "push", "cue": "Full range. Modify on knees if needed." },
-                { "name": "Dumbbell Row", "setsReps": "3 × 12/side", "tempo": "Controlled", "type": "pull", "cue": "Elbow to hip." },
-                { "name": "Mountain Climbers", "setsReps": "3 × 20s", "tempo": "Fast", "type": "cardio", "cue": "Hips level. Drive knees in." }
-              ]
-            },
-            {
-              "name": "03 — Cardio Finisher", "tag": "accessories", "note": "15 min",
-              "exercises": [
-                { "name": "Treadmill or Bike", "setsReps": "15 min", "tempo": "Moderate", "type": "cardio", "cue": "Zone 2 cardio — can hold a conversation." }
+                {
+                  "name": "Shadow Boxing",
+                  "setsReps": "3 × 3 min",
+                  "tempo": "Rounds",
+                  "type": "cardio",
+                  "cue": "Focus on head movement."
+                },
+                {
+                  "name": "Pad Work",
+                  "setsReps": "4 × 2 min",
+                  "tempo": "Rounds",
+                  "type": "cardio",
+                  "cue": "Reduce power shots 30%."
+                }
               ]
             }
           ]
         },
-        "Tue": { "label": "Rest / Walk", "phases": [{ "name": "Active Recovery", "tag": "warmup", "note": "", "exercises": [{ "name": "Walking", "setsReps": "20–30 min", "tempo": "Easy", "type": "cardio", "cue": "Keep it easy. Recovery day." }] }] },
-        "Thu": { "label": "Rest / Walk", "phases": [{ "name": "Active Recovery", "tag": "warmup", "note": "", "exercises": [{ "name": "Walking", "setsReps": "20–30 min", "tempo": "Easy", "type": "cardio", "cue": "Keep it easy. Recovery day." }] }] },
-        "Sat": { "label": "Active Rest", "phases": [{ "name": "Recovery", "tag": "warmup", "note": "", "exercises": [{ "name": "Light Walk or Stretch", "setsReps": "20 min", "tempo": "Easy", "type": "mobility", "cue": "Stay active but relaxed." }] }] },
-        "Sun": { "label": "Rest Day", "phases": [{ "name": "Rest", "tag": "warmup", "note": "", "exercises": [{ "name": "Full Rest", "setsReps": "—", "tempo": "—", "type": "rehab", "cue": "Recovery is where adaptation happens." }] }] }
+        "Wed": {
+          "label": "Rest + Shoulder Rehab",
+          "phases": [
+            {
+              "name": "Rehab Routine",
+              "tag": "warmup",
+              "note": "10 min daily",
+              "exercises": [
+                {
+                  "name": "Pec Minor Stretch",
+                  "setsReps": "3 × 45–60s",
+                  "tempo": "Hold",
+                  "type": "rehab",
+                  "cue": "Hands at shoulder height. Lean gently."
+                },
+                {
+                  "name": "Band External Rotation",
+                  "setsReps": "3 × 15/side",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "Elbow at 90°."
+                },
+                {
+                  "name": "Wall Angels",
+                  "setsReps": "3 × 10",
+                  "tempo": "Slow",
+                  "type": "activation",
+                  "cue": "Back flat against wall."
+                }
+              ]
+            }
+          ]
+        },
+        "Sat": {
+          "label": "Active Rest",
+          "phases": [
+            {
+              "name": "Recovery",
+              "tag": "warmup",
+              "note": "Easy only",
+              "exercises": [
+                {
+                  "name": "Walking",
+                  "setsReps": "30 min",
+                  "tempo": "Easy",
+                  "type": "cardio",
+                  "cue": "Recovery, not training."
+                }
+              ]
+            }
+          ]
+        },
+        "Sun": {
+          "label": "Rest Day",
+          "phases": [
+            {
+              "name": "Rest",
+              "tag": "warmup",
+              "note": "",
+              "exercises": [
+                {
+                  "name": "Shoulder Rehab Routine",
+                  "setsReps": "10 min",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "10 min every morning."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sang",
+      "name": "Sang",
+      "level": "Beginner",
+      "goal": "Fat Loss + Posture + Height",
+      "sessionsPerWeek": 3,
+      "program": {
+        "Mon": {
+          "label": "Session A — Strength + Mobility",
+          "phases": [
+            {
+              "name": "01 — Warm-Up",
+              "tag": "warmup",
+              "note": "10 min",
+              "exercises": [
+                {
+                  "name": "Hip Circles",
+                  "setsReps": "2 × 10/side",
+                  "tempo": "Controlled",
+                  "type": "mobility",
+                  "cue": "Slow and full range — mobilise hip joint before loading"
+                },
+                {
+                  "name": "Thoracic Rotation (Seated)",
+                  "setsReps": "2 × 8/side",
+                  "tempo": "Slow",
+                  "type": "mobility",
+                  "cue": "Unlock mid-back; sit on mat, hands behind head"
+                },
+                {
+                  "name": "Ankle Circles",
+                  "setsReps": "2 × 10/each",
+                  "tempo": "Controlled",
+                  "type": "mobility",
+                  "cue": "Prep for squat pattern; improve dorsiflexion"
+                },
+                {
+                  "name": "Bodyweight Squat",
+                  "setsReps": "2 × 10",
+                  "tempo": "2-1-2",
+                  "type": "activation",
+                  "cue": "Rehearse the pattern; chest up, knees track toes"
+                }
+              ]
+            },
+            {
+              "name": "02 — Strength Phase",
+              "tag": "strength",
+              "note": "30–35 min · Rest: 90s",
+              "exercises": [
+                {
+                  "name": "Goblet Squat",
+                  "setsReps": "3 × 8–10",
+                  "tempo": "2-1-2",
+                  "type": "primary",
+                  "cue": "Heels flat, chest tall, depth ≥ parallel. KEY squat teacher. Week 1–4: light DB, progress +1–2 kg"
+                },
+                {
+                  "name": "Romanian Deadlift (Dumbbell)",
+                  "setsReps": "3 × 8–10",
+                  "tempo": "3-1-1",
+                  "type": "hinge",
+                  "cue": "Hinge at hips, not bend. Feel hamstring stretch. Neutral spine."
+                },
+                {
+                  "name": "Push-Up (chest-to-floor)",
+                  "setsReps": "3 × AMRAP",
+                  "tempo": "2-0-2",
+                  "type": "push",
+                  "cue": "Log reps each set. Progress = more reps or elevated variation."
+                },
+                {
+                  "name": "DB Bent-Over Row",
+                  "setsReps": "3 × 10/side",
+                  "tempo": "2-1-2",
+                  "type": "pull",
+                  "cue": "Neutral spine, elbow drives back past torso. Row both sides."
+                },
+                {
+                  "name": "Plank Hold",
+                  "setsReps": "3 × 20–30s",
+                  "tempo": "Isometric",
+                  "type": "bracing",
+                  "cue": "Squeeze glutes (posterior pelvic tilt). No sagging hips. Progress duration weekly."
+                }
+              ]
+            },
+            {
+              "name": "03 — Mobility Cooldown",
+              "tag": "accessories",
+              "note": "10–12 min",
+              "exercises": [
+                {
+                  "name": "90/90 Hip Stretch",
+                  "setsReps": "2 × 60s/side",
+                  "tempo": "Static",
+                  "type": "mobility",
+                  "cue": "Key for pelvis alignment & anterior pelvic tilt correction"
+                },
+                {
+                  "name": "World's Greatest Stretch",
+                  "setsReps": "2 × 5/side",
+                  "tempo": "Flowing",
+                  "type": "mobility",
+                  "cue": "Full-body mobility combo — lunge, twist, reach"
+                },
+                {
+                  "name": "Doorway Chest Stretch",
+                  "setsReps": "2 × 45s/side",
+                  "tempo": "Static",
+                  "type": "rehab",
+                  "cue": "Counter desk/phone posture; open pec minor"
+                },
+                {
+                  "name": "Cat-Cow Spine Mobilisation",
+                  "setsReps": "2 × 10 cycles",
+                  "tempo": "Slow",
+                  "type": "mobility",
+                  "cue": "Spinal decompression cooldown. Breathe into each position."
+                }
+              ]
+            }
+          ]
+        },
+        "Wed": {
+          "label": "Session B — Plyometrics + Cardio",
+          "phases": [
+            {
+              "name": "01 — Warm-Up",
+              "tag": "warmup",
+              "note": "10 min",
+              "exercises": [
+                {
+                  "name": "Jumping Jacks",
+                  "setsReps": "1 × 30s",
+                  "tempo": "Moderate",
+                  "type": "cardio",
+                  "cue": "Elevate heart rate gently before explosive work"
+                },
+                {
+                  "name": "Leg Swings (front + side)",
+                  "setsReps": "2 × 10/direction",
+                  "tempo": "Dynamic",
+                  "type": "activation",
+                  "cue": "Hip flexor activation — essential before plyos"
+                },
+                {
+                  "name": "Arm Circles",
+                  "setsReps": "2 × 10/direction",
+                  "tempo": "Dynamic",
+                  "type": "activation",
+                  "cue": "Shoulder warm-up; forward and backward"
+                },
+                {
+                  "name": "Skips / High Knees in Place",
+                  "setsReps": "1 × 20s",
+                  "tempo": "Rhythmic",
+                  "type": "activation",
+                  "cue": "CNS activation before plyometric work"
+                }
+              ]
+            },
+            {
+              "name": "02 — Plyometric Phase",
+              "tag": "strength",
+              "note": "20–25 min · Rest: 90s · Quality over quantity",
+              "exercises": [
+                {
+                  "name": "Box Jump (30–40 cm)",
+                  "setsReps": "4 × 5 reps",
+                  "tempo": "Explosive",
+                  "type": "power",
+                  "cue": "Soft landing: toe-ball-heel. Hips back. Knees track toes. Step down — don't jump down. Ph1: 30cm, Ph2–3: 40cm"
+                },
+                {
+                  "name": "Broad Jump",
+                  "setsReps": "3 × 5 reps",
+                  "tempo": "Explosive",
+                  "type": "power",
+                  "cue": "Max horizontal distance. Stick the landing 2–3 sec. Arms help load."
+                },
+                {
+                  "name": "Lateral Bound (Skater Hop)",
+                  "setsReps": "3 × 6/side",
+                  "tempo": "Explosive",
+                  "type": "power",
+                  "cue": "Load the outside hip. Push off outside edge. Stick landing. START WEEK 5 ONLY."
+                },
+                {
+                  "name": "Ankle Hop / Pogos",
+                  "setsReps": "3 × 15 reps",
+                  "tempo": "Reactive",
+                  "type": "power",
+                  "cue": "Fast ground contact. Stiffen ankle like a spring. Minimal knee bend."
+                },
+                {
+                  "name": "Depth Drop (step off box)",
+                  "setsReps": "3 × 5 reps",
+                  "tempo": "Absorb",
+                  "type": "power",
+                  "cue": "STEP off (don't jump). Land softly and absorb quietly. START WEEK 9 ONLY."
+                }
+              ]
+            },
+            {
+              "name": "03 — Cardio Phase",
+              "tag": "accessories",
+              "note": "15–18 min",
+              "exercises": [
+                {
+                  "name": "Aerobic Intervals (bike/row/run)",
+                  "setsReps": "1 × 15 min",
+                  "tempo": "2 min easy / 1 min mod",
+                  "type": "cardio",
+                  "cue": "RPE 5–7. Sustainable aerobic work. Should be able to talk in easy phase."
+                },
+                {
+                  "name": "Agility Ladder Drills",
+                  "setsReps": "3 × 30s/pattern",
+                  "tempo": "Fast feet",
+                  "type": "cardio",
+                  "cue": "Patterns: 2-in, Ickey Shuffle, Lateral Run. Sport-specific footwork."
+                },
+                {
+                  "name": "Cone Shuttle Sprint (10-5-10 m)",
+                  "setsReps": "4 × 30s effort",
+                  "tempo": "Max effort",
+                  "type": "power",
+                  "cue": "Acceleration + deceleration under control. Touch cone each time."
+                }
+              ]
+            },
+            {
+              "name": "04 — Mobility Cooldown",
+              "tag": "core",
+              "note": "10 min",
+              "exercises": [
+                {
+                  "name": "Hip Flexor Stretch (Half-Kneeling)",
+                  "setsReps": "2 × 60s/side",
+                  "tempo": "Static",
+                  "type": "rehab",
+                  "cue": "Critical for anterior pelvic tilt correction — most important stretch for posture"
+                },
+                {
+                  "name": "Child's Pose + Lat Reach",
+                  "setsReps": "2 × 45s/side",
+                  "tempo": "Static",
+                  "type": "mobility",
+                  "cue": "Thoracic & lat opener. Reach arm along floor for extra stretch."
+                },
+                {
+                  "name": "Calf Stretch (bent + straight knee)",
+                  "setsReps": "2 × 45s/each",
+                  "tempo": "Static",
+                  "type": "mobility",
+                  "cue": "Both positions target different calf muscles. Improves squat depth over time."
+                }
+              ]
+            }
+          ]
+        },
+        "Fri": {
+          "label": "Session C — Posterior Chain + Spinal Health",
+          "phases": [
+            {
+              "name": "01 — Warm-Up",
+              "tag": "warmup",
+              "note": "10 min",
+              "exercises": [
+                {
+                  "name": "Foam Roll Thoracic Spine",
+                  "setsReps": "1 × 60s",
+                  "tempo": "Slow",
+                  "type": "mobility",
+                  "cue": "10 passes across mid-back. Pause on tight spots."
+                },
+                {
+                  "name": "Band Pull-Apart",
+                  "setsReps": "2 × 12 reps",
+                  "tempo": "Controlled",
+                  "type": "activation",
+                  "cue": "Activate mid-back & rotator cuff. Arms straight, thumbs up."
+                },
+                {
+                  "name": "Glute Bridge Activation",
+                  "setsReps": "2 × 10 reps",
+                  "tempo": "2-1-2",
+                  "type": "activation",
+                  "cue": "Wake up posterior chain before deadlift. Squeeze glutes at top."
+                },
+                {
+                  "name": "Inchworm Walk-Out",
+                  "setsReps": "2 × 5 reps",
+                  "tempo": "Slow",
+                  "type": "mobility",
+                  "cue": "Walk hands out to plank position and back. Full body prep."
+                }
+              ]
+            },
+            {
+              "name": "02 — Strength Phase",
+              "tag": "strength",
+              "note": "35 min · Rest: 90s–2 min",
+              "exercises": [
+                {
+                  "name": "Trap-Bar Deadlift",
+                  "setsReps": "3 × 5–6",
+                  "tempo": "2-1-1",
+                  "type": "primary",
+                  "cue": "PREFERRED over barbell — safer for growing spine. Vertical torso. Hinge and drive floor away."
+                },
+                {
+                  "name": "Incline DB Press (30°)",
+                  "setsReps": "3 × 8–10",
+                  "tempo": "2-1-2",
+                  "type": "push",
+                  "cue": "Shoulder-safe pressing. 30° incline. Neutral grip option. Control the descent."
+                },
+                {
+                  "name": "Single-Leg RDL (Bodyweight)",
+                  "setsReps": "3 × 6/side",
+                  "tempo": "3-1-1",
+                  "type": "unilateral",
+                  "cue": "Balance + posterior chain. Hold wall if needed. Flat back, hinge to feel hamstring."
+                },
+                {
+                  "name": "Seated Cable Row (or Band Row)",
+                  "setsReps": "3 × 10–12",
+                  "tempo": "2-1-2",
+                  "type": "pull",
+                  "cue": "Retract scapula fully at end range. Row to lower chest. Chest stays tall."
+                },
+                {
+                  "name": "Dead Bug",
+                  "setsReps": "3 × 6/side",
+                  "tempo": "Slow",
+                  "type": "anti-ext",
+                  "cue": "Opposite arm + leg extend slowly. Lower back FLAT on floor throughout. Exhale on extend."
+                },
+                {
+                  "name": "Superman Hold",
+                  "setsReps": "3 × 12 reps / 30s",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "Erector spinae + glute activation. For height: spine decompression + posterior chain strength."
+                }
+              ]
+            },
+            {
+              "name": "03 — Mobility Cooldown",
+              "tag": "accessories",
+              "note": "12 min · Daily posture habits",
+              "exercises": [
+                {
+                  "name": "Pigeon Pose",
+                  "setsReps": "2 × 75s/side",
+                  "tempo": "Static",
+                  "type": "mobility",
+                  "cue": "Deep hip external rotation. Place cushion under hip if tight. Breathe and relax into it."
+                },
+                {
+                  "name": "Wall Angel Drill",
+                  "setsReps": "2 × 10 slow reps",
+                  "tempo": "Slow active",
+                  "type": "rehab",
+                  "cue": "Stand with back FLAT on wall. Slide arms up overhead. KEY daily posture habit."
+                },
+                {
+                  "name": "Thoracic Extension over Foam Roll",
+                  "setsReps": "2 × 60s",
+                  "tempo": "Passive",
+                  "type": "mobility",
+                  "cue": "Lie over roller at mid-back. Arms across chest. Open chest. Spinal decompression."
+                },
+                {
+                  "name": "Standing Forward Fold",
+                  "setsReps": "2 × 60s",
+                  "tempo": "Static",
+                  "type": "mobility",
+                  "cue": "Hamstring length. Soft bend in knees if very tight. Relaxes spine after loading."
+                }
+              ]
+            }
+          ]
+        },
+        "Tue": {
+          "label": "Rest / Active Recovery",
+          "phases": [
+            {
+              "name": "Active Recovery",
+              "tag": "warmup",
+              "note": "Optional",
+              "exercises": [
+                {
+                  "name": "Light Walk",
+                  "setsReps": "20–30 min",
+                  "tempo": "Easy",
+                  "type": "cardio",
+                  "cue": "Easy pace. Stay active but relaxed."
+                }
+              ]
+            }
+          ]
+        },
+        "Thu": {
+          "label": "Rest / Active Recovery",
+          "phases": [
+            {
+              "name": "Active Recovery",
+              "tag": "warmup",
+              "note": "Optional",
+              "exercises": [
+                {
+                  "name": "Light Walk",
+                  "setsReps": "20–30 min",
+                  "tempo": "Easy",
+                  "type": "cardio",
+                  "cue": "Easy pace. Stay active but relaxed."
+                }
+              ]
+            }
+          ]
+        },
+        "Sat": {
+          "label": "Active Rest",
+          "phases": [
+            {
+              "name": "Daily Posture Routine",
+              "tag": "warmup",
+              "note": "5 min daily",
+              "exercises": [
+                {
+                  "name": "Wall Angels",
+                  "setsReps": "2 × 10 reps",
+                  "tempo": "Slow",
+                  "type": "rehab",
+                  "cue": "Back flat on wall. Slide arms up and down. KEY daily habit."
+                },
+                {
+                  "name": "Chin Tuck",
+                  "setsReps": "3 × 10 reps",
+                  "tempo": "Controlled",
+                  "type": "rehab",
+                  "cue": "Gently retract chin. Counteracts forward head posture from phone/screen use."
+                }
+              ]
+            }
+          ]
+        },
+        "Sun": {
+          "label": "Rest Day",
+          "phases": [
+            {
+              "name": "Rest",
+              "tag": "warmup",
+              "note": "",
+              "exercises": [
+                {
+                  "name": "Full Rest + Sleep 8–10 hrs",
+                  "setsReps": "—",
+                  "tempo": "—",
+                  "type": "rehab",
+                  "cue": "Growth hormone released during deep sleep. Sleep is training for height and recovery."
+                }
+              ]
+            }
+          ]
+        }
       }
     }
   ]
