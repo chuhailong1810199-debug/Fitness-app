@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migration Tool — Fitness App</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:monospace;background:#0d0d0d;color:#f0f0f0;padding:2rem;min-height:100vh;}
+h1{font-size:20px;color:#e8ff00;margin-bottom:.5rem;}
+.sub{font-size:13px;color:#555;margin-bottom:2rem;}
+.card{background:#161616;border:1px solid #222;border-radius:8px;padding:1.5rem;max-width:600px;margin-bottom:1rem;}
+.card h2{font-size:14px;color:#aaa;margin-bottom:1rem;text-transform:uppercase;letter-spacing:1px;}
+.btn{padding:12px 24px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn:hover{background:#f5ff4d;}
+.btn:disabled{background:#333;color:#555;cursor:not-allowed;}
+.btn-danger{background:transparent;color:#ff4444;border:1px solid #4e1a1a;}
+.btn-danger:hover{background:#2e1a1a;}
+.log{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:4px;padding:1rem;margin-top:1rem;height:300px;overflow-y:auto;font-size:12px;line-height:1.8;}
+.log-ok{color:#44cc66;}
+.log-err{color:#ff4444;}
+.log-info{color:#888;}
+.log-warn{color:#e8ff00;}
+.status{font-size:13px;margin-top:.5rem;}
+.google-btn{width:100%;padding:14px;border-radius:6px;background:#fff;color:#222;border:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1rem;}
+.user-info{font-size:13px;color:#44cc66;margin-bottom:1rem;padding:8px 12px;background:#0d2e0d;border-radius:4px;border:1px solid #1a4e1a;}
+</style>
+</head>
+<body>
+<h1>Migration Tool</h1>
+<div class="sub">Chuyển data từ clients.json lên Firebase Firestore — chạy 1 lần duy nhất</div>
+
+<div class="card" id="auth-card">
+  <h2>Bước 1 — Đăng nhập Coach</h2>
+  <button class="google-btn" id="login-btn" onclick="loginGoogle()">
+    <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+    Đăng nhập với Google Coach account
+  </button>
+  <div id="user-info" style="display:none" class="user-info"></div>
+</div>
+
+<div class="card" id="migrate-card" style="opacity:.4;pointer-events:none">
+  <h2>Bước 2 — Migrate clients.json → Firestore</h2>
+  <p style="font-size:13px;color:#888;margin-bottom:1rem;line-height:1.6">
+    Script sẽ đọc <code>clients.json</code> từ GitHub repo của bạn và tạo từng client document trong Firestore, bao gồm toàn bộ program (các ngày tập, phases, exercises).
+  </p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn" id="migrate-btn" onclick="runMigration()">Chạy Migration</button>
+    <button class="btn btn-danger" id="clear-btn" onclick="clearFirestore()">Xoá toàn bộ clients</button>
+  </div>
+  <div class="log" id="log"><span class="log-info">Chờ bắt đầu...</span></div>
+  <div class="status" id="status"></div>
+</div>
+
+<script type="module">
+import { initializeApp }        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDocs, deleteDoc, collection, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAiu9jzMzDzr1ltBZJQkwWzK8VWidHq8WU",
+  authDomain: "fitness-app-a22c8.firebaseapp.com",
+  projectId: "fitness-app-a22c8",
+  storageBucket: "fitness-app-a22c8.firebasestorage.app",
+  messagingSenderId: "583223865664",
+  appId: "1:583223865664:web:281cbf803d55d6f0808aa5"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('user-info').textContent   = '✓ Đăng nhập: ' + user.email;
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('migrate-card').style.opacity       = '1';
+    document.getElementById('migrate-card').style.pointerEvents = 'auto';
+  }
+});
+
+window.loginGoogle = async () => {
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch(e) { alert('Lỗi: ' + e.message); }
+};
+
+function log(msg, type='info') {
+  const el  = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = 'log-' + type;
+  div.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+window.runMigration = async () => {
+  if (!currentUser) { alert('Cần đăng nhập trước'); return; }
+  const btn = document.getElementById('migrate-btn');
+  btn.disabled = true; btn.textContent = 'Đang chạy...';
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('status').textContent = '';
+
+  try {
+    // Fetch clients.json from GitHub
+    log('Đang tải clients.json từ GitHub...', 'info');
+    const resp = await fetch(
+      'https://raw.githubusercontent.com/chuhailong1810199-debug/Fitness-app/main/clients.json',
+      { cache: 'no-cache' }
+    );
+    if (!resp.ok) throw new Error('Không tải được clients.json: ' + resp.status);
+    const data = await resp.json();
+    const clients = data.clients || [];
+    log(`Tìm thấy ${clients.length} clients`, 'ok');
+
+    let success = 0, failed = 0;
+
+    for (const client of clients) {
+      try {
+        log(`Đang migrate: ${client.name} (${client.id})...`, 'info');
+
+        // Build client document
+        const clientDoc = {
+          name:            client.name,
+          level:           client.level    || 'Beginner',
+          goal:            client.goal     || '',
+          sessionsPerWeek: client.sessionsPerWeek || 3,
+          email:           client.email    || '',
+          coachUid:        currentUser.uid,
+          program:         client.program  || {},
+          createdAt:       serverTimestamp(),
+          migratedAt:      serverTimestamp(),
+        };
+
+        await setDoc(doc(db, 'clients', client.id), clientDoc);
+        log(`  ✓ ${client.name} — ${Object.keys(client.program || {}).length} ngày tập`, 'ok');
+        success++;
+
+        // Count exercises
+        let totalEx = 0;
+        Object.values(client.program || {}).forEach(day => {
+          (day.phases || []).forEach(phase => {
+            totalEx += (phase.exercises || []).length;
+          });
+        });
+        log(`    └ ${totalEx} exercises tổng cộng`, 'info');
+
+      } catch(e) {
+        log(`  ✗ ${client.name}: ${e.message}`, 'err');
+        failed++;
+      }
+    }
+
+    log('', 'info');
+    log(`Migration hoàn tất! ${success} thành công, ${failed} lỗi`, success > 0 ? 'ok' : 'err');
+    document.getElementById('status').textContent =
+      `✓ Xong: ${success}/${clients.length} clients đã migrate lên Firestore`;
+    document.getElementById('status').style.color = '#44cc66';
+
+  } catch(e) {
+    log('Lỗi: ' + e.message, 'err');
+    document.getElementById('status').textContent = '✗ Thất bại: ' + e.message;
+    document.getElementById('status').style.color = '#ff4444';
+  }
+
+  btn.disabled = false; btn.textContent = 'Chạy lại Migration';
+};
+
+window.clearFirestore = async () => {
+  if (!currentUser) { alert('Cần đăng nhập trước'); return; }
+  if (!confirm('Xoá TOÀN BỘ clients trong Firestore?\nHành động này không thể hoàn tác!')) return;
+  const btn = document.getElementById('clear-btn');
+  btn.disabled = true; btn.textContent = 'Đang xoá...';
+  document.getElementById('log').innerHTML = '';
+  try {
+    log('Đang xoá tất cả clients...', 'warn');
+    const snap = await getDocs(collection(db, 'clients'));
+    for (const d of snap.docs) {
+      await deleteDoc(d.ref);
+      log(`Đã xoá: ${d.id}`, 'warn');
+    }
+    log('Xoá xong!', 'ok');
+  } catch(e) {
+    log('Lỗi: ' + e.message, 'err');
+  }
+  btn.disabled = false; btn.textContent = 'Xoá toàn bộ clients';
+};
+</script>
+</body>
+</html>
