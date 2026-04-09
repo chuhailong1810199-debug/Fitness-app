@@ -128,26 +128,45 @@ async function loadUserProfile(user) {
 
 // ── LOAD APP ───────────────────────────────────────────
 async function loadApp() {
+  // Show role badge
+  const badge = document.getElementById('role-badge');
+  if (badge) {
+    badge.textContent = userRole === 'coach' ? 'Coach' : 'Client';
+    badge.className   = 'user-role-badge ' + (userRole === 'coach' ? 'role-coach' : 'role-client');
+  }
+
   if (userRole === 'coach') {
     await loadAllClients();
     renderClientBar(true);
-  } else {
-    // Client — load only their own data
-    if (!userClientId) {
-      showNoClientError();
+    // Coach with no clients yet — show empty state
+    if (clientsData.length === 0) {
+      activeClient = null;
+      updateDateDisplay();
+      showScreen('app');
+      document.getElementById('exercise-list').innerHTML =
+        `<div class="empty-state">
+          <div class="empty-icon">&#128075;</div>
+          <div class="empty-title">Chao mung, Coach!</div>
+          <div class="empty-sub">Bam <strong>+ Add</strong> de them client dau tien.</div>
+        </div>`;
+      document.getElementById('day-tabs').innerHTML = '';
       return;
     }
+  } else {
+    // Client
+    if (!userClientId) { showNoClientError(); return; }
     const snap = await getDoc(doc(db, 'clients', userClientId));
     if (!snap.exists()) { showNoClientError(); return; }
     clientsData  = [{ id: snap.id, ...snap.data() }];
     activeClient = clientsData[0];
     renderClientBar(false);
+    await checkAndShowBaseline();
   }
 
   updateDateDisplay();
   renderDayTabs();
   renderExercises();
-  renderStats();
+  await renderStats();
   subscribeProgram();
   showScreen('app');
 }
@@ -191,7 +210,7 @@ async function switchClient() {
   subscribeProgram();
   renderDayTabs();
   renderExercises();
-  renderStats();
+  await renderStats();
 }
 
 // ── ADD CLIENT (coach only) ────────────────────────────
@@ -1378,6 +1397,13 @@ h1 span{color:#e8ff00;}
 .upload-bar-wrap{height:3px;background:#222;border-radius:2px;margin-bottom:4px;}
 .upload-bar{height:100%;background:#e8ff00;border-radius:2px;transition:width .2s;}
 .upload-pct{font-size:10px;color:#555;text-align:center;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:3rem 1rem;}
+.empty-icon{font-size:40px;margin-bottom:1rem;}
+.empty-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;color:#f0f0f0;margin-bottom:.5rem;}
+.empty-sub{font-size:14px;color:#555;line-height:1.6;}
+.empty-sub strong{color:#e8ff00;}
 </style>
 </head>
 <body>
