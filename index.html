@@ -5,41 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fitness Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<!-- Firebase SDKs - using compat CDN (no ES module needed) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script>
-// Firebase compat SDK uses firebase.* namespace — adapt function names
-const initializeApp     = (cfg) => firebase.initializeApp(cfg);
-const getAuth           = (app) => firebase.auth();
-const getFirestore      = (app) => firebase.firestore();
-const getStorage        = (app) => firebase.storage();
-const GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
-const signInWithPopup   = (auth, provider) => auth.signInWithPopup(provider);
-const signOut           = (auth) => auth.signOut();
-const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
-const serverTimestamp   = () => firebase.firestore.FieldValue.serverTimestamp();
-// Firestore helpers
-const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i+=2) r = (i===0?db.collection(path[0]):r).doc(path[i+1]||path[i]); return path.length===1?db.collection(path[0]):r; };
-const collection = (db, path) => db.collection(path);
-const query      = (ref, ...constraints) => { let q = ref; constraints.forEach(c => q = c(q)); return q; };
-const orderBy    = (field, dir='asc') => (ref) => ref.orderBy(field, dir);
-const where      = (f,op,v) => (ref) => ref.where(f,op,v);
-const getDocs    = async (ref) => { const snap = await ref.get(); snap.docs = snap.docs || []; snap.forEach = snap.forEach.bind(snap); return snap; };
-const getDoc     = async (ref) => ref.get();
-const setDoc     = async (ref, data, opts) => opts?.merge ? ref.set(data, {merge:true}) : ref.set(data);
-const addDoc     = async (ref, data) => ref.add(data);
-const updateDoc  = async (ref, data) => ref.update(data);
-const deleteDoc  = async (ref) => ref.delete();
-const onSnapshot = (ref, cb) => ref.onSnapshot(cb);
-const ref        = (storage, path) => storage.ref(path);
-const uploadBytesResumable = (ref, file) => ref.put(file);
-const getDownloadURL = (ref) => ref.getDownloadURL();
-const deleteObject = (ref) => ref.delete();
-</script>
-<script>
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
+  collection, query, orderBy, getDocs, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 // ── FIREBASE CONFIG ────────────────────────────────────
 const firebaseConfig = {
@@ -93,15 +68,7 @@ onAuthStateChanged(auth, async user => {
   } else {
     currentUser = null;
     userRole = null;
-    // Show slides first on fresh session, then login
-    const slidesEl = document.getElementById('slides-screen');
-    if (!sessionStorage.getItem('slides-seen') && slidesEl) {
-      slidesEl.classList.remove('hidden');
-      // Login screen will show after skipSlides() is called
-    } else {
-      if (slidesEl) slidesEl.classList.add('hidden');
-      showScreen('login');
-    }
+    document.getElementById('slides-screen')?.classList.remove('hidden'); showScreen('login');
   }
 });
 
@@ -762,8 +729,6 @@ function renderExercises() {
     phase.exercises.forEach((ex, ei) => {
       const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
-      // Hide completed exercises unless user toggled to show them
-      if (done && !showDoneExercises) { /* skip done exercises - shown in done-strip */ }
       const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const coachUrl  = getVideoUrl(vKey, 'coach');
       const clientUrl = getVideoUrl(vKey, 'client');
@@ -883,18 +848,7 @@ function renderExercises() {
     </div>`;
   }
 
-  // Prepend "done strip" if there are done exercises being hidden
-  const doneKeys  = Object.entries(exerciseState[activeClient.id] || {}).filter(([,v])=>v).map(([k])=>k);
-  const dayDoneKeys = doneKeys.filter(k => k.startsWith(activeClient.id+'_'+activeDay+'_'));
-  if (dayDoneKeys.length > 0 && !showDoneExercises) {
-    const strip = `<div class="done-strip" onclick="toggleDoneExercises()">
-      <span class="done-strip-label">✓ Đã hoàn thành</span>
-      <span class="done-strip-count">${dayDoneKeys.length} bài ↓ xem lại</span>
-    </div>`;
-    list.innerHTML = strip + html;
-  } else {
-    list.innerHTML = html;
-  }
+  list.innerHTML = html;
   updateProgress();
 }
 
@@ -988,33 +942,8 @@ function closeModal(id) {
 // ── WORKOUT STATE ──────────────────────────────────────
 function toggleExercise(key) {
   if (!exerciseState[activeClient.id]) exerciseState[activeClient.id] = {};
-  const wasDone = exerciseState[activeClient.id][key];
-  exerciseState[activeClient.id][key] = !wasDone;
-
-  if (!wasDone) {
-    // Marking as done — animate out then re-render
-    const card = document.getElementById('card_' + key);
-    if (card) {
-      card.classList.add('dismissing');
-      showQuote();
-      setTimeout(() => {
-        updateProgress();
-        // Check if ALL exercises done → celebration
-        const prog  = getProgram();
-        const day   = prog[activeDay];
-        const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
-        const doneN = Object.values(exerciseState[activeClient.id] || {}).filter(Boolean).length;
-        if (doneN >= total && total > 0) {
-          setTimeout(() => showCelebration(total), 300);
-        } else {
-          renderExercises();
-        }
-      }, 380);
-    }
-  } else {
-    // Un-marking — re-render immediately (no animation)
-    renderExercises(); updateProgress();
-  }
+  exerciseState[activeClient.id][key] = !exerciseState[activeClient.id][key];
+  renderExercises(); updateProgress();
 }
 function updateProgress() {
   const cards = document.querySelectorAll('.exercise-card');
@@ -1173,134 +1102,46 @@ async function openUpdateModal() {
 
 // Expose to global scope (called from HTML onclick)
 
-window._loginWithGoogle = loginWithGoogle;
-window._logout = logout;
-window._switchClient = switchClient;
-window._addClient = addClient;
-window._showPage = showPage;
-window._setDay = setDay;
-window._openModal = openModal;
-window._closeModal = closeModal;
-
-// ── QUOTES ────────────────────────────────────────────
-const WORKOUT_QUOTES = [
-  { icon: '🔥', text: 'Tốt lắm! Mỗi rep đều có giá trị.' },
-  { icon: '💪', text: 'Không có gì dễ dàng, nhưng bạn đang làm được!' },
-  { icon: '⚡', text: 'Cơ thể bạn đang thay đổi từng ngày.' },
-  { icon: '🎯', text: 'Tập trung. Mỗi set đưa bạn đến mục tiêu.' },
-  { icon: '🚀', text: 'Consistency beats intensity — bạn đang làm đúng rồi!' },
-  { icon: '🌟', text: 'Người ta nghỉ. Bạn tập. Đó là sự khác biệt.' },
-  { icon: '💥', text: 'Đau rát là tiến bộ — embrace it!' },
-  { icon: '🏅', text: 'Mỗi bài hoàn thành là 1 bước tới phiên bản tốt hơn.' },
-  { icon: '⚔️', text: 'Kỷ luật hôm nay, kết quả ngày mai.' },
-  { icon: '🎖️', text: 'Coach tự hào về bạn. Tiếp tục!' },
-];
-let _quoteTimer = null;
-
-function showQuote() {
-  const q = WORKOUT_QUOTES[Math.floor(Math.random() * WORKOUT_QUOTES.length)];
-  const toast = document.getElementById('quote-toast');
-  document.getElementById('quote-icon').textContent = q.icon;
-  document.getElementById('quote-text').textContent = q.text;
-  toast.classList.add('show');
-  if (_quoteTimer) clearTimeout(_quoteTimer);
-  _quoteTimer = setTimeout(() => toast.classList.remove('show'), 2800);
-}
-
-function showCelebration(totalEx) {
-  const screen = document.getElementById('celebration-screen');
-  document.getElementById('cel-exercises').textContent = totalEx;
-  document.getElementById('cel-day').textContent = activeDay;
-  // Random celebration message
-  const msgs = [
-    'Bạn đã hoàn thành tất cả bài tập hôm nay. Tuyệt vời!',
-    'Xuất sắc! Không bỏ lỡ một bài nào. Consistency is key!',
-    'Hôm nay bạn đã chiến thắng chính mình. Tốt lắm!',
-    'Workout hoàn hảo! Cơ thể bạn cảm ơn bạn tối nay.',
-  ];
-  document.getElementById('cel-sub').textContent = msgs[Math.floor(Math.random()*msgs.length)];
-  screen.classList.add('show');
-  spawnConfetti();
-}
-
-window._closeCelebration = function() {
-  document.getElementById('celebration-screen').classList.remove('show');
-  finishWorkout();
+window.nextSlide = function() {
+  document.getElementById('slide-1').classList.remove('active');
+  document.getElementById('slide-2').classList.add('active');
 };
-
-function spawnConfetti() {
-  const colors = ['#e8ff00','#44cc66','#6688ff','#ff9933','#ff4444','#fff'];
-  for(let i=0; i<40; i++) {
-    const el = document.createElement('div');
-    el.style.cssText = [
-      'position:fixed',
-      'width:'+(6+Math.random()*8)+'px',
-      'height:'+(6+Math.random()*8)+'px',
-      'background:'+colors[Math.floor(Math.random()*colors.length)],
-      'border-radius:'+(Math.random()>.5?'50%':'2px'),
-      'left:'+(10+Math.random()*80)+'vw',
-      'top:-10px',
-      'z-index:401',
-      'pointer-events:none',
-      'transition:all '+(1.5+Math.random()*2)+'s ease-in',
-    ].join(';');
-    document.body.appendChild(el);
-    setTimeout(() => {
-      el.style.top = (80+Math.random()*30)+'vh';
-      el.style.transform = 'rotate('+(Math.random()*720-360)+'deg)';
-      el.style.opacity = '0';
-    }, 50);
-    setTimeout(() => el.remove(), 4000);
-  }
-}
-
-// ── DONE EXERCISES STATE ──────────────────────────────
-let showDoneExercises = false;
-
-window._toggleDone = function() {
-  showDoneExercises = !showDoneExercises;
-  renderExercises();
+window.skipSlides = function() {
+  document.getElementById('slides-screen').classList.add('hidden');
 };
-
-window._toggleExercise = toggleExercise;
-window._toggleEditMode = toggleEditMode;
-window._toggleEditCard = toggleEditCard;
-window._showMoveRow = showMoveRow;
-window._confirmMove = confirmMove;
-window._deleteExercise = deleteExercise;
-window._deletePhase = deletePhase;
-window._toggleAddForm = toggleAddForm;
-window._toggleAddPhaseForm = toggleAddPhaseForm;
-window._addExercise = addExercise;
-window._addPhase = addPhase;
-window._addDay = addDay;
-window._finishWorkout = finishWorkout;
-window.__finishWorkout = finishWorkout;
-
-// Signal that module is fully loaded — queued _call() callbacks will fire
-// (queue flush moved to end)
-window._blGender = blGender;
-window._blCalc = blCalc;
-window._saveBaseline = saveBaseline;
-window._skipBaseline = skipBaseline;
-window._openBaselineScreen = openBaselineScreen;
-window._resetAssessment = resetAssessment;
-window._openUpdateModal = openUpdateModal;
-window._saveCheckpoint = saveCheckpoint;
-window._dismissCheckpoint = dismissCheckpoint;
-window._uploadVideo = uploadVideo;
-window._deleteVideo = deleteVideo;
-window._playVideo = playVideo;
-
-
-// ── FLUSH QUEUE — must be LAST thing in module ──────────
-window._ready = true;
-window._queue.forEach(function(item) {
-  var fn = window[item.fn];
-  if (typeof fn === 'function') fn.apply(null, item.args);
-});
-window._queue = [];
-document.dispatchEvent(new Event('app-ready'));
+window.loginWithGoogle    = loginWithGoogle;
+window.logout             = logout;
+window.switchClient       = switchClient;
+window.addClient          = addClient;
+window.showPage           = showPage;
+window.setDay             = setDay;
+window.openModal          = openModal;
+window.closeModal         = closeModal;
+window.toggleExercise     = toggleExercise;
+window.toggleEditMode     = toggleEditMode;
+window.toggleEditCard     = toggleEditCard;
+window.showMoveRow        = showMoveRow;
+window.confirmMove        = confirmMove;
+window.deleteExercise     = deleteExercise;
+window.deletePhase        = deletePhase;
+window.toggleAddForm      = toggleAddForm;
+window.toggleAddPhaseForm = toggleAddPhaseForm;
+window.addExercise        = addExercise;
+window.addPhase           = addPhase;
+window.addDay             = addDay;
+window.finishWorkout      = finishWorkout;
+window.blGender           = blGender;
+window.blCalc             = blCalc;
+window.saveBaseline       = saveBaseline;
+window.skipBaseline       = skipBaseline;
+window.openBaselineScreen = openBaselineScreen;
+window.resetAssessment    = resetAssessment;
+window.openUpdateModal    = openUpdateModal;
+window.saveCheckpoint     = saveCheckpoint;
+window.dismissCheckpoint  = dismissCheckpoint;
+window.uploadVideo        = uploadVideo;
+window.deleteVideo        = deleteVideo;
+window.playVideo          = playVideo;
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@700;800&display=swap');
@@ -1598,103 +1439,7 @@ h1 span{color:#e8ff00;}
 .empty-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;color:#f0f0f0;margin-bottom:.5rem;}
 .empty-sub{font-size:14px;color:#555;line-height:1.6;}
 .empty-sub strong{color:#e8ff00;}
-
-/* ── EXERCISE DISMISS ANIMATION ── */
-.exercise-card{transition:opacity .35s ease, transform .35s ease, max-height .4s ease, margin .35s ease, padding .35s ease;}
-.exercise-card.dismissing{opacity:0;transform:translateX(60px) scale(.96);max-height:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;overflow:hidden;}
-
-/* ── BACK STRIP ── */
-.done-strip{background:#161616;border:1px solid #1e1e1e;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;}
-.done-strip:hover{background:#1e1e1e;}
-.done-strip-label{font-size:11px;color:#444;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
-.done-strip-count{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:#e8ff00;font-weight:800;}
-
-/* ── QUOTE TOAST ── */
-.quote-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:#161616;border:1px solid #e8ff00;border-radius:10px;padding:12px 20px;max-width:320px;width:90%;text-align:center;z-index:500;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;}
-.quote-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.quote-toast-icon{font-size:18px;margin-bottom:4px;}
-.quote-toast-text{font-size:13px;color:#f0f0f0;line-height:1.5;font-style:italic;}
-
-/* ── CELEBRATION SCREEN ── */
-.celebration-screen{position:fixed;inset:0;background:#0d0d0d;z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;opacity:0;pointer-events:none;transition:opacity .4s ease;}
-.celebration-screen.show{opacity:1;pointer-events:auto;}
-.celebration-emoji{font-size:64px;margin-bottom:1rem;animation:bounce 1s ease infinite;}
-@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
-.celebration-title{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;text-transform:uppercase;color:#e8ff00;text-align:center;margin-bottom:.5rem;}
-.celebration-sub{font-size:15px;color:#888;text-align:center;line-height:1.6;max-width:280px;margin-bottom:2rem;}
-.celebration-stats{display:flex;gap:20px;margin-bottom:2rem;}
-.cel-stat{text-align:center;}
-.cel-stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;}
-.cel-stat-lbl{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
-.celebration-btn{padding:14px 36px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .15s;}
-.celebration-btn:hover{background:#f5ff4d;transform:translateY(-1px);}
-.confetti{position:absolute;pointer-events:none;}
 </style>
-<script>
-// Slides work immediately — no module dependency
-function nextSlide() {
-  document.getElementById('slide-1').classList.remove('active');
-  document.getElementById('slide-2').classList.add('active');
-}
-function skipSlides() {
-  sessionStorage.setItem('slides-seen','1');
-  document.getElementById('slides-screen').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
-}
-// All other functions are set by the module on window.*
-// Use a queue for calls that happen before module loads
-window._queue = [];
-window._ready = false;
-function _q(fn, args) {
-  if (window._ready && typeof window[fn]==='function') {
-    window[fn].apply(null, args);
-  } else {
-    window._queue.push({fn:fn, args:args});
-  }
-}
-// These names MUST match exactly what module assigns to window.*
-// They do NOT call themselves — they call window[fn] which is the MODULE version
-// We use _q() which only calls window[fn] AFTER module is ready
-// Important: these are defined on window with DIFFERENT internal name to avoid conflict
-window.loginWithGoogle   = function() { _q('_loginWithGoogle',[]); };
-window.logout            = function() { _q('_logout',[]); };
-window.showPage          = function(p){ _q('_showPage',[p]); };
-window.switchClient      = function() { _q('_switchClient',[]); };
-window.addClient         = function() { _q('_addClient',[]); };
-window.setDay            = function(d){ _q('_setDay',[d]); };
-window.openModal         = function(pi,ei){ _q('_openModal',[pi,ei]); };
-window.closeModal        = function(id){ _q('_closeModal',[id]); };
-window.openUpdateModal   = function() { _q('_openUpdateModal',[]); };
-window.dismissCheckpoint = function() { _q('_dismissCheckpoint',[]); };
-window.openBaselineScreen= function() { _q('_openBaselineScreen',[]); };
-window.skipBaseline      = function() { _q('_skipBaseline',[]); };
-window.resetAssessment   = function() { _q('_resetAssessment',[]); };
-window.saveBaseline      = function() { _q('_saveBaseline',[]); };
-window.saveCheckpoint    = function() { _q('_saveCheckpoint',[]); };
-window.toggleExercise    = function(k){ _q('_toggleExercise',[k]); };
-window.toggleEditMode    = function() { _q('_toggleEditMode',[]); };
-window.toggleEditCard    = function(k){ _q('_toggleEditCard',[k]); };
-window.showMoveRow       = function(k,pi,ei){ _q('_showMoveRow',[k,pi,ei]); };
-window.confirmMove       = function(k,pi,ei){ _q('_confirmMove',[k,pi,ei]); };
-window.deleteExercise    = function(pi,ei){ _q('_deleteExercise',[pi,ei]); };
-window.deletePhase       = function(pi){ _q('_deletePhase',[pi]); };
-window.toggleAddForm     = function(pi){ _q('_toggleAddForm',[pi]); };
-window.toggleAddPhaseForm= function() { _q('_toggleAddPhaseForm',[]); };
-window.addExercise       = function(pi){ _q('_addExercise',[pi]); };
-window.addPhase          = function() { _q('_addPhase',[]); };
-window.addDay            = function() { _q('_addDay',[]); };
-window.finishWorkout     = function() { _q('_finishWorkout',[]); };
-window.blGender          = function(g){ _q('_blGender',[g]); };
-window.blCalc            = function() { _q('_blCalc',[]); };
-window.uploadVideo       = function(v,s,i){ _q('_uploadVideo',[v,s,i]); };
-window.deleteVideo       = function(v,s){ _q('_deleteVideo',[v,s]); };
-window.playVideo         = function(url){ _q('_playVideo',[url]); };
-window.closeCelebration  = function() {
-  document.getElementById('celebration-screen').classList.remove('show');
-  _q('_finishWorkout',[]);
-};
-window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
-</script>
 </head>
 <body>
 
@@ -1996,29 +1741,5 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   </div>
 </div>
 
-
-<!-- QUOTE TOAST -->
-<div class="quote-toast" id="quote-toast">
-  <div class="quote-toast-icon" id="quote-icon">💪</div>
-  <div class="quote-toast-text" id="quote-text">Keep going!</div>
-</div>
-
-<!-- CELEBRATION SCREEN -->
-<div class="celebration-screen" id="celebration-screen">
-  <div class="celebration-emoji">🏆</div>
-  <div class="celebration-title">Workout Complete!</div>
-  <div class="celebration-sub" id="cel-sub">Bạn đã hoàn thành tất cả bài tập hôm nay. Tuyệt vời!</div>
-  <div class="celebration-stats">
-    <div class="cel-stat">
-      <div class="cel-stat-num" id="cel-exercises">0</div>
-      <div class="cel-stat-lbl">Exercises</div>
-    </div>
-    <div class="cel-stat">
-      <div class="cel-stat-num" id="cel-day">—</div>
-      <div class="cel-stat-lbl">Session</div>
-    </div>
-  </div>
-  <button class="celebration-btn" onclick="closeCelebration()">Hoàn thành ngày tập ✓</button>
-</div>
 </body>
 </html>
