@@ -5,16 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fitness Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
-  collection, query, orderBy, getDocs, onSnapshot, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+<!-- Firebase SDKs - using compat CDN (no ES module needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script>
+// Firebase compat SDK uses firebase.* namespace — adapt function names
+const initializeApp     = (cfg) => firebase.initializeApp(cfg);
+const getAuth           = (app) => firebase.auth();
+const getFirestore      = (app) => firebase.firestore();
+const getStorage        = (app) => firebase.storage();
+const GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
+const signInWithPopup   = (auth, provider) => auth.signInWithPopup(provider);
+const signOut           = (auth) => auth.signOut();
+const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
+const serverTimestamp   = () => firebase.firestore.FieldValue.serverTimestamp();
+// Firestore helpers
+const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i+=2) r = (i===0?db.collection(path[0]):r).doc(path[i+1]||path[i]); return path.length===1?db.collection(path[0]):r; };
+const collection = (db, path) => db.collection(path);
+const query      = (ref, ...constraints) => { let q = ref; constraints.forEach(c => q = c(q)); return q; };
+const orderBy    = (field, dir='asc') => (ref) => ref.orderBy(field, dir);
+const where      = (f,op,v) => (ref) => ref.where(f,op,v);
+const getDocs    = async (ref) => { const snap = await ref.get(); snap.docs = snap.docs || []; snap.forEach = snap.forEach.bind(snap); return snap; };
+const getDoc     = async (ref) => ref.get();
+const setDoc     = async (ref, data, opts) => opts?.merge ? ref.set(data, {merge:true}) : ref.set(data);
+const addDoc     = async (ref, data) => ref.add(data);
+const updateDoc  = async (ref, data) => ref.update(data);
+const deleteDoc  = async (ref) => ref.delete();
+const onSnapshot = (ref, cb) => ref.onSnapshot(cb);
+const ref        = (storage, path) => storage.ref(path);
+const uploadBytesResumable = (ref, file) => ref.put(file);
+const getDownloadURL = (ref) => ref.getDownloadURL();
+const deleteObject = (ref) => ref.delete();
+</script>
+<script>
 
 // ── FIREBASE CONFIG ────────────────────────────────────
 const firebaseConfig = {
@@ -738,7 +763,7 @@ function renderExercises() {
       const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
       // Hide completed exercises unless user toggled to show them
-      if (done && !showDoneExercises) continue; // skip — shown in done-strip instead
+      if (done && !showDoneExercises) { /* skip done exercises - shown in done-strip */ }
       const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const coachUrl  = getVideoUrl(vKey, 'coach');
       const clientUrl = getVideoUrl(vKey, 'client');
@@ -1148,14 +1173,14 @@ async function openUpdateModal() {
 
 // Expose to global scope (called from HTML onclick)
 
-window.loginWithGoogle    = loginWithGoogle;
-window.logout             = logout;
-window.switchClient       = switchClient;
-window.addClient          = addClient;
-window.showPage           = showPage;
-window.setDay             = setDay;
-window.openModal          = openModal;
-window.closeModal         = closeModal;
+window._loginWithGoogle = loginWithGoogle;
+window._logout = logout;
+window._switchClient = switchClient;
+window._addClient = addClient;
+window._showPage = showPage;
+window._setDay = setDay;
+window._openModal = openModal;
+window._closeModal = closeModal;
 
 // ── QUOTES ────────────────────────────────────────────
 const WORKOUT_QUOTES = [
@@ -1237,35 +1262,45 @@ window._toggleDone = function() {
   renderExercises();
 };
 
-window.toggleExercise     = toggleExercise;
-window.toggleEditMode     = toggleEditMode;
-window.toggleEditCard     = toggleEditCard;
-window.showMoveRow        = showMoveRow;
-window.confirmMove        = confirmMove;
-window.deleteExercise     = deleteExercise;
-window.deletePhase        = deletePhase;
-window.toggleAddForm      = toggleAddForm;
-window.toggleAddPhaseForm = toggleAddPhaseForm;
-window.addExercise        = addExercise;
-window.addPhase           = addPhase;
-window.addDay             = addDay;
-window.finishWorkout      = finishWorkout;
-window._finishWorkout     = finishWorkout;
+window._toggleExercise = toggleExercise;
+window._toggleEditMode = toggleEditMode;
+window._toggleEditCard = toggleEditCard;
+window._showMoveRow = showMoveRow;
+window._confirmMove = confirmMove;
+window._deleteExercise = deleteExercise;
+window._deletePhase = deletePhase;
+window._toggleAddForm = toggleAddForm;
+window._toggleAddPhaseForm = toggleAddPhaseForm;
+window._addExercise = addExercise;
+window._addPhase = addPhase;
+window._addDay = addDay;
+window._finishWorkout = finishWorkout;
+window.__finishWorkout = finishWorkout;
 
 // Signal that module is fully loaded — queued _call() callbacks will fire
+// (queue flush moved to end)
+window._blGender = blGender;
+window._blCalc = blCalc;
+window._saveBaseline = saveBaseline;
+window._skipBaseline = skipBaseline;
+window._openBaselineScreen = openBaselineScreen;
+window._resetAssessment = resetAssessment;
+window._openUpdateModal = openUpdateModal;
+window._saveCheckpoint = saveCheckpoint;
+window._dismissCheckpoint = dismissCheckpoint;
+window._uploadVideo = uploadVideo;
+window._deleteVideo = deleteVideo;
+window._playVideo = playVideo;
+
+
+// ── FLUSH QUEUE — must be LAST thing in module ──────────
+window._ready = true;
+window._queue.forEach(function(item) {
+  var fn = window[item.fn];
+  if (typeof fn === 'function') fn.apply(null, item.args);
+});
+window._queue = [];
 document.dispatchEvent(new Event('app-ready'));
-window.blGender           = blGender;
-window.blCalc             = blCalc;
-window.saveBaseline       = saveBaseline;
-window.skipBaseline       = skipBaseline;
-window.openBaselineScreen = openBaselineScreen;
-window.resetAssessment    = resetAssessment;
-window.openUpdateModal    = openUpdateModal;
-window.saveCheckpoint     = saveCheckpoint;
-window.dismissCheckpoint  = dismissCheckpoint;
-window.uploadVideo        = uploadVideo;
-window.deleteVideo        = deleteVideo;
-window.playVideo          = playVideo;
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@700;800&display=swap');
@@ -1596,56 +1631,69 @@ h1 span{color:#e8ff00;}
 .confetti{position:absolute;pointer-events:none;}
 </style>
 <script>
-// ── GLOBAL FUNCTION STUBS ──────────────────────────────────────────
-// These run BEFORE the ES module loads. They proxy to window.* set by the module.
-function _call(fn) {
-  var args = Array.prototype.slice.call(arguments, 1);
-  if (typeof window[fn] === 'function') return window[fn].apply(window, args);
-  document.addEventListener('app-ready', function() { window[fn] && window[fn].apply(window, args); }, {once:true});
+// Slides work immediately — no module dependency
+function nextSlide() {
+  document.getElementById('slide-1').classList.remove('active');
+  document.getElementById('slide-2').classList.add('active');
 }
-function nextSlide() { document.getElementById('slide-1').classList.remove('active'); document.getElementById('slide-2').classList.add('active'); }
 function skipSlides() {
-  sessionStorage.setItem('slides-seen', '1');
+  sessionStorage.setItem('slides-seen','1');
   document.getElementById('slides-screen').classList.add('hidden');
-  // Now show login screen
-  var loginEl = document.getElementById('login-screen');
-  if (loginEl) loginEl.classList.remove('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
 }
-function loginWithGoogle()   { _call('loginWithGoogle'); }
-function logout()            { _call('logout'); }
-function showPage(p)         { _call('showPage', p); }
-function switchClient()      { _call('switchClient'); }
-function addClient()         { _call('addClient'); }
-function setDay(d)           { _call('setDay', d); }
-function openModal(pi,ei)    { _call('openModal', pi, ei); }
-function closeModal(id)      { _call('closeModal', id); }
-function openUpdateModal()   { _call('openUpdateModal'); }
-function dismissCheckpoint() { _call('dismissCheckpoint'); }
-function openBaselineScreen(){ _call('openBaselineScreen'); }
-function skipBaseline()      { _call('skipBaseline'); }
-function resetAssessment()   { _call('resetAssessment'); }
-function saveBaseline()      { _call('saveBaseline'); }
-function saveCheckpoint()    { _call('saveCheckpoint'); }
-function toggleExercise(k)             { _call('toggleExercise', k); }
-function toggleEditMode()              { _call('toggleEditMode'); }
-function toggleEditCard(k)             { _call('toggleEditCard', k); }
-function showMoveRow(k,pi,ei)          { _call('showMoveRow', k, pi, ei); }
-function confirmMove(k,pi,ei)          { _call('confirmMove', k, pi, ei); }
-function deleteExercise(pi,ei)         { _call('deleteExercise', pi, ei); }
-function deletePhase(pi)               { _call('deletePhase', pi); }
-function toggleAddForm(pi)             { _call('toggleAddForm', pi); }
-function toggleAddPhaseForm()          { _call('toggleAddPhaseForm'); }
-function addExercise(pi)               { _call('addExercise', pi); }
-function addPhase()                    { _call('addPhase'); }
-function addDay()                      { _call('addDay'); }
-function finishWorkout()               { _call('finishWorkout'); }
-function blGender(g)                   { _call('blGender', g); }
-function blCalc()                      { _call('blCalc'); }
-function uploadVideo(v,s,i)            { _call('uploadVideo', v, s, i); }
-function deleteVideo(v,s)              { _call('deleteVideo', v, s); }
-function playVideo(url)                { _call('playVideo', url); }
-function closeCelebration()            { document.getElementById('celebration-screen').classList.remove('show'); _call('finishWorkout'); }
-function toggleDoneExercises()         { _call('_toggleDone'); }
+// All other functions are set by the module on window.*
+// Use a queue for calls that happen before module loads
+window._queue = [];
+window._ready = false;
+function _q(fn, args) {
+  if (window._ready && typeof window[fn]==='function') {
+    window[fn].apply(null, args);
+  } else {
+    window._queue.push({fn:fn, args:args});
+  }
+}
+// These names MUST match exactly what module assigns to window.*
+// They do NOT call themselves — they call window[fn] which is the MODULE version
+// We use _q() which only calls window[fn] AFTER module is ready
+// Important: these are defined on window with DIFFERENT internal name to avoid conflict
+window.loginWithGoogle   = function() { _q('_loginWithGoogle',[]); };
+window.logout            = function() { _q('_logout',[]); };
+window.showPage          = function(p){ _q('_showPage',[p]); };
+window.switchClient      = function() { _q('_switchClient',[]); };
+window.addClient         = function() { _q('_addClient',[]); };
+window.setDay            = function(d){ _q('_setDay',[d]); };
+window.openModal         = function(pi,ei){ _q('_openModal',[pi,ei]); };
+window.closeModal        = function(id){ _q('_closeModal',[id]); };
+window.openUpdateModal   = function() { _q('_openUpdateModal',[]); };
+window.dismissCheckpoint = function() { _q('_dismissCheckpoint',[]); };
+window.openBaselineScreen= function() { _q('_openBaselineScreen',[]); };
+window.skipBaseline      = function() { _q('_skipBaseline',[]); };
+window.resetAssessment   = function() { _q('_resetAssessment',[]); };
+window.saveBaseline      = function() { _q('_saveBaseline',[]); };
+window.saveCheckpoint    = function() { _q('_saveCheckpoint',[]); };
+window.toggleExercise    = function(k){ _q('_toggleExercise',[k]); };
+window.toggleEditMode    = function() { _q('_toggleEditMode',[]); };
+window.toggleEditCard    = function(k){ _q('_toggleEditCard',[k]); };
+window.showMoveRow       = function(k,pi,ei){ _q('_showMoveRow',[k,pi,ei]); };
+window.confirmMove       = function(k,pi,ei){ _q('_confirmMove',[k,pi,ei]); };
+window.deleteExercise    = function(pi,ei){ _q('_deleteExercise',[pi,ei]); };
+window.deletePhase       = function(pi){ _q('_deletePhase',[pi]); };
+window.toggleAddForm     = function(pi){ _q('_toggleAddForm',[pi]); };
+window.toggleAddPhaseForm= function() { _q('_toggleAddPhaseForm',[]); };
+window.addExercise       = function(pi){ _q('_addExercise',[pi]); };
+window.addPhase          = function() { _q('_addPhase',[]); };
+window.addDay            = function() { _q('_addDay',[]); };
+window.finishWorkout     = function() { _q('_finishWorkout',[]); };
+window.blGender          = function(g){ _q('_blGender',[g]); };
+window.blCalc            = function() { _q('_blCalc',[]); };
+window.uploadVideo       = function(v,s,i){ _q('_uploadVideo',[v,s,i]); };
+window.deleteVideo       = function(v,s){ _q('_deleteVideo',[v,s]); };
+window.playVideo         = function(url){ _q('_playVideo',[url]); };
+window.closeCelebration  = function() {
+  document.getElementById('celebration-screen').classList.remove('show');
+  _q('_finishWorkout',[]);
+};
+window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
 </script>
 </head>
 <body>
