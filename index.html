@@ -86,21 +86,51 @@ const ADVICE = [
 ];
 
 // ── AUTH STATE ─────────────────────────────────────────
+// Handle redirect result FIRST (mobile login returns here after Google page)
+auth.getRedirectResult().then(result => {
+  if (result && result.user) {
+    // Redirect login succeeded - onAuthStateChanged will fire automatically
+    console.log('Redirect login success:', result.user.email);
+  }
+}).catch(e => {
+  // Ignore no-auth-event (normal on desktop/first load)
+  if (e.code && e.code !== 'auth/no-auth-event') {
+    setLoginLoading(false);
+    alert('Đăng nhập thất bại: ' + e.code + '\n' + e.message);
+  }
+});
+
+// Track if we've already handled the initial auth state
+let _authInitialized = false;
+
 onAuthStateChanged(auth, async user => {
   if (user) {
+    // User logged in - always show app
+    _authInitialized = true;
     currentUser = user;
+    // Hide slides and login immediately
+    document.getElementById('slides-screen')?.classList.add('hidden');
+    document.getElementById('login-screen')?.classList.add('hidden');
     await loadUserProfile(user);
   } else {
     currentUser = null;
     userRole = null;
-    // Show slides first on fresh session, then login
-    const slidesEl = document.getElementById('slides-screen');
-    if (!sessionStorage.getItem('slides-seen') && slidesEl) {
-      slidesEl.classList.remove('hidden');
-      // Login screen will show after skipSlides() is called
-    } else {
-      if (slidesEl) slidesEl.classList.add('hidden');
+    // Only show slides/login on first auth check
+    if (_authInitialized) {
+      // Already initialized - user logged out, show login
+      document.getElementById('slides-screen')?.classList.add('hidden');
       showScreen('login');
+    } else {
+      _authInitialized = true;
+      // First load - show slides or login
+      const slidesEl = document.getElementById('slides-screen');
+      if (!sessionStorage.getItem('slides-seen') && slidesEl) {
+        slidesEl.classList.remove('hidden');
+        document.getElementById('login-screen')?.classList.add('hidden');
+      } else {
+        if (slidesEl) slidesEl.classList.add('hidden');
+        showScreen('login');
+      }
     }
   }
 });
@@ -109,13 +139,13 @@ async function loginWithGoogle() {
   try {
     setLoginLoading(true);
     const provider = new GoogleAuthProvider();
-    try {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Mobile: dùng redirect ngay, không thử popup (tránh treo)
+      await auth.signInWithRedirect(provider);
+    } else {
+      // Desktop: dùng popup
       await signInWithPopup(auth, provider);
-    } catch(popupErr) {
-      if (['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request']
-          .includes(popupErr.code) || /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        await auth.signInWithRedirect(provider);
-      } else { throw popupErr; }
     }
   } catch(e) {
     setLoginLoading(false);
@@ -1662,7 +1692,10 @@ function nextSlide() {
 function skipSlides() {
   sessionStorage.setItem('slides-seen','1');
   document.getElementById('slides-screen').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
+  // Only show login if user is NOT already logged in
+  if (!firebase.auth().currentUser) {
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
 }
 // All other functions are set by the module on window.*
 // Use a queue for calls that happen before module loads
@@ -1819,7 +1852,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   <!-- COACH: client selector -->
   <div class="client-bar" id="client-bar" style="display:none">
     <span class="client-label">Client</span>
-    <select class="client-select" id="client-select" onchange="switchClient(this.value)"><option>Loading...</option></select>
+    <select class="client-select" id="client-select" onchange="switchClient(this.value)" ontouchend="setTimeout(()=>switchClient(this.value),100)"><option>Loading...</option></select>
     <span class="client-badge" id="client-level">—</span>
     <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
   </div>
