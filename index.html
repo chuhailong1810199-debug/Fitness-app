@@ -122,13 +122,19 @@ const ADVICE = [
 
 // ── AUTH STATE ─────────────────────────────────────────
 // Handle redirect result (mobile login)
-auth.getRedirectResult().then(result => {
-  // Redirect result handled by onAuthStateChanged
-}).catch(e => {
-  if (e.code !== 'auth/no-auth-event') {
-    console.error('Redirect error:', e.message);
-  }
-});
+// Handle redirect result on page load (after signInWithRedirect)
+if (typeof auth.getRedirectResult === 'function') {
+  auth.getRedirectResult().then(result => {
+    if (result && result.user) {
+      console.log('Redirect login OK:', result.user.email);
+      // onAuthStateChanged will fire automatically
+    }
+  }).catch(e => {
+    if (e.code && e.code !== 'auth/no-auth-event') {
+      console.error('Redirect error:', e.code, e.message);
+    }
+  });
+}
 
 onAuthStateChanged(auth, async user => {
   if (user) {
@@ -153,16 +159,13 @@ async function loginWithGoogle() {
   try {
     setLoginLoading(true);
     const provider = new GoogleAuthProvider();
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      // Mobile: use redirect (popup bị chặn trên mobile browser)
-      await auth.signInWithRedirect(provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
+    // Use redirect for all platforms - more reliable than popup
+    // (popup has COOP issues on some browsers/environments)
+    await auth.signInWithRedirect(provider);
   } catch(e) {
     setLoginLoading(false);
-    alert('Đăng nhập thất bại: ' + e.message);
+    console.error('Login error:', e.code, e.message);
+    alert('Đăng nhập thất bại: ' + e.code + '\n' + e.message);
   }
 }
 
@@ -278,27 +281,33 @@ async function loadAllClients() {
 function subscribeProgram() {
   if (_programUnsub) _programUnsub();
   if (!activeClient) return;
-  // Capture clientId at subscribe time to avoid stale closure
-  const subscribedClientId = activeClient.id;
-  _programUnsub = onSnapshot(doc(db, 'clients', subscribedClientId), snap => {
+  const clientRef = doc(db, 'clients', activeClient.id);
+  _programUnsub = onSnapshot(clientRef, snap => {
     if (!snap.exists) return;
-    // Only update if this snapshot belongs to the CURRENT activeClient
-    if (!activeClient || activeClient.id !== subscribedClientId) return;
     const data = snap.data();
-    activeClient.program = data.program || {};
-    const days = Object.keys(activeClient.program);
-    if (days.length > 0 && !activeClient.program[activeDay]) {
-      activeDay = days[0];
+    // Update program on the correct client object in clientsData
+    const clientId = snap.id || snap.ref?.id;
+    const target = clientsData.find(c => c.id === clientId) || activeClient;
+    target.program = data.program || {};
+    // Only re-render if this is the currently active client
+    if (activeClient && activeClient.id === target.id) {
+      activeClient.program = target.program;
+      const days = Object.keys(activeClient.program);
+      if (days.length > 0 && !activeClient.program[activeDay]) {
+        activeDay = days[0];
+      }
+      renderDayTabs();
+      renderExercises();
     }
-    renderDayTabs();
-    renderExercises();
   });
 }
 
 // ── CLIENT SWITCH (coach only) ─────────────────────────
-async function switchClient() {
-  const sel = document.getElementById('client-select');
-  const id  = sel ? sel.value : (activeClient?.id || '');
+async function switchClient(id) {
+  if (!id) {
+    const sel = document.getElementById('client-select');
+    id = sel ? sel.value : (activeClient?.id || '');
+  }
   activeClient = clientsData.find(c => c.id === id) || null;
   if (!activeClient) return;
   document.getElementById('client-level').textContent = activeClient.level || '—';
@@ -830,8 +839,7 @@ function renderExercises() {
     phase.exercises.forEach((ex, ei) => {
       const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
-      // Hide completed exercises unless user toggled to show them
-      if (done && !showDoneExercises) { /* skip done exercises - shown in done-strip */ }
+      // (done exercises shown normally — toggle feature TBD)
       const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const coachUrl  = getVideoUrl(vKey, 'coach');
       const clientUrl = getVideoUrl(vKey, 'client');
@@ -1727,7 +1735,7 @@ function _q(fn, args) {
 window.loginWithGoogle   = function() { _q('_loginWithGoogle',[]); };
 window.logout            = function() { _q('_logout',[]); };
 window.showPage          = function(p){ _q('_showPage',[p]); };
-window.switchClient      = function() { _q('_switchClient',[]); };
+window.switchClient      = function(id){ _q('_switchClient',[id]); };
 window.addClient         = function() { _q('_addClient',[]); };
 window.setDay            = function(d){ _q('_setDay',[d]); };
 window.openModal         = function(pi,ei){ _q('_openModal',[pi,ei]); };
@@ -1865,7 +1873,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   <!-- COACH: client selector -->
   <div class="client-bar" id="client-bar" style="display:none">
     <span class="client-label">Client</span>
-    <select class="client-select" id="client-select" onchange="switchClient()"><option>Loading...</option></select>
+    <select class="client-select" id="client-select" onchange="switchClient(this.value)"><option>Loading...</option></select>
     <span class="client-badge" id="client-level">—</span>
     <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
   </div>
