@@ -1140,13 +1140,6 @@ async function openUpdateModal() {
 
 // Expose to global scope (called from HTML onclick)
 
-window.nextSlide = function() {
-  document.getElementById('slide-1').classList.remove('active');
-  document.getElementById('slide-2').classList.add('active');
-};
-window.skipSlides = function() {
-  document.getElementById('slides-screen').classList.add('hidden');
-};
 window.loginWithGoogle    = loginWithGoogle;
 window.logout             = logout;
 window.switchClient       = switchClient;
@@ -1197,7 +1190,7 @@ function showCelebration(totalEx) {
   spawnConfetti();
 }
 
-window.closeCelebration = function() {
+window._closeCelebration = function() {
   document.getElementById('celebration-screen').classList.remove('show');
   finishWorkout();
 };
@@ -1231,7 +1224,7 @@ function spawnConfetti() {
 // ── DONE EXERCISES STATE ──────────────────────────────
 let showDoneExercises = false;
 
-window.toggleDoneExercises = function() {
+window._toggleDone = function() {
   showDoneExercises = !showDoneExercises;
   renderExercises();
 };
@@ -1249,6 +1242,7 @@ window.addExercise        = addExercise;
 window.addPhase           = addPhase;
 window.addDay             = addDay;
 window.finishWorkout      = finishWorkout;
+window._finishWorkout     = finishWorkout;
 window.blGender           = blGender;
 window.blCalc             = blCalc;
 window.saveBaseline       = saveBaseline;
@@ -1590,6 +1584,24 @@ h1 span{color:#e8ff00;}
 .celebration-btn:hover{background:#f5ff4d;transform:translateY(-1px);}
 .confetti{position:absolute;pointer-events:none;}
 </style>
+<script>
+// Slide functions must be in regular script (not module) so onclick works
+function nextSlide() {
+  document.getElementById('slide-1').classList.remove('active');
+  document.getElementById('slide-2').classList.add('active');
+}
+function skipSlides() {
+  document.getElementById('slides-screen').classList.add('hidden');
+}
+function closeCelebration() {
+  document.getElementById('celebration-screen').classList.remove('show');
+  // finishWorkout is in module scope — call via window alias
+  if(typeof window._finishWorkout === 'function') window._finishWorkout();
+}
+function toggleDoneExercises() {
+  if(typeof window._toggleDone === 'function') window._toggleDone();
+}
+</script>
 </head>
 <body>
 
