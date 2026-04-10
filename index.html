@@ -11,33 +11,68 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script>
-// Firebase compat SDK uses firebase.* namespace — adapt function names
-const initializeApp     = (cfg) => firebase.initializeApp(cfg);
-const getAuth           = (app) => firebase.auth();
-const getFirestore      = (app) => firebase.firestore();
-const getStorage        = (app) => firebase.storage();
+// Firebase compat SDK adapter
+// Wraps compat API to match modular API signatures used in app code
+
+const initializeApp      = (cfg) => firebase.initializeApp(cfg);
+const getAuth            = ()    => firebase.auth();
+const getFirestore       = ()    => firebase.firestore();
+const getStorage         = ()    => firebase.storage();
 const GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
-const signInWithPopup   = (auth, provider) => auth.signInWithPopup(provider);
-const signOut           = (auth) => auth.signOut();
+const signInWithPopup    = (auth, provider) => auth.signInWithPopup(provider);
+const signOut            = (auth) => auth.signOut();
 const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
-const serverTimestamp   = () => firebase.firestore.FieldValue.serverTimestamp();
-// Firestore helpers
-const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i+=2) r = (i===0?db.collection(path[0]):r).doc(path[i+1]||path[i]); return path.length===1?db.collection(path[0]):r; };
+const serverTimestamp    = () => firebase.firestore.FieldValue.serverTimestamp();
+
+// Firestore path helper: doc(db, 'col', 'id', 'subcol', 'subid', ...)
+const doc = (db, ...path) => {
+  let ref = db.collection(path[0]);
+  for (let i = 1; i < path.length; i++) {
+    ref = i % 2 === 1 ? ref.doc(path[i]) : ref.collection(path[i]);
+  }
+  return ref;
+};
 const collection = (db, path) => db.collection(path);
-const query      = (ref, ...constraints) => { let q = ref; constraints.forEach(c => q = c(q)); return q; };
+const query      = (ref, ...fns) => { let q = ref; fns.forEach(fn => q = fn(q)); return q; };
 const orderBy    = (field, dir='asc') => (ref) => ref.orderBy(field, dir);
-const where      = (f,op,v) => (ref) => ref.where(f,op,v);
-const getDocs    = async (ref) => { const snap = await ref.get(); snap.docs = snap.docs || []; snap.forEach = snap.forEach.bind(snap); return snap; };
-const getDoc     = async (ref) => ref.get();
-const setDoc     = async (ref, data, opts) => opts?.merge ? ref.set(data, {merge:true}) : ref.set(data);
-const addDoc     = async (ref, data) => ref.add(data);
-const updateDoc  = async (ref, data) => ref.update(data);
-const deleteDoc  = async (ref) => ref.delete();
+const where      = (f, op, v)        => (ref) => ref.where(f, op, v);
+
+// getDocs: wraps QuerySnapshot — normalises .docs and .forEach
+const getDocs = async (ref) => {
+  const snap = await ref.get();
+  return {
+    docs: snap.docs,
+    forEach: (fn) => snap.forEach(fn),
+    empty: snap.empty,
+    size: snap.size,
+  };
+};
+
+// getDoc: wraps DocumentSnapshot — normalises .exists and .data()
+const getDoc = async (ref) => {
+  const snap = await ref.get();
+  return {
+    exists: snap.exists,          // boolean
+    id: snap.id,
+    ref: snap.ref,
+    data: () => snap.data(),
+  };
+};
+
+// Write helpers
+const setDoc    = async (ref, data, opts) => opts && opts.merge ? ref.set(data, {merge:true}) : ref.set(data);
+const addDoc    = async (ref, data)        => ref.add(data);
+const updateDoc = async (ref, data)        => ref.update(data);
+const deleteDoc = async (ref)              => ref.delete();
+
+// Realtime
 const onSnapshot = (ref, cb) => ref.onSnapshot(cb);
-const ref        = (storage, path) => storage.ref(path);
-const uploadBytesResumable = (ref, file) => ref.put(file);
-const getDownloadURL = (ref) => ref.getDownloadURL();
-const deleteObject = (ref) => ref.delete();
+
+// Storage helpers
+const ref                  = (storage, path) => storage.ref(path);
+const uploadBytesResumable = (storageRef, file) => storageRef.put(file);
+const getDownloadURL       = (storageRef)       => storageRef.getDownloadURL();
+const deleteObject         = (storageRef)        => storageRef.delete();
 </script>
 <script>
 
