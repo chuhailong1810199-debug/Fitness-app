@@ -68,7 +68,15 @@ onAuthStateChanged(auth, async user => {
   } else {
     currentUser = null;
     userRole = null;
-    document.getElementById('slides-screen')?.classList.remove('hidden'); showScreen('login');
+    // Show slides first on fresh session, then login
+    const slidesEl = document.getElementById('slides-screen');
+    if (!sessionStorage.getItem('slides-seen') && slidesEl) {
+      slidesEl.classList.remove('hidden');
+      // Login screen will show after skipSlides() is called
+    } else {
+      if (slidesEl) slidesEl.classList.add('hidden');
+      showScreen('login');
+    }
   }
 });
 
@@ -1243,6 +1251,9 @@ window.addPhase           = addPhase;
 window.addDay             = addDay;
 window.finishWorkout      = finishWorkout;
 window._finishWorkout     = finishWorkout;
+
+// Signal that module is fully loaded — queued _call() callbacks will fire
+document.dispatchEvent(new Event('app-ready'));
 window.blGender           = blGender;
 window.blCalc             = blCalc;
 window.saveBaseline       = saveBaseline;
@@ -1585,22 +1596,56 @@ h1 span{color:#e8ff00;}
 .confetti{position:absolute;pointer-events:none;}
 </style>
 <script>
-// Slide functions must be in regular script (not module) so onclick works
-function nextSlide() {
-  document.getElementById('slide-1').classList.remove('active');
-  document.getElementById('slide-2').classList.add('active');
+// ── GLOBAL FUNCTION STUBS ──────────────────────────────────────────
+// These run BEFORE the ES module loads. They proxy to window.* set by the module.
+function _call(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (typeof window[fn] === 'function') return window[fn].apply(window, args);
+  document.addEventListener('app-ready', function() { window[fn] && window[fn].apply(window, args); }, {once:true});
 }
+function nextSlide() { document.getElementById('slide-1').classList.remove('active'); document.getElementById('slide-2').classList.add('active'); }
 function skipSlides() {
+  sessionStorage.setItem('slides-seen', '1');
   document.getElementById('slides-screen').classList.add('hidden');
+  // Now show login screen
+  var loginEl = document.getElementById('login-screen');
+  if (loginEl) loginEl.classList.remove('hidden');
 }
-function closeCelebration() {
-  document.getElementById('celebration-screen').classList.remove('show');
-  // finishWorkout is in module scope — call via window alias
-  if(typeof window._finishWorkout === 'function') window._finishWorkout();
-}
-function toggleDoneExercises() {
-  if(typeof window._toggleDone === 'function') window._toggleDone();
-}
+function loginWithGoogle()   { _call('loginWithGoogle'); }
+function logout()            { _call('logout'); }
+function showPage(p)         { _call('showPage', p); }
+function switchClient()      { _call('switchClient'); }
+function addClient()         { _call('addClient'); }
+function setDay(d)           { _call('setDay', d); }
+function openModal(pi,ei)    { _call('openModal', pi, ei); }
+function closeModal(id)      { _call('closeModal', id); }
+function openUpdateModal()   { _call('openUpdateModal'); }
+function dismissCheckpoint() { _call('dismissCheckpoint'); }
+function openBaselineScreen(){ _call('openBaselineScreen'); }
+function skipBaseline()      { _call('skipBaseline'); }
+function resetAssessment()   { _call('resetAssessment'); }
+function saveBaseline()      { _call('saveBaseline'); }
+function saveCheckpoint()    { _call('saveCheckpoint'); }
+function toggleExercise(k)             { _call('toggleExercise', k); }
+function toggleEditMode()              { _call('toggleEditMode'); }
+function toggleEditCard(k)             { _call('toggleEditCard', k); }
+function showMoveRow(k,pi,ei)          { _call('showMoveRow', k, pi, ei); }
+function confirmMove(k,pi,ei)          { _call('confirmMove', k, pi, ei); }
+function deleteExercise(pi,ei)         { _call('deleteExercise', pi, ei); }
+function deletePhase(pi)               { _call('deletePhase', pi); }
+function toggleAddForm(pi)             { _call('toggleAddForm', pi); }
+function toggleAddPhaseForm()          { _call('toggleAddPhaseForm'); }
+function addExercise(pi)               { _call('addExercise', pi); }
+function addPhase()                    { _call('addPhase'); }
+function addDay()                      { _call('addDay'); }
+function finishWorkout()               { _call('finishWorkout'); }
+function blGender(g)                   { _call('blGender', g); }
+function blCalc()                      { _call('blCalc'); }
+function uploadVideo(v,s,i)            { _call('uploadVideo', v, s, i); }
+function deleteVideo(v,s)              { _call('deleteVideo', v, s); }
+function playVideo(url)                { _call('playVideo', url); }
+function closeCelebration()            { document.getElementById('celebration-screen').classList.remove('show'); _call('finishWorkout'); }
+function toggleDoneExercises()         { _call('_toggleDone'); }
 </script>
 </head>
 <body>
