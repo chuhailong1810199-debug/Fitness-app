@@ -68,7 +68,7 @@ onAuthStateChanged(auth, async user => {
   } else {
     currentUser = null;
     userRole = null;
-    showScreen('login');
+    document.getElementById('slides-screen')?.classList.remove('hidden'); showScreen('login');
   }
 });
 
@@ -192,11 +192,10 @@ function subscribeProgram() {
   _programUnsub = onSnapshot(doc(db, 'clients', activeClient.id), snap => {
     if (!snap.exists()) return;
     const data = snap.data();
-    if (data.program) {
-      activeClient.program = data.program;
-      renderDayTabs();
-      renderExercises();
-    }
+    // Always update program from Firestore (first load + realtime updates)
+    activeClient.program = data.program || {};
+    renderDayTabs();
+    renderExercises();
   });
 }
 
@@ -207,9 +206,8 @@ async function switchClient() {
   if (!activeClient) return;
   document.getElementById('client-level').textContent = activeClient.level || '—';
   if (_programUnsub) _programUnsub();
+  // subscribeProgram will trigger renderDayTabs + renderExercises on first snapshot
   subscribeProgram();
-  renderDayTabs();
-  renderExercises();
   await renderStats();
 }
 
@@ -785,13 +783,22 @@ function renderExercises() {
                    <video src="${clientUrl}" preload="metadata"></video>
                    <div class="video-play-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg></div>
                  </div>`
-              : `<label for="vi_client_${vKey}">
-                   <div class="video-add-btn">
-                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="10" rx="2"/><polygon points="17,10 23,7 23,17 17,14"/></svg>
-                     + Client video
-                   </div>
-                 </label>
-                 <input class="video-input" type="file" id="vi_client_${vKey}" accept="video/*" capture="camcorder" onchange="uploadVideo('${vKey}','client',this)">`
+              : `<div style="display:flex;flex-direction:column;gap:4px;padding:6px 8px;">
+                   <label for="vi_client_cam_${vKey}">
+                     <div class="video-add-btn">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+                       Quay ngay
+                     </div>
+                   </label>
+                   <input class="video-input" type="file" id="vi_client_cam_${vKey}" accept="video/*" capture="camcorder" onchange="uploadVideo('${vKey}','client',this)">
+                   <label for="vi_client_lib_${vKey}">
+                     <div class="video-add-btn">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="10" rx="2"/><polygon points="17,10 23,7 23,17 17,14"/></svg>
+                       Thư viện
+                     </div>
+                   </label>
+                   <input class="video-input" type="file" id="vi_client_lib_${vKey}" accept="video/*" onchange="uploadVideo('${vKey}','client',this)">
+                 </div>`
             }
           </div>
         </div>
@@ -1094,6 +1101,14 @@ async function openUpdateModal() {
 }
 
 // Expose to global scope (called from HTML onclick)
+
+window.nextSlide = function() {
+  document.getElementById('slide-1').classList.remove('active');
+  document.getElementById('slide-2').classList.add('active');
+};
+window.skipSlides = function() {
+  document.getElementById('slides-screen').classList.add('hidden');
+};
 window.loginWithGoogle    = loginWithGoogle;
 window.logout             = logout;
 window.switchClient       = switchClient;
@@ -1136,6 +1151,26 @@ body{font-family:'Barlow',sans-serif;background:#0d0d0d;color:#f0f0f0;padding:1r
 .app{max-width:500px;margin:0 auto;}
 
 /* LOGIN */
+
+/* INTRO SLIDES */
+.slides-screen{position:fixed;inset:0;background:#0d0d0d;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.slides-screen.hidden{display:none;}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2.5rem 2rem;width:100%;max-width:400px;}
+.slide.active{display:flex;}
+.slide-visual{width:100%;max-width:320px;aspect-ratio:4/3;border-radius:16px;margin-bottom:2rem;background:#161616;border:1px solid #222;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.slide-visual svg{opacity:.15;}
+.slide-badge{font-size:11px;color:#e8ff00;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:.75rem;}
+.slide-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.75rem;line-height:1.1;}
+.slide-title span{color:#e8ff00;}
+.slide-desc{font-size:14px;color:#666;line-height:1.7;margin-bottom:2rem;max-width:300px;}
+.slide-dots{display:flex;gap:8px;margin-bottom:1.5rem;}
+.slide-dot{width:8px;height:8px;border-radius:50%;background:#222;transition:all .2s;}
+.slide-dot.on{background:#e8ff00;width:24px;border-radius:4px;}
+.slide-next{padding:14px 36px;border-radius:6px;background:#e8ff00;color:#0d0d0d;border:none;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .15s;}
+.slide-next:hover{background:#f5ff4d;}
+.slide-skip{font-size:12px;color:#333;margin-top:1rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.slide-skip:hover{color:#555;}
+
 .login-screen{position:fixed;inset:0;background:#0d0d0d;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
 .login-logo{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.25rem;}
 .login-logo span{color:#e8ff00;}
@@ -1407,6 +1442,57 @@ h1 span{color:#e8ff00;}
 </style>
 </head>
 <body>
+
+<!-- INTRO SLIDES -->
+<div id="slides-screen" class="slides-screen">
+  <!-- Slide 1 -->
+  <div class="slide active" id="slide-1">
+    <div class="slide-visual">
+      <svg width="160" height="120" viewBox="0 0 160 120">
+        <rect x="20" y="30" width="50" height="60" rx="6" fill="#e8ff00"/>
+        <rect x="90" y="50" width="50" height="40" rx="6" fill="#e8ff00"/>
+        <circle cx="45" cy="20" r="12" fill="#fff"/>
+        <circle cx="115" cy="40" r="12" fill="#fff"/>
+        <line x1="45" y1="30" x2="45" y2="90" stroke="#0d0d0d" stroke-width="3"/>
+        <line x1="115" y1="52" x2="115" y2="90" stroke="#0d0d0d" stroke-width="3"/>
+        <line x1="30" y1="65" x2="60" y2="55" stroke="#0d0d0d" stroke-width="2"/>
+        <line x1="100" y1="70" x2="130" y2="60" stroke="#0d0d0d" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="slide-badge">Fit Tracker</div>
+    <div class="slide-title">Your Personal <span>Coach</span> in Your Pocket</div>
+    <div class="slide-desc">Chương trình tập luyện được cá nhân hóa, theo dõi tiến độ theo thời gian thực.</div>
+    <div class="slide-dots">
+      <div class="slide-dot on"></div>
+      <div class="slide-dot"></div>
+    </div>
+    <button class="slide-next" onclick="nextSlide()">Tiếp theo →</button>
+    <div class="slide-skip" onclick="skipSlides()">Bỏ qua</div>
+  </div>
+  <!-- Slide 2 -->
+  <div class="slide" id="slide-2">
+    <div class="slide-visual">
+      <svg width="160" height="120" viewBox="0 0 160 120">
+        <rect x="15" y="20" width="130" height="80" rx="10" fill="#161616" stroke="#222" stroke-width="1"/>
+        <rect x="25" y="30" width="50" height="8" rx="4" fill="#e8ff00" opacity=".9"/>
+        <rect x="25" y="45" width="110" height="4" rx="2" fill="#2a2a2a"/>
+        <rect x="25" y="45" width="70" height="4" rx="2" fill="#e8ff00" opacity=".6"/>
+        <rect x="25" y="56" width="110" height="4" rx="2" fill="#2a2a2a"/>
+        <rect x="25" y="56" width="40" height="4" rx="2" fill="#44cc66" opacity=".7"/>
+        <circle cx="120" cy="75" r="18" fill="#1e1e00" stroke="#e8ff00" stroke-width="1.5"/>
+        <text x="120" y="80" text-anchor="middle" fill="#e8ff00" font-size="12" font-weight="700">72kg</text>
+      </svg>
+    </div>
+    <div class="slide-badge">Track Progress</div>
+    <div class="slide-title">Baseline → <span>Results</span></div>
+    <div class="slide-desc">Đo lường từ ngày đầu, checkpoint mỗi 4 tuần, biểu đồ tiến độ rõ ràng.</div>
+    <div class="slide-dots">
+      <div class="slide-dot"></div>
+      <div class="slide-dot on"></div>
+    </div>
+    <button class="slide-next" onclick="skipSlides()">Bắt đầu →</button>
+  </div>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen" class="login-screen">

@@ -149,6 +149,7 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 let me = null;
 let parsedProgram = null;
+let parsedClientInfo = null;
 
 // Sang data parsed from Excel
 const SANG_DATA = {"name": "Sang", "email": "", "level": "Beginner", "goal": "Reduce body fat · Improve posture · Maximize height potential", "sessionsPerWeek": 3, "program": {"Mon": {"label": "Session A — Strength", "phases": [{"name": "WARM-UP", "tag": "warmup", "note": "(10 min)", "exercises": [{"name": "Hip Circles", "setsReps": "2 × 10 each side", "tempo": "Controlled", "type": "mobility", "cue": "Slow and full range — mobilise hip joint before loading | Load: Bodyweight"}, {"name": "Thoracic Rotation (Seated)", "setsReps": "2 × 8 each side", "tempo": "Slow", "type": "mobility", "cue": "Unlock mid-back; sit on mat, hands behind head | Load: Bodyweight"}, {"name": "Ankle Circles", "setsReps": "2 × 10 each", "tempo": "Controlled", "type": "mobility", "cue": "Prep for squat pattern; improve dorsiflexion | Load: Bodyweight"}, {"name": "Bodyweight Squat", "setsReps": "2 × 10", "tempo": "2-1-2", "type": "primary", "cue": "Rehearse the pattern; cue: chest up, knees track toes | Load: Bodyweight"}]}, {"name": "STRENGTH PHASE", "tag": "strength", "note": "(30–35 min)", "exercises": [{"name": "Goblet Squat", "setsReps": "3 × 8–10", "tempo": "2-1-2", "type": "primary", "cue": "Heels flat, chest tall, depth ≥ parallel. KEY squat teacher. | Load: Week 1–4: Light DB | Progress +1–2 kg"}, {"name": "Romanian Deadlift (Dumbbell)", "setsReps": "3 × 8–10", "tempo": "3-1-1", "type": "primary", "cue": "Hinge at hips, not bend. Feel hamstring stretch. Neutral spine. | Load: Week 1–4: Light-Mod DB"}, {"name": "Push-Up (chest-to-floor)", "setsReps": "3 × AMRAP*", "tempo": "2-0-2", "type": "primary", "cue": "Log reps each set. Progress = more reps or elevated variation. | Load: *All clean reps"}, {"name": "DB Bent-Over Row", "setsReps": "3 × 10 each", "tempo": "2-1-2", "type": "primary", "cue": "Neutral spine, elbow drives back past torso. Row both sides. | Load: Light-Mod DB"}, {"name": "Plank Hold", "setsReps": "3 × 20–30 s", "tempo": "—", "type": "core", "cue": "Posterior pelvic tilt (squeeze glutes). No sagging hips. Progress duration weekly. | Load: Bodyweight"}]}, {"name": "MOBILITY COOLDOWN", "tag": "warmup", "note": "(10–12 min)", "exercises": [{"name": "90/90 Hip Stretch", "setsReps": "2 × 60 s each side", "tempo": "Static", "type": "mobility", "cue": "Key for pelvis alignment & anterior pelvic tilt correction | Load: Bodyweight"}, {"name": "World's Greatest Stretch", "setsReps": "2 × 5 reps each side", "tempo": "Flowing", "type": "mobility", "cue": "Full-body mobility combo — lunge, twist, reach | Load: Bodyweight"}, {"name": "Doorway Chest Stretch", "setsReps": "2 × 45 s each side", "tempo": "Static", "type": "mobility", "cue": "Counter desk/phone posture; open pec minor | Load: Bodyweight"}, {"name": "Cat-Cow Spine Mobilisation", "setsReps": "2 × 10 cycles", "tempo": "Slow", "type": "mobility", "cue": "Spinal decompression cooldown. Breathe into each position. | Load: Bodyweight"}]}]}, "Wed": {"label": "Session B — Plyometrics", "phases": [{"name": "WARM-UP", "tag": "warmup", "note": "(10 min)", "exercises": [{"name": "Jumping Jacks", "setsReps": "1 × 30 s", "tempo": "Moderate", "type": "power", "cue": "Elevate heart rate gently before explosive work | Load: Bodyweight"}, {"name": "Leg Swings (front + side)", "setsReps": "2 × 10 each direction", "tempo": "Dynamic", "type": "primary", "cue": "Hip flexor activation — essential before plyos | Load: Bodyweight"}, {"name": "Arm Circles", "setsReps": "2 × 10 each dir.", "tempo": "Dynamic", "type": "mobility", "cue": "Shoulder warm-up; forward and backward | Load: Bodyweight"}, {"name": "Skips / High Knees in Place", "setsReps": "1 × 20 s", "tempo": "Rhythmic", "type": "activation", "cue": "CNS activation before plyometric work | Load: Bodyweight"}]}, {"name": "PLYOMETRIC PHASE", "tag": "strength", "note": "(20–25 min)", "exercises": [{"name": "Box Jump (30–40 cm platform)", "setsReps": "4 × 5 reps", "tempo": "Explosive", "type": "power", "cue": "Soft landing: toe-ball-heel. Hips back. Knees track toes. Step down — don't jump down. | Load: Phase 1: 30 cm | Ph 2–3: 40 cm"}, {"name": "Broad Jump", "setsReps": "3 × 5 reps", "tempo": "Explosive", "type": "power", "cue": "Max horizontal distance. Stick the landing 2–3 sec. Arms help load. | Load: Bodyweight"}, {"name": "Lateral Bound (Skater Hop)", "setsReps": "3 × 6 each side", "tempo": "Explosive", "type": "power", "cue": "Load the outside hip. Push off outside edge. Stick landing before next bound. | Load: Bodyweight — from Week 5"}, {"name": "Ankle Hop / Pogos", "setsReps": "3 × 15 reps", "tempo": "Reactive", "type": "power", "cue": "Fast ground contact. Stiffen ankle like a spring. Minimal knee bend. | Load: Bodyweight"}, {"name": "Depth Drop (step off box)", "setsReps": "3 × 5 reps", "tempo": "Absorb", "type": "power", "cue": "STEP off (don't jump). Land softly and absorb quietly. Teaches landing mechanics. | Load: 20–30 cm box — from Week 9"}]}, {"name": "CARDIO PHASE", "tag": "accessories", "note": "(15–18 min)", "exercises": [{"name": "Aerobic Intervals (bike/row/run)", "setsReps": "1 × 15 min total", "tempo": "2 min easy / 1 min mod.", "type": "cardio", "cue": "Sustainable aerobic work. Builds base for fat loss. Should be able to talk in easy phase. | Load: RPE 5–7 / 10"}, {"name": "Agility Ladder Drills", "setsReps": "3 × 30 s per pattern", "tempo": "Fast feet", "type": "power", "cue": "Patterns: 2-in, Ickey Shuffle, Lateral Run. Sport-specific footwork. | Load: Bodyweight"}, {"name": "Cone Shuttle Sprint (10-5-10 m)", "setsReps": "4 × 30 s effort", "tempo": "Max effort", "type": "power", "cue": "Acceleration + deceleration under control. Touch cone each time. Replicates sport demands. | Load: Bodyweight"}]}, {"name": "MOBILITY COOLDOWN", "tag": "warmup", "note": "(10 min)", "exercises": [{"name": "Hip Flexor Stretch (Half-Kneeling)", "setsReps": "2 × 60 s each side", "tempo": "Static", "type": "mobility", "cue": "Critical for anterior pelvic tilt correction — most important stretch for posture | Load: Bodyweight"}, {"name": "Child's Pose + Lat Reach", "setsReps": "2 × 45 s each side", "tempo": "Static", "type": "mobility", "cue": "Thoracic & lat opener. Reach arm along floor for extra stretch. | Load: Bodyweight"}, {"name": "Calf Stretch — bent + straight knee", "setsReps": "2 × 45 s each", "tempo": "Static", "type": "mobility", "cue": "Both positions target different calf muscles. Improves squat depth over time. | Load: Bodyweight"}]}]}, "Fri": {"label": "Session C — Strength", "phases": [{"name": "WARM-UP", "tag": "warmup", "note": "(10 min)", "exercises": [{"name": "Foam Roll Thoracic Spine", "setsReps": "1 × 60 s", "tempo": "Slow", "type": "activation", "cue": "10 passes across mid-back. Mobilise before loading. Pause on tight spots. | Load: Foam roller"}, {"name": "Band Pull-Apart", "setsReps": "2 × 12 reps", "tempo": "Controlled", "type": "activation", "cue": "Activate mid-back & rotator cuff. Arms straight, thumbs up. | Load: Light resistance band"}, {"name": "Glute Bridge Activation", "setsReps": "2 × 10 reps", "tempo": "2-1-2", "type": "activation", "cue": "Wake up posterior chain before deadlift. Squeeze glutes at top. | Load: Bodyweight"}, {"name": "Inchworm Walk-Out", "setsReps": "2 × 5 reps", "tempo": "Slow", "type": "activation", "cue": "Walk hands out to plank position and back. Full body prep. | Load: Bodyweight"}]}, {"name": "STRENGTH PHASE", "tag": "strength", "note": "(35 min)", "exercises": [{"name": "Trap-Bar / Hex-Bar Deadlift", "setsReps": "3 × 5–6", "tempo": "2-1-1", "type": "primary", "cue": "PREFERRED over barbell. Vertical torso — safer for growing spine. Hinge and drive floor away. | Load: Week 1–4: Light-Mod | Progress carefully"}, {"name": "Incline DB Press (30°)", "setsReps": "3 × 8–10", "tempo": "2-1-2", "type": "primary", "cue": "Shoulder-safe pressing. 30° incline targets chest + anterior delt. Neutral grip option. | Load: Light-Mod DB"}, {"name": "Single-Leg RDL (Bodyweight)", "setsReps": "3 × 6 each side", "tempo": "3-1-1", "type": "primary", "cue": "Balance + posterior chain. Hold wall if needed. Flat back, hinge to feel hamstring. | Load: Bodyweight → add load Ph2"}, {"name": "Seated Cable Row (or Band Row)", "setsReps": "3 × 10–12", "tempo": "2-1-2", "type": "primary", "cue": "Retract scapula fully at end range. Row to lower chest. Chest stays tall. | Load: Mod weight / band"}, {"name": "Dead Bug", "setsReps": "3 × 6 each side", "tempo": "Slow", "type": "core", "cue": "Opposite arm + leg extend slowly. Lower back FLAT on floor throughout. Exhale on extend. | Load: Bodyweight"}, {"name": "Reverse Hyper / Superman Hold", "setsReps": "3 × 12 / 30 s", "tempo": "Controlled", "type": "core", "cue": "Erector spinae + glute activation. For height: spine decompression + posterior chain strength. | Load: Bodyweight"}]}, {"name": "MOBILITY COOLDOWN", "tag": "warmup", "note": "(12 min)", "exercises": [{"name": "Pigeon Pose", "setsReps": "2 × 75 s each side", "tempo": "Static", "type": "mobility", "cue": "Deep hip external rotation. Place cushion under hip if tight. Breathe and relax into it. | Load: Bodyweight"}, {"name": "Wall Angel Drill", "setsReps": "2 × 10 slow reps", "tempo": "Slow active", "type": "mobility", "cue": "Stand with back FLAT on wall. Slide arms up overhead. KEY daily posture habit. | Load: Wall"}, {"name": "Thoracic Extension over Foam Roll", "setsReps": "2 × 60 s", "tempo": "Passive", "type": "activation", "cue": "Lie over roller at mid-back. Arms across chest. Open chest. Spinal decompression. | Load: Foam roller"}, {"name": "Standing Forward Fold", "setsReps": "2 × 60 s", "tempo": "Static", "type": "mobility", "cue": "Hamstring length. Soft bend in knees if very tight. Relaxes spine after loading. | Load: Bodyweight"}]}]}}};
@@ -242,30 +243,79 @@ window.pushSang = async () => {
 const PHASE_MAP = {warm:'warmup',plyometric:'strength',strength:'strength',cardio:'accessories',mobility:'warmup',cooldown:'warmup'};
 const SESSION_DAYS = {A:'Mon',B:'Wed',C:'Fri'};
 
-function parseXlsx(wb) {
+function isNewFormat(wb) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, sheetRows:2});
+  if(!rows[0]) return false;
+  const h = rows[0].map(v => v ? String(v).toLowerCase().trim() : '');
+  return h.includes('day') && h.includes('exercise');
+}
+
+function parseXlsxNewFormat(wb) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+  const headers = rows[0].map(h => h ? String(h).toLowerCase().trim() : '');
+  const col = k => headers.indexOf(k);
+  const clientInfo = {email:'',level:'Beginner',goal:'',name:'',sessionsPerWeek:3};
   const program = {};
+  for(let i=1; i<rows.length; i++) {
+    const row = rows[i];
+    if(!row || !row.some(v=>v!=null)) continue;
+    const get = k => { const c=col(k); return c>=0&&row[c]!=null?String(row[c]).trim():''; };
+    if(i===1) {
+      clientInfo.email = get('email')||clientInfo.email;
+      clientInfo.level = get('level')||clientInfo.level;
+      clientInfo.goal  = get('goal') ||clientInfo.goal;
+      clientInfo.name  = get('name') ||clientInfo.name;
+    }
+    const day=get('day')||get('session'), phaseName=get('phase')||'Main', exName=get('exercise');
+    if(!day||!exName) continue;
+    if(!program[day]) program[day]={label:day,phases:[]};
+    let phase=program[day].phases.find(p=>p.name===phaseName);
+    if(!phase){
+      const low=phaseName.toLowerCase();
+      const tag=low.includes('warm')?'warmup':low.includes('strength')?'strength':low.includes('cardio')?'accessories':'warmup';
+      phase={name:phaseName,tag,note:'',exercises:[]}; program[day].phases.push(phase);
+    }
+    const sets=get('sets')||'3', reps=get('reps')||get('reps/duration')||'10';
+    const tempo=get('tempo')||'', weight=get('weight')||get('load')||get('load guidance')||'';
+    const cue=get('cue')||get('coaching notes')||get('notes')||'';
+    const low=exName.toLowerCase();
+    let etype='primary';
+    if(/jump|hop|bound|sprint|ladder|shuttle/.test(low)) etype='power';
+    else if(/stretch|fold|pose|angel|rotation|circle|pigeon|child/.test(low)) etype='mobility';
+    else if(/plank|bug|hold|dead bug|superman/.test(low)) etype='core';
+    else if(/cardio|bike|run|interval/.test(low)) etype='cardio';
+    else if(/warm|jack|skip|inchworm|foam roll/.test(low)) etype='activation';
+    phase.exercises.push({name:exName,setsReps:sets+' x '+reps,tempo,type:etype,cue:(cue+(weight?' | Load: '+weight:'')).trim()});
+  }
+  return {clientInfo, program};
+}
+
+function parseXlsx(wb) {
+  if(isNewFormat(wb)) return parseXlsxNewFormat(wb).program;
+  const program={};
   for(const sname of wb.SheetNames) {
-    // Detect session sheets by letter A/B/C
-    const match = sname.match(/Session ([ABC])/i);
+    const match=sname.match(/Session ([ABC])/i);
     if(!match) continue;
-    const day = SESSION_DAYS[match[1].toUpperCase()];
-    const ws = wb.Sheets[sname];
-    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
-    const label = rows[0]?.[0] ? String(rows[0][0]).replace(/[📗📙📘]/g,'').trim() : sname;
+    const day=SESSION_DAYS[match[1].toUpperCase()];
+    const ws=wb.Sheets[sname];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    const label=rows[0]?.[0]?String(rows[0][0]).replace(/[\u{1F4D7}\u{1F4D9}\u{1F4D8}]/gu,'').trim():sname;
     const phases=[]; let curPhase=null, inEx=false;
     for(const row of rows) {
-      const c0 = row[0]!=null ? String(row[0]).trim() : '';
-      if(['🔥','💪','⚡','🏃','🧘'].some(e=>c0.includes(e)) && row[1]==null) {
+      const c0=row[0]!=null?String(row[0]).trim():'';
+      if(['\u{1F525}','\u{1F4AA}','\u26A1','\u{1F3C3}','\u{1F9D8}'].some(e=>c0.includes(e))&&row[1]==null){
         if(curPhase?.exercises?.length) phases.push(curPhase);
         const low=c0.toLowerCase();
         const tag=Object.entries(PHASE_MAP).find(([k])=>low.includes(k))?.[1]||'warmup';
-        let pname=c0.replace(/[🔥💪⚡🏃🧘]/g,'').trim(), note='';
-        if(pname.includes('(')){ const p=pname.split('('); note='('+p[1]; pname=p[0].trim(); }
+        let pname=c0.replace(/[\u{1F525}\u{1F4AA}\u26A1\u{1F3C3}\u{1F9D8}]/gu,'').trim(),note='';
+        if(pname.includes('(')){const p=pname.split('(');note='('+p[1];pname=p[0].trim();}
         curPhase={name:pname,tag,note,exercises:[]}; inEx=false; continue;
       }
       if(c0==='Exercise'&&row[1]!=null){inEx=true;continue;}
-      if(c0.includes('📌')||(!c0&&row[1]==null)) continue;
-      if(inEx&&curPhase&&row[1]!=null) {
+      if(c0.includes('\u{1F4CC}')||(!c0&&row[1]==null)) continue;
+      if(inEx&&curPhase&&row[1]!=null){
         const low=c0.toLowerCase();
         let etype='primary';
         if(/jump|hop|bound|sprint|ladder|shuttle|depth drop/.test(low)) etype='power';
@@ -273,15 +323,9 @@ function parseXlsx(wb) {
         else if(/plank|bug|hold|dead bug|superman|reverse hyper/.test(low)) etype='core';
         else if(/interval|cardio|bike|run/.test(low)) etype='cardio';
         else if(/jack|skip|high knee|inchworm|foam roll|band pull|glute bridge/.test(low)) etype='activation';
-        const load = row[5]?String(row[5]).replace(/\n/g,' | '):'';
-        const cue  = row[6]?String(row[6]).replace(/\n/g,' '):'';
-        curPhase.exercises.push({
-          name:c0,
-          setsReps:`${String(row[1]).trim()} × ${String(row[2]||'').trim()}`,
-          tempo:row[4]?String(row[4]).trim():'',
-          type:etype,
-          cue:(cue+(load?' | Load: '+load:'')).trim()
-        });
+        const load=row[5]?String(row[5]).replace(/\n/g,' | '):'';
+        const cue=row[6]?String(row[6]).replace(/\n/g,' '):'';
+        curPhase.exercises.push({name:c0,setsReps:String(row[1]).trim()+' x '+String(row[2]||'').trim(),tempo:row[4]?String(row[4]).trim():'',type:etype,cue:(cue+(load?' | Load: '+load:'')).trim()});
       }
     }
     if(curPhase?.exercises?.length) phases.push(curPhase);
@@ -296,7 +340,20 @@ window.previewExcel = (input) => {
   reader.onload = e => {
     try {
       const wb = XLSX.read(e.target.result, {type:'array'});
-      parsedProgram = parseXlsx(wb);
+      if(isNewFormat(wb)) {
+        const r = parseXlsxNewFormat(wb);
+        parsedProgram    = r.program;
+        parsedClientInfo = r.clientInfo;
+        if(r.clientInfo.name)  document.getElementById('imp-name').value  = r.clientInfo.name;
+        if(r.clientInfo.email) document.getElementById('imp-email').value = r.clientInfo.email;
+        if(r.clientInfo.level) document.getElementById('imp-level').value = r.clientInfo.level;
+        if(r.clientInfo.goal)  document.getElementById('imp-goal').value  = r.clientInfo.goal;
+      } else {
+        parsedProgram    = parseXlsx(wb);
+        parsedClientInfo = null;
+      }
+      // (removed duplicate parsedProgram = parseXlsx(wb) line)
+      if(false) parsedProgram = parseXlsx(wb);
       const lines = Object.entries(parsedProgram).map(([day,d])=> {
         const ex = d.phases.reduce((a,p)=>a+p.exercises.length,0);
         return `${day}: ${d.label.substring(0,35)} — ${d.phases.length} phases, ${ex} exercises`;
@@ -314,10 +371,21 @@ window.previewExcel = (input) => {
 
 window.importClient = async () => {
   if(!me){alert('Login first');return;}
-  const name  = document.getElementById('imp-name').value.trim();
-  const email = document.getElementById('imp-email').value.trim().toLowerCase();
-  const level = document.getElementById('imp-level').value;
-  const goal  = document.getElementById('imp-goal').value.trim();
+  let name  = document.getElementById('imp-name').value.trim();
+  let email = document.getElementById('imp-email').value.trim().toLowerCase();
+  let level = document.getElementById('imp-level').value;
+  let goal  = document.getElementById('imp-goal').value.trim();
+  // Auto-fill from new format if fields empty
+  if(parsedClientInfo) {
+    if(!name  && parsedClientInfo.name)  name  = parsedClientInfo.name;
+    if(!email && parsedClientInfo.email) email = parsedClientInfo.email;
+    if(!level && parsedClientInfo.level) level = parsedClientInfo.level;
+    if(!goal  && parsedClientInfo.goal)  goal  = parsedClientInfo.goal;
+    // Auto-fill form fields
+    if(parsedClientInfo.name)  document.getElementById('imp-name').value  = name;
+    if(parsedClientInfo.email) document.getElementById('imp-email').value = email;
+    if(parsedClientInfo.goal)  document.getElementById('imp-goal').value  = goal;
+  }
   if(!name||!email){alert('Nhập tên và Gmail');return;}
   if(!parsedProgram){alert('Chọn file Excel trước');return;}
   clr();
