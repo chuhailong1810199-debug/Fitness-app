@@ -258,13 +258,19 @@ async function loadAllClients() {
   const snap = await getDocs(collection(db, 'clients'));
   clientsData = [];
   snap.forEach(d => clientsData.push({ id: d.id, ...d.data() }));
-  if (clientsData.length > 0) {
+  // Sort: clients with most program days first (skip empty/test clients)
+  clientsData.sort((a, b) => {
+    const aD = Object.keys(a.program || {}).length;
+    const bD = Object.keys(b.program || {}).length;
+    return bD - aD;
+  });
+  const sel = document.getElementById('client-select');
+  if (clientsData.length > 0 && sel) {
+    sel.innerHTML = clientsData.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    // Set activeClient to match what select shows (first option after sort)
     activeClient = clientsData[0];
-    const sel = document.getElementById('client-select');
-    if (sel) {
-      sel.innerHTML = clientsData.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      sel.value = activeClient.id;
-    }
+    sel.value = activeClient.id;
+    document.getElementById('client-level').textContent = activeClient.level || '—';
   }
 }
 
@@ -272,11 +278,18 @@ async function loadAllClients() {
 function subscribeProgram() {
   if (_programUnsub) _programUnsub();
   if (!activeClient) return;
-  _programUnsub = onSnapshot(doc(db, 'clients', activeClient.id), snap => {
+  // Capture clientId at subscribe time to avoid stale closure
+  const subscribedClientId = activeClient.id;
+  _programUnsub = onSnapshot(doc(db, 'clients', subscribedClientId), snap => {
     if (!snap.exists) return;
+    // Only update if this snapshot belongs to the CURRENT activeClient
+    if (!activeClient || activeClient.id !== subscribedClientId) return;
     const data = snap.data();
-    // Always update program from Firestore (first load + realtime updates)
     activeClient.program = data.program || {};
+    const days = Object.keys(activeClient.program);
+    if (days.length > 0 && !activeClient.program[activeDay]) {
+      activeDay = days[0];
+    }
     renderDayTabs();
     renderExercises();
   });
@@ -284,12 +297,12 @@ function subscribeProgram() {
 
 // ── CLIENT SWITCH (coach only) ─────────────────────────
 async function switchClient() {
-  const id = document.getElementById('client-select').value;
+  const sel = document.getElementById('client-select');
+  const id  = sel ? sel.value : (activeClient?.id || '');
   activeClient = clientsData.find(c => c.id === id) || null;
   if (!activeClient) return;
   document.getElementById('client-level').textContent = activeClient.level || '—';
   if (_programUnsub) _programUnsub();
-  // subscribeProgram will trigger renderDayTabs + renderExercises on first snapshot
   subscribeProgram();
   await renderStats();
 }
@@ -790,8 +803,13 @@ function renderCharts(bl, cps) {
 // ── EXERCISE RENDERING ─────────────────────────────────
 function renderDayTabs() {
   const prog = getProgram();
+  const availDays = DAYS.filter(d => prog[d]);
+  // If activeDay has no program, switch to first available day
+  if (availDays.length > 0 && !prog[activeDay]) {
+    activeDay = availDays[0];
+  }
   document.getElementById('day-tabs').innerHTML =
-    DAYS.filter(d => prog[d]).map(d =>
+    availDays.map(d =>
       `<div class="day-tab${d===activeDay?' active':''}" onclick="setDay('${d}')">${d}</div>`
     ).join('');
 }
@@ -951,9 +969,9 @@ function renderExercises() {
 // ── EDIT PROGRAM ───────────────────────────────────────
 function toggleEditMode() {
   editMode = !editMode;
-  document.getElementById('toggle-track').classList.toggle('on', editMode);
-  document.getElementById('edit-mode-text').textContent = editMode ? 'On' : 'Off';
-  document.getElementById('edit-mode-text').classList.toggle('on', editMode);
+  document.getElementById('toggle-track')?.classList.toggle('on', editMode);
+  const txt = document.getElementById('edit-mode-text');
+  if (txt) { txt.textContent = editMode ? 'On' : 'Off'; txt.classList.toggle('on', editMode); }
   renderExercises();
 }
 function toggleEditCard(key) {
