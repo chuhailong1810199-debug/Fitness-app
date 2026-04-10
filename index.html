@@ -86,6 +86,15 @@ const ADVICE = [
 ];
 
 // ── AUTH STATE ─────────────────────────────────────────
+// Handle redirect result (mobile login)
+auth.getRedirectResult().then(result => {
+  // Redirect result handled by onAuthStateChanged
+}).catch(e => {
+  if (e.code !== 'auth/no-auth-event') {
+    console.error('Redirect error:', e.message);
+  }
+});
+
 onAuthStateChanged(auth, async user => {
   if (user) {
     currentUser = user;
@@ -109,7 +118,13 @@ async function loginWithGoogle() {
   try {
     setLoginLoading(true);
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Mobile: use redirect (popup bị chặn trên mobile browser)
+      await auth.signInWithRedirect(provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
   } catch(e) {
     setLoginLoading(false);
     alert('Đăng nhập thất bại: ' + e.message);
@@ -132,7 +147,7 @@ async function loadUserProfile(user) {
   const userRef = doc(db, 'users', user.uid);
   const snap    = await getDoc(userRef);
 
-  if (!snap.exists()) {
+  if (!snap.exists) {
     // First time — check if this email is in clients list
     const clientsSnap = await getDocs(collection(db, 'clients'));
     let matchedClientId = null;
@@ -189,7 +204,7 @@ async function loadApp() {
     // Client
     if (!userClientId) { showNoClientError(); return; }
     const snap = await getDoc(doc(db, 'clients', userClientId));
-    if (!snap.exists()) { showNoClientError(); return; }
+    if (!snap.exists) { showNoClientError(); return; }
     clientsData  = [{ id: snap.id, ...snap.data() }];
     activeClient = clientsData[0];
     renderClientBar(false);
@@ -223,7 +238,7 @@ function subscribeProgram() {
   if (_programUnsub) _programUnsub();
   if (!activeClient) return;
   _programUnsub = onSnapshot(doc(db, 'clients', activeClient.id), snap => {
-    if (!snap.exists()) return;
+    if (!snap.exists) return;
     const data = snap.data();
     // Always update program from Firestore (first load + realtime updates)
     activeClient.program = data.program || {};
@@ -321,7 +336,7 @@ async function getBL() {
   if (!activeClient) return null;
   try {
     const snap = await getDoc(doc(db, 'clients', activeClient.id, 'assessment', 'baseline'));
-    return snap.exists() ? snap.data() : null;
+    return snap.exists ? snap.data() : null;
   } catch(e) { return null; }
 }
 
@@ -459,7 +474,7 @@ async function uploadVideo(vKey, slot, input) {
       // Save URL to Firestore too
       const vidDocRef = doc(db, 'clients', activeClient.id, 'videos', vKey);
       const existing = await getDoc(vidDocRef);
-      const vidData = existing.exists() ? existing.data() : {};
+      const vidData = existing.exists ? existing.data() : {};
       vidData[slot + 'Url'] = url;
       await setDoc(vidDocRef, vidData);
       renderExercises();
@@ -475,7 +490,7 @@ async function deleteVideo(vKey, slot) {
   localStorage.removeItem(getVideoUrlKey(vKey, slot));
   const vidDocRef = doc(db, 'clients', activeClient.id, 'videos', vKey);
   const existing = await getDoc(vidDocRef);
-  if (existing.exists()) {
+  if (existing.exists) {
     const d = existing.data();
     delete d[slot + 'Url'];
     await setDoc(vidDocRef, d);
@@ -502,7 +517,7 @@ async function loadVideoUrls(vKey) {
   // Fallback: check Firestore
   try {
     const snap = await getDoc(doc(db, 'clients', activeClient.id, 'videos', vKey));
-    if (snap.exists()) {
+    if (snap.exists) {
       const d = snap.data();
       if (d.coachUrl)  localStorage.setItem(getVideoUrlKey(vKey, 'coach'),  d.coachUrl);
       if (d.clientUrl) localStorage.setItem(getVideoUrlKey(vKey, 'client'), d.clientUrl);
@@ -1295,7 +1310,7 @@ window._playVideo = playVideo;
 
 // ── FLUSH QUEUE — must be LAST thing in module ──────────
 window._ready = true;
-window._queue.forEach(function(item) {
+(window._queue || []).forEach(function(item) {
   var fn = window[item.fn];
   if (typeof fn === 'function') fn.apply(null, item.args);
 });
