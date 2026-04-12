@@ -295,6 +295,43 @@ async function switchClient(id) {
   await renderStats();
 }
 
+// ── EDIT CLIENT INFO (coach only) ─────────────────────
+function openEditClientModal() {
+  if (!activeClient) return;
+  document.getElementById('edit-client-name').value  = activeClient.name  || '';
+  document.getElementById('edit-client-email').value = activeClient.email || '';
+  document.getElementById('edit-client-level').value = activeClient.level || 'Advanced';
+  document.getElementById('edit-client-goal').value  = activeClient.goal  || '';
+  document.getElementById('edit-client-modal').classList.add('open');
+}
+
+async function saveClientInfo() {
+  if (!activeClient) return;
+  const name  = document.getElementById('edit-client-name').value.trim();
+  const email = document.getElementById('edit-client-email').value.trim().toLowerCase();
+  const level = document.getElementById('edit-client-level').value;
+  const goal  = document.getElementById('edit-client-goal').value.trim();
+  if (!name || !email) return alert('Vui lòng điền đầy đủ Name và Gmail.');
+
+  const oldEmail = activeClient.email;
+  await updateDoc(doc(db, 'clients', activeClient.id), { name, email, level, goal });
+
+  // Update linked user record if email changed
+  if (email !== oldEmail) {
+    const usersSnap = await getDocs(query(collection(db, 'users')));
+    usersSnap.forEach(async d => {
+      if (d.data().clientId === activeClient.id) {
+        await updateDoc(doc(db, 'users', d.id), { email, role: 'client' });
+      }
+    });
+  }
+
+  closeModal('edit-client-modal');
+  await loadAllClients();
+  document.getElementById('client-select').value = activeClient.id;
+  await switchClient(activeClient.id);
+}
+
 // ── ADD CLIENT (coach only) ────────────────────────────
 async function addClient() {
   const name  = document.getElementById('new-client-name').value.trim();
@@ -1230,6 +1267,8 @@ window._loginWithGoogle = loginWithGoogle;
 window._logout = logout;
 window._switchClient = switchClient;
 window._addClient = addClient;
+window._openEditClientModal = openEditClientModal;
+window._saveClientInfo = saveClientInfo;
 window._showPage = showPage;
 window._setDay = setDay;
 window._openModal = openModal;
@@ -1714,8 +1753,10 @@ function _q(fn, args) {
 window.loginWithGoogle   = function() { _q('_loginWithGoogle',[]); };
 window.logout            = function() { _q('_logout',[]); };
 window.showPage          = function(p){ _q('_showPage',[p]); };
-window.switchClient      = function(id){ _q('_switchClient',[id]); };
-window.addClient         = function() { _q('_addClient',[]); };
+window.switchClient           = function(id){ _q('_switchClient',[id]); };
+window.addClient              = function() { _q('_addClient',[]); };
+window.openEditClientModal    = function() { _q('_openEditClientModal',[]); };
+window.saveClientInfo         = function() { _q('_saveClientInfo',[]); };
 window.setDay            = function(d){ _q('_setDay',[d]); };
 window.openModal         = function(pi,ei){ _q('_openModal',[pi,ei]); };
 window.closeModal        = function(id){ _q('_closeModal',[id]); };
@@ -1855,6 +1896,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
     <select class="client-select" id="client-select" onchange="switchClient(this.value)" ontouchend="setTimeout(()=>switchClient(this.value),100)"><option>Loading...</option></select>
     <span class="client-badge" id="client-level">—</span>
     <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
+    <button class="add-client-btn" onclick="openEditClientModal()" style="background:#1a1a00;border-color:#555;color:#ccc;">Edit</button>
   </div>
 
   <div class="nav">
@@ -2004,6 +2046,28 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
     <div class="form-actions" style="margin-top:14px">
       <button class="btn-save" onclick="saveCheckpoint()">Save Update</button>
       <button class="btn-discard" onclick="closeModal('update-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CLIENT MODAL (coach only) -->
+<div class="modal-overlay" id="edit-client-modal" onclick="if(event.target===this)closeModal('edit-client-modal')">
+  <div class="modal">
+    <div class="modal-title">Edit Client Info</div>
+    <div class="modal-sub">Cập nhật thông tin đăng nhập và profile của khách.</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="edit-client-name" placeholder="Thai Son"></div>
+      <div class="form-group"><label class="form-label">Gmail</label><input class="form-input" id="edit-client-email" type="email" placeholder="client@gmail.com"></div>
+      <div class="form-group"><label class="form-label">Level</label>
+        <select class="form-select" id="edit-client-level">
+          <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="edit-client-goal" placeholder="Strength + Boxing"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" onclick="saveClientInfo()">Save</button>
+      <button class="btn-discard" onclick="closeModal('edit-client-modal')">Cancel</button>
     </div>
   </div>
 </div>
