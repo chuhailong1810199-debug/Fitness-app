@@ -1,7 +1,5 @@
 {
   "routes": [
-    { "src": "/",        "dest": "/landing.html" },
-    { "src": "/app",     "dest": "/index.html"   },
     { "src": "/migrate", "dest": "/migrate.html" },
     { "handle": "filesystem" }
   ]
