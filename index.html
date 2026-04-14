@@ -239,9 +239,27 @@ async function loadApp() {
     }
   } else {
     // Client
-    if (!userClientId) { showNoClientError(); return; }
+    if (!userClientId) {
+      // Last-resort: rescan clients directly in case users doc was wrong
+      console.log('[loadApp] userClientId null — emergency rescan...');
+      const csSnap = await getDocs(collection(db, 'clients'));
+      csSnap.forEach(d => {
+        if ((d.data().email || '').toLowerCase().trim() === (currentUser?.email || '').toLowerCase().trim()) {
+          userClientId = d.id;
+          userRole = 'client';
+        }
+      });
+      if (userClientId) {
+        // Fix the users doc so next login is instant
+        await updateDoc(doc(db, 'users', currentUser.uid), { role: 'client', clientId: userClientId });
+        console.log('[loadApp] Fixed clientId =', userClientId);
+      } else {
+        showNoClientError('email=' + (currentUser?.email || '?') + ' not found in /clients');
+        return;
+      }
+    }
     const snap = await getDoc(doc(db, 'clients', userClientId));
-    if (!snap.exists) { showNoClientError(); return; }
+    if (!snap.exists) { showNoClientError('doc /clients/' + userClientId + ' missing'); return; }
     clientsData  = [{ id: snap.id, ...snap.data() }];
     activeClient = clientsData[0];
     renderClientBar(false);
@@ -1216,8 +1234,11 @@ function showScreen(name) {
   if (target) target.classList.remove('hidden');
 }
 
-function showNoClientError() {
+function showNoClientError(debugMsg = '') {
   showScreen('no-client');
+  const dbg = document.getElementById('no-client-debug');
+  if (dbg) dbg.textContent = debugMsg ? '⚠ ' + debugMsg : '';
+  if (debugMsg) console.error('[noClientError]', debugMsg);
 }
 
 function renderClientBar(isCoach) {
@@ -1884,6 +1905,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   <div class="login-card" style="text-align:center">
     <div class="login-title">Chưa có tài khoản</div>
     <div class="login-sub">Email của bạn chưa được thêm vào hệ thống.<br>Liên hệ coach để được thêm vào app.</div>
+    <div id="no-client-debug" style="margin-top:0.75rem;font-size:11px;color:#ff6b6b;word-break:break-all;max-width:280px;margin-left:auto;margin-right:auto;"></div>
     <button class="google-btn" onclick="logout()" style="margin-top:1rem;background:#161616;color:#f0f0f0;border:1px solid #333;">
       Đăng xuất
     </button>
