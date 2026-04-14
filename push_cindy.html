@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Push Cindy → Firestore</title>
+<style>
+  body { font-family: monospace; background: #0a0a0a; color: #fff; padding: 40px; }
+  button { padding: 14px 32px; background: #e05535; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 10px 0; }
+  button:disabled { background: #555; cursor: default; }
+  #log { margin-top: 20px; white-space: pre-wrap; font-size: 13px; line-height: 1.6; }
+  .ok { color: #4caf50; } .err { color: #f44336; } .info { color: #aaa; }
+</style>
+</head>
+<body>
+<h2>🏋️ Push Cindy Program → Firestore</h2>
+<p>Client: <b>Cindy</b> | dolykim1401@gmail.com | Intermediate | Strength &amp; Fat Loss</p>
+<button id="btn" onclick="run()">Sign in with Google &amp; Push</button>
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: "AIzaSyAiu9jzMzDzr1ltBZJQkwWzK8VWidHq8WU",
+  authDomain: "fitness-app-a22c8.firebaseapp.com",
+  projectId: "fitness-app-a22c8",
+  storageBucket: "fitness-app-a22c8.firebasestorage.app",
+  messagingSenderId: "583223865664",
+  appId: "1:583223865664:web:281cbf803d55d6f0808aa5"
+});
+
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const PROGRAM = {"Mon": {"label": "Session A — Monday | Anterior Focus", "phases": [{"name": "🔥 Warm-up / Core Activation", "tag": "warmup", "note": "", "exercises": [{"name": "Dead Bug", "setsReps": "3 × 8/side", "tempo": "Slow", "type": "core", "cue": "Lower back flat on floor, exhale as arm/leg extends | Load: Bodyweight", "done": false}, {"name": "Hollow Body Hold", "setsReps": "3 × 20–30s", "tempo": "—", "type": "core", "cue": "Press lower back into floor, arms overhead, legs low | Load: Bodyweight", "done": false}]}, {"name": "💪 Main Lifts", "tag": "strength", "note": "", "exercises": [{"name": "Barbell Back Squat", "setsReps": "4 × 6", "tempo": "3-1-2", "type": "primary", "cue": "Chest up, knees track toes, depth below parallel | Load: 70–75% 1RM", "done": false}, {"name": "Barbell Hip Thrust", "setsReps": "4 × 8", "tempo": "2-1-2", "type": "primary", "cue": "Full glute squeeze at top, ribs down, chin tucked | Load: Mod–Heavy", "done": false}]}, {"name": "⚡ Accessories", "tag": "accessories", "note": "", "exercises": [{"name": "Leg Press", "setsReps": "3 × 10–12", "tempo": "2-1-2", "type": "primary", "cue": "Feet shoulder-width, full ROM without lower back rounding | Load: Moderate", "done": false}, {"name": "Cable Pull-Through", "setsReps": "3 × 12", "tempo": "2-1-1", "type": "primary", "cue": "Hinge pattern, squeeze glutes at top | Load: Mod", "done": false}, {"name": "Walking Lunge", "setsReps": "3 × 12/side", "tempo": "2-1-2", "type": "primary", "cue": "Tall posture, front knee tracks toes, push off heel | Load: Dumbbells", "done": false}]}, {"name": "🏃 15-Min AMRAP Circuit", "tag": "accessories", "note": "", "exercises": [{"name": "Goblet Squat", "setsReps": "AMRAP × 10", "tempo": "Controlled", "type": "primary", "cue": "Heels flat, elbows inside knees at bottom | Load: Mod KB/DB", "done": false}, {"name": "Push-Up", "setsReps": "AMRAP × 10", "tempo": "2-0-2", "type": "primary", "cue": "Chest to floor, elbows 45°, rigid core throughout | Load: Bodyweight", "done": false}, {"name": "Box Step-Up", "setsReps": "AMRAP × 10/side", "tempo": "Controlled", "type": "primary", "cue": "Drive through heel, full hip extension at top | Load: Dumbbells", "done": false}, {"name": "Plank Shoulder Tap", "setsReps": "AMRAP × 10/side", "tempo": "Controlled", "type": "core", "cue": "Minimize hip rotation, brace core hard | Load: Bodyweight", "done": false}]}]}, "Wed": {"label": "Session B — Wednesday | Posterior Focus", "phases": [{"name": "🔥 Warm-up / Abs Activation", "tag": "warmup", "note": "", "exercises": [{"name": "Ab Wheel Rollout", "setsReps": "3 × 8–10", "tempo": "Slow", "type": "core", "cue": "Brace core hard, hips don't sag, extend only as far as controlled | Load: Ab wheel", "done": false}, {"name": "Cable Crunch", "setsReps": "3 × 12–15", "tempo": "2-1-1", "type": "core", "cue": "Flex spine not just hips — feel abs contract fully at bottom | Load: Light–Mod", "done": false}]}, {"name": "💪 Main Lifts", "tag": "strength", "note": "", "exercises": [{"name": "Romanian Deadlift", "setsReps": "4 × 6", "tempo": "3-1-1", "type": "primary", "cue": "Hinge at hips, neutral spine, feel hamstring fully load | Load: 70–75% 1RM", "done": false}, {"name": "Barbell Bent-Over Row", "setsReps": "4 × 8", "tempo": "2-1-2", "type": "primary", "cue": "Chest up, row to lower chest, squeeze scapula at top | Load: 65–70% 1RM", "done": false}]}, {"name": "⚡ Accessories", "tag": "accessories", "note": "", "exercises": [{"name": "Single-Leg Hamstring Curl (Machine)", "setsReps": "3 × 10/side", "tempo": "3-1-1", "type": "primary", "cue": "Slow eccentric — control the hamstring lengthening phase | Load: Mod", "done": false}, {"name": "Seated Cable Row", "setsReps": "3 × 12", "tempo": "2-1-2", "type": "primary", "cue": "Retract scapula fully at end range, chest stays tall | Load: Mod", "done": false}, {"name": "Face Pull", "setsReps": "3 × 15", "tempo": "Controlled", "type": "primary", "cue": "Pull to forehead, elbows high, external rotation at end | Load: Light–Mod", "done": false}]}, {"name": "🏃 15-Min Interval Run", "tag": "accessories", "note": "", "exercises": [{"name": "Treadmill Sprint Intervals", "setsReps": "10 × 45s on / 45s off", "tempo": "HIIT", "type": "cardio", "cue": "Max sprint effort each interval — log pace and total distance | Load: 85–90% max HR", "done": false}]}]}, "Fri": {"label": "Session C — Friday | 40-Min Hyrox Simulation", "phases": [{"name": "🔥 Warm-up (5 min)", "tag": "warmup", "note": "", "exercises": [{"name": "Ski Erg / Row Erg", "setsReps": "1 × 3 min", "tempo": "Easy pace", "type": "cardio", "cue": "Elevate HR gradually, stay below 70% max HR | Load: Bodyweight", "done": false}, {"name": "Hip Circle + Leg Swing Combo", "setsReps": "1 × 60s", "tempo": "Dynamic", "type": "mobility", "cue": "Full hip mobility — prep for lunges, sleds, burpees | Load: Bodyweight", "done": false}]}, {"name": "⚡ Hyrox Simulation Blocks", "tag": "accessories", "note": "", "exercises": [{"name": "1km Run (treadmill or track)", "setsReps": "1 × ~5–6 min", "tempo": "Race pace", "type": "cardio", "cue": "Consistent race-pace effort — not a sprint, not a jog | Load: Bodyweight", "done": false}, {"name": "Ski Erg", "setsReps": "1 × 250m", "tempo": "Hard effort", "type": "cardio", "cue": "Full body pull — drive hips back, arms follow through fully | Load: Bodyweight", "done": false}, {"name": "500m Run", "setsReps": "1 × ~2.5 min", "tempo": "Race pace", "type": "cardio", "cue": "Recover rhythm from Ski Erg before next station | Load: Bodyweight", "done": false}, {"name": "Sled Push (heavy)", "setsReps": "1 × 20m × 2", "tempo": "Explosive", "type": "primary", "cue": "Low drive position, push through heel, short powerful steps | Load: Heavy plate", "done": false}, {"name": "500m Run", "setsReps": "1 × ~2.5 min", "tempo": "Race pace", "type": "cardio", "cue": "Transition run — keep moving even if pace drops slightly | Load: Bodyweight", "done": false}, {"name": "Burpee Broad Jump", "setsReps": "1 × 15 reps", "tempo": "Explosive", "type": "primary", "cue": "Max forward distance each rep, land soft with bent knees | Load: Bodyweight", "done": false}, {"name": "500m Run", "setsReps": "1 × ~2.5 min", "tempo": "Race pace", "type": "cardio", "cue": "Mental reset run — breathe and find rhythm before lunges | Load: Bodyweight", "done": false}, {"name": "Sandbag Lunges", "setsReps": "1 × 20m", "tempo": "Controlled", "type": "primary", "cue": "Upright torso, full knee extension each step, control descent | Load: 10–15 kg bag", "done": false}, {"name": "500m Run", "setsReps": "1 × ~2.5 min", "tempo": "Race pace", "type": "cardio", "cue": "Final run — empty the tank, push to the finish | Load: Bodyweight", "done": false}]}, {"name": "🧘 Cooldown (5 min)", "tag": "warmup", "note": "", "exercises": [{"name": "Hip Flexor Stretch", "setsReps": "1 × 60s/side", "tempo": "Static", "type": "mobility", "cue": "Critical post-lunge/run — breathe into the hip and hold | Load: Bodyweight", "done": false}, {"name": "Child's Pose + Thoracic Reach", "setsReps": "1 × 60s/side", "tempo": "Static", "type": "mobility", "cue": "Decompress spine after sled + sandbag loading | Load: Bodyweight", "done": false}]}]}};
+
+window.run = async function() {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  try {
+    log('⏳ Signing in with Google...');
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const me = result.user;
+    log('✓ Logged in as ' + me.email, 'ok');
+
+    log('⏳ Pushing Cindy to Firestore...');
+    await setDoc(doc(db, 'clients', 'cindy'), {
+      name: 'Cindy',
+      email: 'dolykim1401@gmail.com',
+      level: 'Intermediate',
+      goal: 'Strength & Fat Loss',
+      sessionsPerWeek: 3,
+      coachUid: me.uid,
+      program: PROGRAM,
+      createdAt: serverTimestamp()
+    });
+    log('✓ clients/cindy pushed!', 'ok');
+
+    let total = 0;
+    Object.values(PROGRAM).forEach(d => (d.phases||[]).forEach(p => total += (p.exercises||[]).length));
+    log('✓ 3 days (Mon/Wed/Fri) — ' + total + ' exercises total', 'ok');
+    log('\n🎉 Done! Cindy can now log in with dolykim1401@gmail.com', 'ok');
+    btn.textContent = '✓ Done!';
+  } catch(e) {
+    log('✗ ' + e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+  }
+};
+
+function log(msg, cls='info') {
+  const d = document.getElementById('log');
+  d.innerHTML += '<span class="' + cls + '">' + msg + '</span>\n';
+}
+</script>
+</body>
+</html>
