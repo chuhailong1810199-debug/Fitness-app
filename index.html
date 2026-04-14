@@ -174,7 +174,7 @@ async function loadUserProfile(user) {
     const clientsSnap = await getDocs(collection(db, 'clients'));
     let matchedClientId = null;
     clientsSnap.forEach(d => {
-      if (d.data().email === user.email) matchedClientId = d.id;
+      if ((d.data().email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim()) matchedClientId = d.id;
     });
     const role = matchedClientId ? 'client' : 'coach';
     const profileData = {
@@ -198,7 +198,7 @@ async function loadUserProfile(user) {
       const clientsSnap = await getDocs(collection(db, 'clients'));
       let matchedClientId = null;
       clientsSnap.forEach(d => {
-        if (d.data().email === user.email) matchedClientId = d.id;
+        if ((d.data().email || '').toLowerCase().trim() === (user.email || '').toLowerCase().trim()) matchedClientId = d.id;
       });
       if (matchedClientId) {
         await updateDoc(userRef, { role: 'client', clientId: matchedClientId });
