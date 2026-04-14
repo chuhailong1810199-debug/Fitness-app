@@ -1,8 +1,8 @@
 {
-  "rewrites": [
-    { "source": "/app", "destination": "/index.html" },
-    { "source": "/app/(.*)", "destination": "/index.html" },
-    { "source": "/migrate", "destination": "/migrate.html" },
-    { "source": "/", "destination": "/landing.html" }
+  "routes": [
+    { "src": "/",        "dest": "/landing.html" },
+    { "src": "/app",     "dest": "/index.html"   },
+    { "src": "/migrate", "dest": "/migrate.html" },
+    { "handle": "filesystem" }
   ]
 }
