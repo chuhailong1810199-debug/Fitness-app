@@ -139,14 +139,8 @@ async function loginWithGoogle() {
   try {
     setLoginLoading(true);
     const provider = new GoogleAuthProvider();
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      // Mobile: dùng redirect ngay, không thử popup (tránh treo)
-      await auth.signInWithRedirect(provider);
-    } else {
-      // Desktop: dùng popup
-      await signInWithPopup(auth, provider);
-    }
+    // Always use popup — redirect fails on Safari/iOS due to ITP cookie blocking
+    await signInWithPopup(auth, provider);
   } catch(e) {
     setLoginLoading(false);
     alert('Đăng nhập thất bại: ' + e.code + '\n' + e.message);
