@@ -252,8 +252,28 @@ async function loadApp() {
         return;
       }
     }
-    const snap = await getDoc(doc(db, 'clients', userClientId));
-    if (!snap.exists) { showNoClientError('doc /clients/' + userClientId + ' missing'); return; }
+    let snap = await getDoc(doc(db, 'clients', userClientId));
+    if (!snap.exists) {
+      // clientId in users doc is stale — rescan to find a valid one
+      console.log('[loadApp] client doc missing for', userClientId, '— rescanning...');
+      const csSnap2 = await getDocs(collection(db, 'clients'));
+      const matches = [];
+      csSnap2.forEach(d => {
+        if ((d.data().email || '').toLowerCase().trim() === (currentUser?.email || '').toLowerCase().trim()) matches.push(d);
+      });
+      let recovered = null;
+      for (const m of matches) {
+        if (m.id !== userClientId) { // skip the known-missing one
+          const t = await getDoc(doc(db, 'clients', m.id));
+          if (t.exists) { recovered = t; break; }
+        }
+      }
+      if (!recovered) { showNoClientError('doc /clients/' + userClientId + ' missing'); return; }
+      snap = recovered;
+      userClientId = recovered.id;
+      await updateDoc(doc(db, 'users', currentUser.uid), { clientId: recovered.id });
+      console.log('[loadApp] Recovered clientId =', recovered.id);
+    }
     clientsData  = [{ id: snap.id, ...snap.data() }];
     activeClient = clientsData[0];
     renderClientBar(false);

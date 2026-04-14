@@ -125,21 +125,21 @@ window.fixEmail = async function() {
     await updateDoc(doc(db, 'clients', 'cindy'), { email: 'dollykim1401@gmail.com' });
     log('✓ clients/cindy email updated → dollykim1401@gmail.com', 'ok');
 
-    // Also fix users docs with old email
-    log('\n⏳ Scanning users for old email...');
+    // Also fix users docs — match by email (both old typo and correct) and fix clientId
+    log('\n⏳ Scanning users for Cindy (any email variant)...');
     const usersSnap = await getDocs(collection(db, 'users'));
     let fixed = 0;
     const fixes = [];
     usersSnap.forEach(d => {
       const e = (d.data().email || '').toLowerCase();
-      if (e === 'dolykim1401@gmail.com') {
+      if (e === 'dollykim1401@gmail.com' || e === 'dolykim1401@gmail.com') {
         fixes.push(updateDoc(doc(db, 'users', d.id), { email: 'dollykim1401@gmail.com', role: 'client', clientId: 'cindy' }));
-        log('  Fixed users/' + d.id, 'warn');
+        log('  Fixed users/' + d.id + ' → clientId: cindy', 'warn');
         fixed++;
       }
     });
     await Promise.all(fixes);
-    if (!fixed) log('  No stale users doc found (OK — will be created on next login)', 'info');
+    if (!fixed) log('  No users doc found (will be created correctly on next login)', 'info');
 
     log('\n🎉 Email fixed! Cindy can now log in with dollykim1401@gmail.com', 'ok');
   } catch(e) {
