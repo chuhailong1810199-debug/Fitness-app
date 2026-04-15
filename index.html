@@ -22,7 +22,7 @@ const signOut           = (auth) => auth.signOut();
 const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
 const serverTimestamp   = () => firebase.firestore.FieldValue.serverTimestamp();
 // Firestore helpers
-const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i+=2) r = (i===0?db.collection(path[0]):r).doc(path[i+1]||path[i]); return path.length===1?db.collection(path[0]):r; };
+const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i++) r = (i%2===0)?r.collection(path[i]):r.doc(path[i]); return r; };
 const collection = (db, path) => db.collection(path);
 const query      = (ref, ...constraints) => { let q = ref; constraints.forEach(c => q = c(q)); return q; };
 const orderBy    = (field, dir='asc') => (ref) => ref.orderBy(field, dir);
@@ -675,25 +675,41 @@ function updateVideoSlotDOM(vKey, slot, url) {
 }
 
 async function refreshVideoSlotsFromFirestore(vKeys) {
-  console.log('[video-debug] refreshing', vKeys.length, 'slots for client', activeClient.id);
   for (const vKey of vKeys) {
     const coachCached  = getVideoUrl(vKey, 'coach');
     const clientCached = getVideoUrl(vKey, 'client');
     if (coachCached && clientCached) continue; // both already in localStorage
+
+    let coachUrl = coachCached, clientUrl = clientCached;
+
+    // 1. Try Firestore
     try {
       const snap = await getDoc(doc(db, 'clients', activeClient.id, 'videos', vKey));
-      console.log('[video-debug]', vKey, '→ exists:', snap.exists(), snap.exists() ? snap.data() : 'no data');
-      if (!snap.exists()) continue;
-      const d = snap.data();
-      if (d.coachUrl && !coachCached) {
-        localStorage.setItem(getVideoUrlKey(vKey, 'coach'), d.coachUrl);
-        updateVideoSlotDOM(vKey, 'coach', d.coachUrl);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.coachUrl  && !coachUrl)  coachUrl  = d.coachUrl;
+        if (d.clientUrl && !clientUrl) clientUrl = d.clientUrl;
       }
-      if (d.clientUrl && !clientCached) {
-        localStorage.setItem(getVideoUrlKey(vKey, 'client'), d.clientUrl);
-        updateVideoSlotDOM(vKey, 'client', d.clientUrl);
-      }
-    } catch(e) { console.error('[video-debug] error for', vKey, e); }
+    } catch(e) { /* ignore */ }
+
+    // 2. Fallback: try Firebase Storage directly
+    //    (covers videos uploaded before the doc() bug was fixed — never saved to Firestore)
+    if (!coachUrl) {
+      try { coachUrl  = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'coach')));  } catch(e) {}
+    }
+    if (!clientUrl) {
+      try { clientUrl = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'client'))); } catch(e) {}
+    }
+
+    // Update localStorage + DOM for any newly found URLs
+    if (coachUrl && !coachCached) {
+      localStorage.setItem(getVideoUrlKey(vKey, 'coach'), coachUrl);
+      updateVideoSlotDOM(vKey, 'coach', coachUrl);
+    }
+    if (clientUrl && !clientCached) {
+      localStorage.setItem(getVideoUrlKey(vKey, 'client'), clientUrl);
+      updateVideoSlotDOM(vKey, 'client', clientUrl);
+    }
   }
 }
 
