@@ -675,12 +675,14 @@ function updateVideoSlotDOM(vKey, slot, url) {
 }
 
 async function refreshVideoSlotsFromFirestore(vKeys) {
+  console.log('[video-debug] refreshing', vKeys.length, 'slots for client', activeClient.id);
   for (const vKey of vKeys) {
     const coachCached  = getVideoUrl(vKey, 'coach');
     const clientCached = getVideoUrl(vKey, 'client');
     if (coachCached && clientCached) continue; // both already in localStorage
     try {
       const snap = await getDoc(doc(db, 'clients', activeClient.id, 'videos', vKey));
+      console.log('[video-debug]', vKey, '→ exists:', snap.exists(), snap.exists() ? snap.data() : 'no data');
       if (!snap.exists()) continue;
       const d = snap.data();
       if (d.coachUrl && !coachCached) {
@@ -691,7 +693,7 @@ async function refreshVideoSlotsFromFirestore(vKeys) {
         localStorage.setItem(getVideoUrlKey(vKey, 'client'), d.clientUrl);
         updateVideoSlotDOM(vKey, 'client', d.clientUrl);
       }
-    } catch(e) { /* ignore */ }
+    } catch(e) { console.error('[video-debug] error for', vKey, e); }
   }
 }
 
