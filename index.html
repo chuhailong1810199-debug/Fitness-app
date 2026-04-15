@@ -286,8 +286,8 @@ async function loadApp() {
   await renderStats();
   subscribeProgram();
   if (userRole === 'client') {
-    showScreen('app');
-    showIntroSlide(() => {}); // show intro overlay on top of app
+    // Show intro slide first — app only reveals when client taps "Enter App"
+    showIntroSlide(() => showScreen('app'));
   } else {
     showScreen('app');
   }
@@ -1255,25 +1255,35 @@ function showScreen(name) {
 
 // ── COACH INTRO SLIDE ──────────────────────────────────
 function showIntroSlide(onDone) {
-  if (sessionStorage.getItem('intro-seen')) { onDone(); return; }
   const el = document.getElementById('intro-slide');
   if (!el) { onDone(); return; }
+
+  // Hide all other screens while slide is showing
+  ['login-screen','loading-screen','app-screen','no-client-screen'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
+  });
+
+  el.style.opacity = '1';
   el.classList.remove('hidden');
+
+  // Reset animation state
+  ['isl1','isl2','isl3'].forEach(id => document.getElementById(id)?.classList.remove('vis'));
+
   // Animate slogan lines in sequence
   setTimeout(() => el.classList.add('loaded'), 50);
-  setTimeout(() => document.getElementById('isl1')?.classList.add('vis'), 300);
-  setTimeout(() => document.getElementById('isl2')?.classList.add('vis'), 550);
-  setTimeout(() => document.getElementById('isl3')?.classList.add('vis'), 800);
+  setTimeout(() => document.getElementById('isl1')?.classList.add('vis'), 400);
+  setTimeout(() => document.getElementById('isl2')?.classList.add('vis'), 700);
+  setTimeout(() => document.getElementById('isl3')?.classList.add('vis'), 1000);
+
   window._introDone = onDone;
 }
+
 function dismissIntro() {
   const el = document.getElementById('intro-slide');
-  if (el) {
-    el.style.transition = 'opacity .4s ease';
-    el.style.opacity = '0';
-    setTimeout(() => el.classList.add('hidden'), 400);
-  }
-  sessionStorage.setItem('intro-seen', '1');
+  if (!el) return;
+  el.style.transition = 'opacity .4s ease';
+  el.style.opacity = '0';
+  setTimeout(() => el.classList.add('hidden'), 420);
   if (window._introDone) { window._introDone(); window._introDone = null; }
 }
 
