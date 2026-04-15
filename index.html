@@ -23,7 +23,7 @@ const onAuthStateChanged = (auth, cb) => auth.onAuthStateChanged(cb);
 const serverTimestamp   = () => firebase.firestore.FieldValue.serverTimestamp();
 // Firestore helpers
 const doc        = (db, ...path) => { let r = db; for(let i=0;i<path.length;i++) r = (i%2===0)?r.collection(path[i]):r.doc(path[i]); return r; };
-const collection = (db, path) => db.collection(path);
+const collection = (db, ...path) => { let r = db; for(let i=0;i<path.length;i++) r = (i%2===0)?r.collection(path[i]):r.doc(path[i]); return r; };
 const query      = (ref, ...constraints) => { let q = ref; constraints.forEach(c => q = c(q)); return q; };
 const orderBy    = (field, dir='asc') => (ref) => ref.orderBy(field, dir);
 const where      = (f,op,v) => (ref) => ref.where(f,op,v);
