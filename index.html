@@ -557,8 +557,10 @@ async function getHistory() {
     const snap = await getDocs(
       query(collection(db, 'clients', activeClient.id, 'workoutHistory'), orderBy('date', 'desc'))
     );
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch(e) { return []; }
+    const result = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    console.log('[session-debug] client=' + activeClient.id + ' sessions=' + result.length, result.map(r => r.id));
+    return result;
+  } catch(e) { console.error('[session-debug] error', e); return []; }
 }
 
 // ── VIDEOS (Firebase Storage) ──────────────────────────
@@ -695,10 +697,14 @@ async function refreshVideoSlotsFromFirestore(vKeys) {
     // 2. Fallback: try Firebase Storage directly
     //    (covers videos uploaded before the doc() bug was fixed — never saved to Firestore)
     if (!coachUrl) {
-      try { coachUrl  = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'coach')));  } catch(e) {}
+      try { coachUrl  = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'coach')));
+        console.log('[video-debug] Storage hit coach:', vKey);
+      } catch(e) {}
     }
     if (!clientUrl) {
-      try { clientUrl = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'client'))); } catch(e) {}
+      try { clientUrl = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'client')));
+        console.log('[video-debug] Storage hit client:', vKey);
+      } catch(e) {}
     }
 
     // Update localStorage + DOM for any newly found URLs
