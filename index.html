@@ -90,9 +90,9 @@ const ADVICE = [
   const ua = navigator.userAgent || '';
   const isInApp = /FBAN|FBAV|FB_IAB|Messenger|Instagram|FB4A|FBIOS/i.test(ua);
   if (!isInApp) return;
-  // Auto-redirect to Safari immediately
+  // Auto-redirect to Chrome immediately
   const url = window.location.href;
-  window.location.href = 'safari://' + url.replace(/^https?:\/\//, '');
+  window.location.href = url.replace(/^https:\/\//, 'googlechromes://').replace(/^http:\/\//, 'googlechrome://');
 })();
 
 // ── AUTH STATE ─────────────────────────────────────────
