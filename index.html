@@ -693,7 +693,24 @@ async function refreshVideoSlotsFromFirestore(vKeys) {
       }
     } catch(e) { /* ignore */ }
 
-    // No Storage fallback — vKey is index-based so paths break if program is edited
+    // 2. Fallback: try Firebase Storage directly (for videos not yet in Firestore)
+    if (!coachUrl) {
+      try { coachUrl  = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'coach')));  } catch(e) {}
+    }
+    if (!clientUrl) {
+      try { clientUrl = await getDownloadURL(ref(storage, getVideoRefPath(vKey, 'client'))); } catch(e) {}
+    }
+    // If found via Storage, save to Firestore so future loads skip Storage check
+    if ((coachUrl && !coachCached) || (clientUrl && !clientCached)) {
+      try {
+        const vidDocRef = doc(db, 'clients', activeClient.id, 'videos', vKey);
+        const existing  = await getDoc(vidDocRef);
+        const vidData   = existing.exists() ? existing.data() : {};
+        if (coachUrl  && !coachCached)  vidData.coachUrl  = coachUrl;
+        if (clientUrl && !clientCached) vidData.clientUrl = clientUrl;
+        await setDoc(vidDocRef, vidData);
+      } catch(e) {}
+    }
 
     // Update localStorage + DOM for any newly found URLs
     if (coachUrl && !coachCached) {
