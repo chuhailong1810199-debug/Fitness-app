@@ -647,18 +647,52 @@ async function loadVideoUrls(vKey) {
   // Try localStorage first (cache)
   const coachUrl  = localStorage.getItem(getVideoUrlKey(vKey, 'coach'));
   const clientUrl = localStorage.getItem(getVideoUrlKey(vKey, 'client'));
-  if (coachUrl || clientUrl) return { coach: coachUrl, client: clientUrl };
+  if (coachUrl && clientUrl) return { coach: coachUrl, client: clientUrl }; // both cached
   // Fallback: check Firestore
   try {
     const snap = await getDoc(doc(db, 'clients', activeClient.id, 'videos', vKey));
-    if (snap.exists) {
+    if (snap.exists()) {
       const d = snap.data();
       if (d.coachUrl)  localStorage.setItem(getVideoUrlKey(vKey, 'coach'),  d.coachUrl);
       if (d.clientUrl) localStorage.setItem(getVideoUrlKey(vKey, 'client'), d.clientUrl);
       return { coach: d.coachUrl || null, client: d.clientUrl || null };
     }
   } catch(e) { /* ignore */ }
-  return { coach: null, client: null };
+  return { coach: coachUrl || null, client: clientUrl || null };
+}
+
+function updateVideoSlotDOM(vKey, slot, url) {
+  const el = document.getElementById('vs_' + slot + '_' + vKey);
+  if (!el || el.querySelector('.video-preview')) return; // already has video
+  const label = slot === 'coach' ? 'Coach demo' : 'Client form';
+  el.innerHTML = `<div class="video-slot-header">${label}
+    <button class="video-del" onclick="deleteVideo('${vKey}','${slot}')">✕</button>
+  </div>
+  <div class="video-preview" onclick="playVideo('${url}')">
+    <video src="${url}" preload="metadata"></video>
+    <div class="video-play-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg></div>
+  </div>`;
+}
+
+async function refreshVideoSlotsFromFirestore(vKeys) {
+  for (const vKey of vKeys) {
+    const coachCached  = getVideoUrl(vKey, 'coach');
+    const clientCached = getVideoUrl(vKey, 'client');
+    if (coachCached && clientCached) continue; // both already in localStorage
+    try {
+      const snap = await getDoc(doc(db, 'clients', activeClient.id, 'videos', vKey));
+      if (!snap.exists()) continue;
+      const d = snap.data();
+      if (d.coachUrl && !coachCached) {
+        localStorage.setItem(getVideoUrlKey(vKey, 'coach'), d.coachUrl);
+        updateVideoSlotDOM(vKey, 'coach', d.coachUrl);
+      }
+      if (d.clientUrl && !clientCached) {
+        localStorage.setItem(getVideoUrlKey(vKey, 'client'), d.clientUrl);
+        updateVideoSlotDOM(vKey, 'client', d.clientUrl);
+      }
+    } catch(e) { /* ignore */ }
+  }
 }
 
 // ── BASELINE UI ────────────────────────────────────────
@@ -905,6 +939,7 @@ function renderExercises() {
   if (!day) { list.innerHTML = '<div class="loading">Rest day 💤</div>'; updateProgress(); return; }
 
   let html = `<div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
+  const vKeys = [];
   day.phases.forEach((phase, pi) => {
     html += `<div class="phase-header">`;
     if (editMode) html += `<div class="phase-edit-bar"><button class="btn-delete-phase" onclick="deletePhase(${pi})">Delete Phase</button></div>`;
@@ -916,6 +951,7 @@ function renderExercises() {
       // Hide completed exercises unless user toggled to show them
       if (done && !showDoneExercises) { /* skip done exercises - shown in done-strip */ }
       const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+      vKeys.push(vKey);
       const coachUrl  = getVideoUrl(vKey, 'coach');
       const clientUrl = getVideoUrl(vKey, 'client');
       html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}">
@@ -1047,6 +1083,8 @@ function renderExercises() {
     list.innerHTML = html;
   }
   updateProgress();
+  // Load video URLs from Firestore for any exercise not yet cached in localStorage
+  refreshVideoSlotsFromFirestore(vKeys);
 }
 
 // ── EDIT PROGRAM ───────────────────────────────────────
