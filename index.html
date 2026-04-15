@@ -215,6 +215,7 @@ async function loadApp() {
   }
 
   if (userRole === 'coach') {
+    document.getElementById('preview-intro-btn')?.style.setProperty('display','inline-block');
     await loadAllClients();
     renderClientBar(true);
     // Coach with no clients yet — show empty state
@@ -2056,6 +2057,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
       </div>
       <span class="user-role-badge" id="role-badge"></span>
       <button class="user-logout" onclick="logout()">Sign out</button>
+      <button class="user-logout" id="preview-intro-btn" onclick="showIntroSlide(()=>{})" style="display:none;color:#e05535;border-color:#e05535;">Preview Intro</button>
     </div>
     <p class="subtitle" id="date-display"></p>
   </div>
