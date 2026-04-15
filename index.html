@@ -1915,14 +1915,49 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
 </div>
 
 <!-- NO CLIENT SCREEN -->
-<div id="no-client-screen" class="login-screen hidden">
-  <div class="login-card" style="text-align:center">
-    <div class="login-title">Chưa có tài khoản</div>
-    <div class="login-sub">Email của bạn chưa được thêm vào hệ thống.<br>Liên hệ coach để được thêm vào app.</div>
-    <div id="no-client-debug" style="margin-top:0.75rem;font-size:11px;color:#ff6b6b;word-break:break-all;max-width:280px;margin-left:auto;margin-right:auto;"></div>
-    <button class="google-btn" onclick="logout()" style="margin-top:1rem;background:#161616;color:#f0f0f0;border:1px solid #333;">
-      Đăng xuất
-    </button>
+<div id="no-client-screen" class="login-screen hidden" style="padding:0;background:#0a0a0a;">
+  <style>
+    .signup-slide{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:100%;max-width:390px;height:100%;min-height:100dvh;padding:3.5rem 2rem 2.5rem;box-sizing:border-box;text-align:center;}
+    .signup-logo{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;color:#e05535;text-transform:uppercase;margin-bottom:0;}
+    .signup-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#e05535 0%,#b03010 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;}
+    .signup-icon svg{width:36px;height:36px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .signup-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+    .signup-headline{font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#fff;line-height:1.2;}
+    .signup-headline span{color:#e05535;}
+    .signup-sub{font-size:14px;color:#666;line-height:1.7;max-width:280px;}
+    .signup-perks{display:flex;flex-direction:column;gap:.6rem;width:100%;margin-top:.5rem;}
+    .signup-perk{display:flex;align-items:center;gap:.75rem;background:#161616;border:1px solid #222;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#ccc;text-align:left;}
+    .signup-perk-icon{width:28px;height:28px;border-radius:6px;background:#1e0a02;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+    .signup-cta{width:100%;padding:15px;border-radius:8px;background:#e05535;color:#fff;border:none;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;text-decoration:none;display:block;transition:background .15s;}
+    .signup-cta:hover{background:#c0401f;}
+    .signup-logout{font-size:12px;color:#444;cursor:pointer;border:none;background:none;padding:.5rem;margin-top:.25rem;}
+    .signup-logout:hover{color:#777;}
+    #no-client-debug{font-size:10px;color:#ff6b6b;word-break:break-all;max-width:300px;margin-top:.5rem;min-height:0;}
+  </style>
+  <div class="signup-slide">
+    <div class="signup-logo">FIT WITH LONG CHU</div>
+
+    <div class="signup-body">
+      <div class="signup-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="signup-headline">Start Your<br><span>Journey</span></div>
+      <div class="signup-sub">Đăng ký để được coach xây dựng chương trình tập luyện cá nhân hoá dành riêng cho bạn.</div>
+
+      <div class="signup-perks">
+        <div class="signup-perk"><div class="signup-perk-icon">🎯</div>Program thiết kế riêng theo goal & level của bạn</div>
+        <div class="signup-perk"><div class="signup-perk-icon">📊</div>Theo dõi tiến độ & số liệu mỗi tuần</div>
+        <div class="signup-perk"><div class="signup-perk-icon">💬</div>Hỗ trợ trực tiếp từ coach</div>
+      </div>
+    </div>
+
+    <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:.5rem;">
+      <a class="signup-cta" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank">
+        Đăng Ký Ngay →
+      </a>
+      <div id="no-client-debug"></div>
+      <button class="signup-logout" onclick="logout()">Đăng xuất</button>
+    </div>
   </div>
 </div>
 
