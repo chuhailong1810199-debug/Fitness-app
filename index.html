@@ -1271,8 +1271,10 @@ async function renderStats() {
   document.getElementById('sessions').textContent   = hist.length;
   document.getElementById('total-vol').textContent  = '0';
   document.getElementById('streak-num').textContent = calcStreak(hist);
-  const resetBtn = document.getElementById('reset-sessions-btn');
-  if (resetBtn) resetBtn.style.display = userRole === 'coach' ? 'inline-flex' : 'none';
+  const resetBtn   = document.getElementById('reset-sessions-btn');
+  const recoverBtn = document.getElementById('recover-sessions-btn');
+  if (resetBtn)   resetBtn.style.display   = userRole === 'coach' ? 'inline-flex' : 'none';
+  if (recoverBtn) recoverBtn.style.display = userRole === 'coach' ? 'inline-flex' : 'none';
 }
 
 async function resetSessions() {
@@ -1284,6 +1286,24 @@ async function resetSessions() {
     await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
     await renderStats();
   } catch(e) { alert('Lỗi: ' + e.message); }
+}
+
+async function recoverLegacySessions() {
+  if (!activeClient) return;
+  // Scan root /clients for orphaned workout-history docs (have date+done+total but no name/email)
+  const snap = await getDocs(collection(db, 'clients'));
+  const legacy = snap.docs.filter(d => {
+    const v = d.data();
+    return v.date && v.done !== undefined && v.total !== undefined && !v.name && !v.email;
+  });
+  if (legacy.length === 0) { alert('Không tìm thấy session cũ nào.'); return; }
+  if (!confirm(`Tìm thấy ${legacy.length} session cũ bị lưu sai chỗ.\nChuyển về ${activeClient.name}?`)) return;
+  for (const d of legacy) {
+    await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), d.data());
+    await deleteDoc(d.ref);
+  }
+  await renderStats();
+  alert(`Đã recover ${legacy.length} session cho ${activeClient.name} ✓`);
 }
 
 // ── PROGRESS PAGE ──────────────────────────────────────
@@ -2178,7 +2198,7 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   <!-- WORKOUT PAGE -->
   <div class="workout-page" id="workout-page">
     <div class="stats">
-      <div class="stat"><div class="stat-num" id="sessions">0</div><div class="stat-label">Sessions <button id="reset-sessions-btn" onclick="resetSessions()" style="display:none;align-items:center;background:transparent;border:1px solid #444;border-radius:4px;color:#888;cursor:pointer;font-size:10px;padding:1px 5px;margin-left:4px;vertical-align:middle" title="Reset sessions về 0">↺</button></div></div>
+      <div class="stat"><div class="stat-num" id="sessions">0</div><div class="stat-label">Sessions <button id="reset-sessions-btn" onclick="resetSessions()" style="display:none;align-items:center;background:transparent;border:1px solid #444;border-radius:4px;color:#888;cursor:pointer;font-size:10px;padding:1px 5px;margin-left:4px;vertical-align:middle" title="Reset sessions về 0">↺</button><button id="recover-sessions-btn" onclick="recoverLegacySessions()" style="display:none;align-items:center;background:transparent;border:1px solid #444;border-radius:4px;color:#888;cursor:pointer;font-size:10px;padding:1px 5px;margin-left:2px;vertical-align:middle" title="Recover sessions cũ bị lưu sai chỗ">↩</button></div></div>
       <div class="stat"><div class="stat-num" id="done-count">0/0</div><div class="stat-label">Completed</div></div>
       <div class="stat"><div class="stat-num" id="total-vol">0</div><div class="stat-label">Volume kg</div></div>
     </div>
