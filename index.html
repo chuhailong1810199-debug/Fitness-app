@@ -537,19 +537,41 @@ function dismissCheckpoint() {
 }
 
 // ── WORKOUT HISTORY (Firestore) ────────────────────────
+let _workoutLogging = false;
+
 async function finishWorkout() {
-  if (!activeClient) return;
-  const prog  = getProgram();
-  const day   = prog[activeDay];
-  const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
-  const doneN = Object.values(exerciseState[activeClient.id] || {}).filter(Boolean).length;
-  await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), {
-    date: serverTimestamp(), day: activeDay, done: doneN, total, volume: 0
-  });
-  exerciseState[activeClient.id] = {};
-  renderExercises();
-  await renderStats();
-  alert('Workout logged! 💪');
+  if (!activeClient || _workoutLogging) return; // prevent double-logging
+  _workoutLogging = true;
+  try {
+    const prog  = getProgram();
+    const day   = prog[activeDay];
+    const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
+    const doneN = Object.values(exerciseState[activeClient.id] || {}).filter(Boolean).length;
+    await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), {
+      date: serverTimestamp(), day: activeDay, done: doneN, total, volume: 0
+    });
+    exerciseState[activeClient.id] = {};
+    renderExercises();
+    await renderStats(); // updates sessions + streak
+    alert('Workout logged! 💪');
+  } finally {
+    _workoutLogging = false;
+  }
+}
+
+function calcStreak(hist) {
+  let streak = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dates = [...new Set(hist.map(h => {
+    const d = h.date?.toDate ? h.date.toDate() : new Date(h.date);
+    d.setHours(0,0,0,0); return d.getTime();
+  }))].sort((a,b) => b-a);
+  let check = today.getTime();
+  for (const ts of dates) {
+    if (ts === check || ts === check - 86400000) { streak++; check = ts - 86400000; }
+    else break;
+  }
+  return streak;
 }
 
 async function getHistory() {
@@ -1248,6 +1270,7 @@ async function renderStats() {
   const hist = await getHistory();
   document.getElementById('sessions').textContent   = hist.length;
   document.getElementById('total-vol').textContent  = '0';
+  document.getElementById('streak-num').textContent = calcStreak(hist);
   const resetBtn = document.getElementById('reset-sessions-btn');
   if (resetBtn) resetBtn.style.display = userRole === 'coach' ? 'inline-flex' : 'none';
 }
@@ -1267,18 +1290,7 @@ async function resetSessions() {
 async function renderProgressPage() {
   if (!activeClient) return;
   const hist = await getHistory();
-  let streak = 0;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const dates = [...new Set(hist.map(h => {
-    const d = h.date?.toDate ? h.date.toDate() : new Date(h.date);
-    d.setHours(0,0,0,0); return d.getTime();
-  }))].sort((a,b) => b-a);
-  let check = today.getTime();
-  for (const ts of dates) {
-    if (ts === check || ts === check - 86400000) { streak++; check = ts - 86400000; }
-    else break;
-  }
-  document.getElementById('streak-num').textContent = streak;
+  document.getElementById('streak-num').textContent = calcStreak(hist);
 
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
   const dim = new Date(y, m+1, 0).getDate();
