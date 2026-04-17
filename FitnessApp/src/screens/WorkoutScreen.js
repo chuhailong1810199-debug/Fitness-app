@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, StyleSheet, Alert,
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { Card, ProgressBar, PrimaryButton } from '../components/UI';
 import { WORKOUT_PLANS } from '../data/workoutData';
+import { addSession, updatePRsFromSession, toDateStr, toDateLabel } from '../services/storage';
 
 export default function WorkoutScreen({ route }) {
   const planIndex = route?.params?.planIndex ?? 0;
@@ -25,6 +26,22 @@ export default function WorkoutScreen({ route }) {
 
   // Track completed sets
   const [completed, setCompleted] = useState({});
+  const [saved, setSaved] = useState(false);
+  const startTimeRef = useRef(Date.now());
+
+  // Reset state if planIndex changes (tab reselected with different plan)
+  useEffect(() => {
+    const init = {};
+    plan.exercises.forEach((ex, ei) => {
+      ex.sets.forEach((s, si) => {
+        init[`${ei}-${si}`] = { weight: String(s.weight), reps: String(s.reps) };
+      });
+    });
+    setSetsData(init);
+    setCompleted({});
+    setSaved(false);
+    startTimeRef.current = Date.now();
+  }, [planIndex]);
 
   const totalSets = plan.exercises.reduce((a, e) => a + e.sets.length, 0);
   const doneSets = Object.values(completed).filter(Boolean).length;
@@ -41,19 +58,78 @@ export default function WorkoutScreen({ route }) {
     }));
   }
 
-  function handleFinish() {
+  async function saveSession() {
+    const now = new Date();
+    const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+
+    const exercises = plan.exercises.map((ex, ei) => ({
+      name: ex.name,
+      nameVi: ex.nameVi,
+      sets: ex.sets.map((_, si) => {
+        const key = `${ei}-${si}`;
+        return {
+          weight: setsData[key]?.weight ?? '0',
+          reps: setsData[key]?.reps ?? '0',
+          done: !!completed[key],
+        };
+      }),
+    }));
+
+    // Volume = sum of weight*reps for completed sets
+    let totalVolume = 0;
+    exercises.forEach(ex => {
+      ex.sets.forEach(s => {
+        if (s.done) {
+          totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0);
+        }
+      });
+    });
+
+    const session = {
+      id: String(Date.now()),
+      planId: plan.id,
+      planName: plan.nameVi,
+      planColor: plan.color,
+      planBorderColor: plan.borderColor,
+      date: toDateStr(now),
+      dateLabel: toDateLabel(now),
+      exercises,
+      totalSets: doneSets,
+      totalVolume: Math.round(totalVolume),
+      durationSeconds,
+    };
+
+    await addSession(session);
+    await updatePRsFromSession(session);
+    setSaved(true);
+  }
+
+  async function handleFinish() {
     if (percent < 100) {
       Alert.alert(
         'Chưa hoàn thành',
         `Bạn mới hoàn thành ${doneSets}/${totalSets} set. Kết thúc sớm?`,
         [
           { text: 'Tiếp tục tập', style: 'cancel' },
-          { text: 'Kết thúc', style: 'destructive', onPress: () => Alert.alert('Đã lưu!', 'Buổi tập đã được ghi lại.') },
+          {
+            text: 'Kết thúc',
+            style: 'destructive',
+            onPress: async () => {
+              await saveSession();
+              Alert.alert('Đã lưu!', `Buổi tập đã được ghi lại (${doneSets}/${totalSets} set).`);
+            },
+          },
         ]
       );
     } else {
-      Alert.alert('🎉 Xuất sắc!', 'Bạn đã hoàn thành toàn bộ buổi tập!');
+      await saveSession();
     }
+  }
+
+  function formatDuration(ms) {
+    const totalMin = Math.round(ms / 60000);
+    if (totalMin < 60) return `${totalMin} phút`;
+    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}ph`;
   }
 
   return (
@@ -123,15 +199,19 @@ export default function WorkoutScreen({ route }) {
           </Card>
         ))}
 
-        {/* Finish Button */}
-        {percent === 100 ? (
+        {/* Finish / Complete */}
+        {saved && percent === 100 ? (
           <View style={styles.completeBox}>
             <Text style={{ fontSize: 32 }}>🎉</Text>
             <Text style={styles.completeText}>Hoàn thành xuất sắc!</Text>
-            <Text style={styles.completeSub}>{doneSets} set đã hoàn thành</Text>
+            <Text style={styles.completeSub}>{doneSets} set · {formatDuration(Date.now() - startTimeRef.current)}</Text>
           </View>
         ) : (
-          <PrimaryButton label={`Kết thúc (${doneSets}/${totalSets} set)`} onPress={handleFinish} style={{ marginBottom: 24 }} />
+          <PrimaryButton
+            label={`Kết thúc (${doneSets}/${totalSets} set)`}
+            onPress={handleFinish}
+            style={{ marginBottom: 24 }}
+          />
         )}
 
         <View style={{ height: 20 }} />
@@ -174,17 +254,15 @@ const styles = StyleSheet.create({
   inputDone: { opacity: 0.4 },
   checkBtn: {
     flex: 1,
-    height: 32, width: 32,
+    height: 32,
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingRight: 0,
     alignSelf: 'flex-end',
     marginLeft: 'auto',
     width: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   checkBtnDone: {
     backgroundColor: COLORS.accent,

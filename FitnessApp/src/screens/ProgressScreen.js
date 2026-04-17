@@ -1,18 +1,57 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../theme/colors';
 import { Card, SectionHeader, Divider } from '../components/UI';
-import { WORKOUT_HISTORY } from '../data/workoutData';
+import { getSessions, getPRs, computeLifetimeStats } from '../services/storage';
 
-const LIFETIME_STATS = [
-  { value: '42', label: 'buổi tập', color: COLORS.accent },
-  { value: '187k', label: 'kg đã nâng', color: COLORS.white },
-  { value: '34h', label: 'giờ tập', color: COLORS.amber },
-  { value: '3 🔥', label: 'ngày liên tiếp', color: COLORS.red },
-];
+// Known exercises from workout plans — shown even before any session is saved
+const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
+
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}ph`;
+  return `${m} phút`;
+}
 
 export default function ProgressScreen() {
+  const [sessions, setSessions] = useState([]);
+  const [prs, setPRs] = useState({});
+  const [stats, setStats] = useState({ totalSessions: 0, volumeLabel: '0', totalHours: 0, streak: 0 });
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      async function load() {
+        const [allSessions, allPRs] = await Promise.all([getSessions(), getPRs()]);
+        if (!active) return;
+        setSessions(allSessions);
+        setPRs(allPRs);
+        setStats(computeLifetimeStats(allSessions));
+      }
+      load();
+      return () => { active = false; };
+    }, [])
+  );
+
+  // Build PR rows: saved PRs first, then any default exercises not yet logged
+  const prExercises = Object.keys(prs);
+  const prRows = [
+    ...prExercises.map(name => ({ name, ...prs[name] })),
+    ...DEFAULT_PR_EXERCISES
+      .filter(n => !prs[n])
+      .map(name => ({ name, weight: null, reps: null, date: null })),
+  ];
+
+  const lifetimeCards = [
+    { value: String(stats.totalSessions), label: 'buổi tập', color: COLORS.accent },
+    { value: stats.volumeLabel, label: 'kg đã nâng', color: COLORS.white },
+    { value: `${stats.totalHours}h`, label: 'giờ tập', color: COLORS.amber },
+    { value: stats.streak > 0 ? `${stats.streak} 🔥` : '0', label: 'ngày liên tiếp', color: COLORS.red },
+  ];
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -25,7 +64,7 @@ export default function ProgressScreen() {
         {/* Lifetime Stats Grid */}
         <SectionHeader title="Thống kê tổng" />
         <View style={styles.statsGrid}>
-          {LIFETIME_STATS.map((s, i) => (
+          {lifetimeCards.map((s, i) => (
             <View key={i} style={styles.statCard}>
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
@@ -36,20 +75,17 @@ export default function ProgressScreen() {
         {/* Personal Records */}
         <SectionHeader title="Kỷ lục cá nhân (PR)" />
         <Card>
-          {[
-            { name: 'Bench Press', pr: '90 kg', date: '15/3' },
-            { name: 'Squat', pr: '120 kg', date: '22/3' },
-            { name: 'Deadlift', pr: '130 kg', date: '10/3' },
-            { name: 'Overhead Press', pr: '60 kg', date: '18/3' },
-          ].map((r, i, arr) => (
-            <View key={i}>
+          {prRows.map((r, i, arr) => (
+            <View key={r.name}>
               <View style={styles.prRow}>
                 <View>
                   <Text style={styles.prName}>{r.name}</Text>
-                  <Text style={styles.prDate}>{r.date}</Text>
+                  <Text style={styles.prDate}>{r.date ?? '—'}</Text>
                 </View>
-                <View style={styles.prBadge}>
-                  <Text style={styles.prValue}>{r.pr}</Text>
+                <View style={[styles.prBadge, !r.weight && styles.prBadgeEmpty]}>
+                  <Text style={[styles.prValue, !r.weight && styles.prValueEmpty]}>
+                    {r.weight ? `${r.weight} kg` : 'Chưa có'}
+                  </Text>
                 </View>
               </View>
               {i < arr.length - 1 && <Divider />}
@@ -59,31 +95,42 @@ export default function ProgressScreen() {
 
         {/* Workout Log */}
         <SectionHeader title="Nhật ký tập luyện" />
-        {WORKOUT_HISTORY.map((entry) => (
-          <Card key={entry.id} style={styles.logCard}>
-            <View style={styles.logTop}>
-              <View>
-                <Text style={styles.logName}>{entry.name}</Text>
-                <Text style={styles.logDate}>{entry.date}</Text>
-              </View>
-              <View style={[styles.durationBadge, { backgroundColor: entry.color + '20', borderColor: entry.color + '40' }]}>
-                <Text style={[styles.durationText, { color: entry.color }]}>{entry.duration}</Text>
-              </View>
-            </View>
-            <Divider />
-            <View style={styles.logStats}>
-              <View>
-                <Text style={styles.logStatVal}>{entry.sets} sets</Text>
-                <Text style={styles.logStatLabel}>khối lượng</Text>
-              </View>
-              <View style={styles.logStatDivider} />
-              <View>
-                <Text style={styles.logStatVal}>{entry.volume}</Text>
-                <Text style={styles.logStatLabel}>tổng kg</Text>
-              </View>
-            </View>
+        {sessions.length === 0 ? (
+          <Card>
+            <Text style={styles.emptyText}>Chưa có buổi tập nào được ghi lại.{'\n'}Hãy bắt đầu tập ngay! 💪</Text>
           </Card>
-        ))}
+        ) : (
+          sessions.slice(0, 20).map((entry) => (
+            <Card key={entry.id} style={styles.logCard}>
+              <View style={styles.logTop}>
+                <View>
+                  <Text style={styles.logName}>{entry.planName}</Text>
+                  <Text style={styles.logDate}>{entry.dateLabel}</Text>
+                </View>
+                <View style={[styles.durationBadge, {
+                  backgroundColor: 'rgba(200,255,87,0.1)',
+                  borderColor: 'rgba(200,255,87,0.25)',
+                }]}>
+                  <Text style={[styles.durationText, { color: COLORS.accent }]}>
+                    {formatDuration(entry.durationSeconds)}
+                  </Text>
+                </View>
+              </View>
+              <Divider />
+              <View style={styles.logStats}>
+                <View>
+                  <Text style={styles.logStatVal}>{entry.totalSets} sets</Text>
+                  <Text style={styles.logStatLabel}>bộ</Text>
+                </View>
+                <View style={styles.logStatDivider} />
+                <View>
+                  <Text style={styles.logStatVal}>{entry.totalVolume.toLocaleString()} kg</Text>
+                  <Text style={styles.logStatLabel}>tổng kg</Text>
+                </View>
+              </View>
+            </Card>
+          ))
+        )}
 
         <View style={{ height: 20 }} />
       </ScrollView>
@@ -119,7 +166,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 5,
     borderRadius: 20,
   },
+  prBadgeEmpty: { backgroundColor: COLORS.cardDark },
   prValue: { color: COLORS.accent, fontWeight: '700', fontSize: 13 },
+  prValueEmpty: { color: COLORS.muted },
   logCard: { marginBottom: 10 },
   logTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   logName: { color: COLORS.white, fontWeight: '600', fontSize: 15 },
@@ -135,5 +184,9 @@ const styles = StyleSheet.create({
   logStatDivider: {
     width: 0.5, height: 28,
     backgroundColor: COLORS.border,
+  },
+  emptyText: {
+    color: COLORS.muted, fontSize: 14, textAlign: 'center',
+    lineHeight: 22, paddingVertical: 8,
   },
 });
