@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, StyleSheet, Alert, Animated, Modal, Vibration,
+  TextInput, StyleSheet, Alert, Animated, Modal, Vibration, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
@@ -72,6 +72,30 @@ function InWorkoutTimer({ visible, totalSeconds, onDismiss, onGoToTimer }) {
 }
 
 // ── Post-Workout Summary Modal ───────────────────────────────────────────────
+function buildShareText(summary) {
+  const intensity = INTENSITY_OPTIONS.find(o => o.value === summary.intensity);
+  let t = `🏋️ ${summary.planName}\n`;
+  t += `⏱ ${summary.duration} · 📊 ${summary.totalSets} sets · ${summary.totalVolume.toLocaleString()} kg\n`;
+  if (intensity) t += `${intensity.emoji} ${intensity.label}\n`;
+  if (summary.note) t += `📝 "${summary.note}"\n`;
+  t += '\n';
+  (summary.exercises ?? []).forEach(ex => {
+    const done = ex.sets.filter(s => s.done);
+    if (!done.length) return;
+    t += `${ex.nameVi}:\n`;
+    done.forEach((s, i) => {
+      const w = parseFloat(s.weight) > 0 ? `${s.weight} kg` : 'BW';
+      t += `  ${i + 1}. ${w} × ${s.reps}\n`;
+    });
+  });
+  if (summary.newPRs?.length) {
+    t += '\n🏆 Kỷ lục mới:\n';
+    summary.newPRs.forEach(pr => { t += `  ${pr.name}: ${pr.newWeight} kg\n`; });
+  }
+  t += '\n📱 FTN Fitness Tracker';
+  return t;
+}
+
 function SummaryModal({ visible, summary, onClose }) {
   if (!summary) return null;
   const volumeDelta = summary.prevVolume != null
@@ -148,9 +172,18 @@ function SummaryModal({ visible, summary, onClose }) {
             </View>
           )}
 
-          <TouchableOpacity style={sumStyles.closeBtn} onPress={onClose} activeOpacity={0.85}>
-            <Text style={sumStyles.closeBtnText}>Đóng</Text>
-          </TouchableOpacity>
+          <View style={sumStyles.btnRow}>
+            <TouchableOpacity
+              style={sumStyles.shareBtn}
+              onPress={() => Share.share({ message: buildShareText(summary) })}
+              activeOpacity={0.8}
+            >
+              <Text style={sumStyles.shareBtnText}>Chia sẻ 🔗</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={sumStyles.closeBtn} onPress={onClose} activeOpacity={0.85}>
+              <Text style={sumStyles.closeBtnText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -325,6 +358,7 @@ export default function WorkoutScreen({ route, navigation }) {
       newPRs,
       intensity,
       note: sessionNote.trim(),
+      exercises,
     });
     setShowSummary(true);
   }
@@ -719,8 +753,15 @@ const sumStyles = StyleSheet.create({
     borderWidth: 0.5, borderColor: COLORS.border,
   },
   noteText: { color: COLORS.mutedLight, fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
+  btnRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  shareBtn: {
+    flex: 1, backgroundColor: COLORS.card,
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  shareBtnText: { color: COLORS.mutedLight, fontWeight: '600', fontSize: 15 },
   closeBtn: {
-    marginTop: 16, backgroundColor: COLORS.accent,
+    flex: 2, backgroundColor: COLORS.accent,
     borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   closeBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },
