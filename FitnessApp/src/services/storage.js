@@ -224,6 +224,41 @@ export function getLastSessionByPlan(sessions) {
   return map;
 }
 
+/**
+ * Returns the most recent session ISO date string for each planId.
+ * Used for recovery time calculations.
+ * Result: { [planId]: isoDateString }
+ */
+export function getLastSessionIsoDates(sessions) {
+  const map = {};
+  sessions.forEach(s => {
+    if (!map[s.planId]) map[s.planId] = s.date; // ISO YYYY-MM-DD
+  });
+  return map;
+}
+
+/**
+ * Given the ISO date of the last session for a plan, returns a recovery status.
+ * - 'ready'     : no history or > 72h since last session
+ * - 'almost'    : 48–72h since last session
+ * - 'recovering': < 48h since last session
+ */
+export function getRecoveryStatus(isoDate) {
+  if (!isoDate) return 'ready';
+  const hoursElapsed = (Date.now() - new Date(isoDate).getTime()) / (1000 * 60 * 60);
+  if (hoursElapsed < 48) return 'recovering';
+  if (hoursElapsed < 72) return 'almost';
+  return 'ready';
+}
+
+/** Remove a session by id and return the updated list */
+export async function deleteSession(sessionId) {
+  const sessions = await getSessions();
+  const updated = sessions.filter(s => s.id !== sessionId);
+  await AsyncStorage.setItem(SESSIONS_KEY, JSON.stringify(updated));
+  return updated;
+}
+
 // ── Helpers ───────────────────────────────────────────
 
 export function toDateStr(date) {

@@ -20,6 +20,8 @@ export default function TimerScreen() {
   const [recentSessions, setRecentSessions] = useState([]);
   const [plateTarget, setPlateTarget] = useState('');
   const [barbellKg, setBarbellKg] = useState(20);
+  const [ormWeight, setOrmWeight] = useState('');
+  const [ormReps, setOrmReps] = useState('');
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -230,6 +232,15 @@ export default function TimerScreen() {
           onBarbellChange={setBarbellKg}
         />
 
+        {/* 1RM Estimator */}
+        <SectionHeader title="Ước tính 1RM" />
+        <OrmEstimator
+          weight={ormWeight}
+          reps={ormReps}
+          onWeightChange={setOrmWeight}
+          onRepsChange={setOrmReps}
+        />
+
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
@@ -355,6 +366,129 @@ const plateStyles = StyleSheet.create({
   plateSize: { color: '#0f0f0f', fontWeight: '800', fontSize: 13 },
   plateCount: { color: '#0f0f0f', fontSize: 9, fontWeight: '700', marginTop: -2 },
   hint: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
+});
+
+// ── 1RM Estimator ────────────────────────────────────
+// Uses Epley formula: 1RM ≈ weight × (1 + reps / 30)
+// Also shows percentages of 1RM for common training zones
+
+const TRAINING_ZONES = [
+  { pct: 95, reps: '1–2',  label: 'Sức mạnh tối đa' },
+  { pct: 85, reps: '5–6',  label: 'Sức mạnh' },
+  { pct: 75, reps: '8–10', label: 'Tăng cơ' },
+  { pct: 65, reps: '12–15',label: 'Sức bền cơ' },
+];
+
+function OrmEstimator({ weight, reps, onWeightChange, onRepsChange }) {
+  const w = parseFloat(weight) || 0;
+  const r = parseInt(reps, 10) || 0;
+  const orm = (w > 0 && r > 0 && r <= 30)
+    ? Math.round(w * (1 + r / 30))
+    : null;
+
+  return (
+    <Card style={ormStyles.card}>
+      <View style={ormStyles.inputsRow}>
+        <View style={ormStyles.inputGroup}>
+          <Text style={ormStyles.inputLabel}>Trọng lượng</Text>
+          <View style={ormStyles.inputWrap}>
+            <TextInput
+              style={ormStyles.input}
+              value={weight}
+              onChangeText={onWeightChange}
+              keyboardType="decimal-pad"
+              placeholder="100"
+              placeholderTextColor={COLORS.muted}
+              selectTextOnFocus
+            />
+            <Text style={ormStyles.unit}>kg</Text>
+          </View>
+        </View>
+        <View style={ormStyles.inputGroup}>
+          <Text style={ormStyles.inputLabel}>Số reps</Text>
+          <View style={ormStyles.inputWrap}>
+            <TextInput
+              style={ormStyles.input}
+              value={reps}
+              onChangeText={onRepsChange}
+              keyboardType="number-pad"
+              placeholder="5"
+              placeholderTextColor={COLORS.muted}
+              selectTextOnFocus
+            />
+            <Text style={ormStyles.unit}>reps</Text>
+          </View>
+        </View>
+      </View>
+
+      {orm !== null ? (
+        <>
+          <View style={ormStyles.resultBox}>
+            <Text style={ormStyles.resultLabel}>Ước tính 1RM</Text>
+            <Text style={ormStyles.resultVal}>{orm} <Text style={ormStyles.resultUnit}>kg</Text></Text>
+          </View>
+          <View style={ormStyles.zonesWrap}>
+            {TRAINING_ZONES.map((z, i) => {
+              const zWeight = Math.round(orm * z.pct / 100);
+              return (
+                <View key={i} style={ormStyles.zoneRow}>
+                  <View style={ormStyles.zoneLeft}>
+                    <Text style={ormStyles.zonePct}>{z.pct}%</Text>
+                    <Text style={ormStyles.zoneLabel}>{z.label}</Text>
+                  </View>
+                  <View style={ormStyles.zoneRight}>
+                    <Text style={ormStyles.zoneWeight}>{zWeight} kg</Text>
+                    <Text style={ormStyles.zoneReps}>{z.reps} reps</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <Text style={ormStyles.disclaimer}>* Epley formula — chỉ mang tính tham khảo</Text>
+        </>
+      ) : (
+        <Text style={ormStyles.placeholder}>
+          Nhập trọng lượng và số reps để tính 1RM
+        </Text>
+      )}
+    </Card>
+  );
+}
+
+const ormStyles = StyleSheet.create({
+  card: { marginBottom: 8 },
+  inputsRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
+  inputGroup: { flex: 1 },
+  inputLabel: { color: COLORS.muted, fontSize: 11, fontWeight: '600', marginBottom: 6, letterSpacing: 0.5 },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  input: {
+    flex: 1, height: 44, backgroundColor: COLORS.cardDark,
+    borderRadius: 10, borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, fontSize: 18, fontWeight: '700', textAlign: 'center',
+  },
+  unit: { color: COLORS.muted, fontSize: 12, minWidth: 28 },
+  resultBox: {
+    backgroundColor: 'rgba(200,255,87,0.08)', borderRadius: 12,
+    padding: 14, alignItems: 'center', marginBottom: 14,
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.25)',
+  },
+  resultLabel: { color: COLORS.muted, fontSize: 12, marginBottom: 4 },
+  resultVal: { color: COLORS.accent, fontSize: 36, fontWeight: '800' },
+  resultUnit: { fontSize: 18, fontWeight: '400', color: COLORS.muted },
+  zonesWrap: { gap: 6 },
+  zoneRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 8, paddingHorizontal: 4,
+    borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
+  },
+  zoneLeft: { flex: 1 },
+  zonePct: { color: COLORS.white, fontWeight: '700', fontSize: 13 },
+  zoneLabel: { color: COLORS.muted, fontSize: 11, marginTop: 1 },
+  zoneRight: { alignItems: 'flex-end' },
+  zoneWeight: { color: COLORS.accent, fontWeight: '700', fontSize: 14 },
+  zoneReps: { color: COLORS.muted, fontSize: 11, marginTop: 1 },
+  disclaimer: { color: '#333', fontSize: 10, marginTop: 10, textAlign: 'center' },
+  placeholder: { color: COLORS.muted, fontSize: 13, textAlign: 'center', paddingVertical: 8 },
 });
 
 const styles = StyleSheet.create({

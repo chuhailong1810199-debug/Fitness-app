@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform,
+  TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,7 +11,7 @@ import {
   getSessions, getPRs, computeLifetimeStats,
   getBodyWeightLog, addBodyWeightEntry,
   getRecentWeightEntries, computeWeightTrend,
-  computeWeeklyVolumeHistory,
+  computeWeeklyVolumeHistory, deleteSession,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
@@ -137,6 +137,14 @@ export default function ProgressScreen() {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
   const [detailSession, setDetailSession] = useState(null);
+
+  async function handleDeleteSession(sessionId) {
+    const updated = await deleteSession(sessionId);
+    setSessions(updated);
+    setStats(computeLifetimeStats(updated));
+    setWeeklyVolumeData(computeWeeklyVolumeHistory(updated));
+    setDetailSession(null);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -392,6 +400,7 @@ export default function ProgressScreen() {
       <SessionDetailModal
         session={detailSession}
         onClose={() => setDetailSession(null)}
+        onDelete={handleDeleteSession}
       />
     </SafeAreaView>
   );
@@ -401,7 +410,7 @@ export default function ProgressScreen() {
 const INTENSITY_LABELS = { 1: '😴 Nhẹ', 2: '😊 Ổn', 3: '💪 Tốt', 4: '🔥 Khó', 5: '⚡ Max' };
 const INTENSITY_EMOJIS = { 1: '😴', 2: '😊', 3: '💪', 4: '🔥', 5: '⚡' };
 
-function SessionDetailModal({ session, onClose }) {
+function SessionDetailModal({ session, onClose, onDelete }) {
   if (!session) return null;
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
@@ -415,6 +424,17 @@ function SessionDetailModal({ session, onClose }) {
               <Text style={detailStyles.planName}>{session.planName}</Text>
               <Text style={detailStyles.meta}>{session.dateLabel} · {formatDuration(session.durationSeconds)}</Text>
             </View>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert('Xóa buổi tập?', 'Thao tác này không thể hoàn tác.', [
+                  { text: 'Hủy', style: 'cancel' },
+                  { text: 'Xóa', style: 'destructive', onPress: () => onDelete(session.id) },
+                ])
+              }
+              style={detailStyles.deleteBtn}
+            >
+              <Text style={detailStyles.deleteText}>🗑</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={detailStyles.closeBtn}>
               <Text style={detailStyles.closeText}>✕</Text>
             </TouchableOpacity>
@@ -497,6 +517,8 @@ const detailStyles = StyleSheet.create({
   meta: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
   closeBtn: { padding: 6 },
   closeText: { color: COLORS.muted, fontSize: 18 },
+  deleteBtn: { padding: 6, marginRight: 4 },
+  deleteText: { fontSize: 18 },
   metaRow: { marginBottom: 14, gap: 6 },
   intensityBadge: {
     alignSelf: 'flex-start',
