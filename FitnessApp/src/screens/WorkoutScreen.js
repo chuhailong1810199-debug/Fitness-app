@@ -172,6 +172,8 @@ export default function WorkoutScreen({ route, navigation }) {
   const [showSummary, setShowSummary] = useState(false);
   const [sessionNote, setSessionNote] = useState('');
   const [intensity, setIntensity] = useState(3); // 1–5
+  const [extraSets, setExtraSets] = useState({}); // { [ei]: count }
+  const [elapsedSecs, setElapsedSecs] = useState(0);
   const startTimeRef = useRef(Date.now());
 
   // Load previous session, profile, and reset state on plan change
@@ -183,11 +185,21 @@ export default function WorkoutScreen({ route, navigation }) {
     setShowSummary(false);
     setSessionNote('');
     setIntensity(3);
+    setExtraSets({});
+    setElapsedSecs(0);
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
     getUserProfile().then(p => setDefaultRestSecs(p.defaultRestSeconds ?? 60));
     getPRs().then(setPRsState);
   }, [planIndex]);
+
+  // Live elapsed timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedSecs(Math.round((Date.now() - startTimeRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-fill weights/reps from previous session
   useEffect(() => {
@@ -206,7 +218,7 @@ export default function WorkoutScreen({ route, navigation }) {
     });
   }, [prevSession]);
 
-  const totalSets = plan.exercises.reduce((a, e) => a + e.sets.length, 0);
+  const totalSets = plan.exercises.reduce((a, e, ei) => a + e.sets.length + (extraSets[ei] || 0), 0);
   const doneSets = Object.values(completed).filter(Boolean).length;
   const percent = Math.round((doneSets / totalSets) * 100);
 
@@ -225,20 +237,42 @@ export default function WorkoutScreen({ route, navigation }) {
     setSetsData(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   }
 
-  // Build exercise/set objects for saving
+  function addSet(ei) {
+    const totalForEx = plan.exercises[ei].sets.length + (extraSets[ei] || 0);
+    const lastKey = `${ei}-${totalForEx - 1}`;
+    const seed = setsData[lastKey] ?? { weight: '0', reps: '0' };
+    const newKey = `${ei}-${totalForEx}`;
+    setSetsData(prev => ({ ...prev, [newKey]: { ...seed } }));
+    setExtraSets(prev => ({ ...prev, [ei]: (prev[ei] || 0) + 1 }));
+  }
+
+  function removeLastSet(ei) {
+    if ((extraSets[ei] || 0) === 0) return;
+    const totalForEx = plan.exercises[ei].sets.length + (extraSets[ei] || 0);
+    const lastKey = `${ei}-${totalForEx - 1}`;
+    if (completed[lastKey]) return; // don't remove a done set
+    setSetsData(prev => { const n = { ...prev }; delete n[lastKey]; return n; });
+    setCompleted(prev => { const n = { ...prev }; delete n[lastKey]; return n; });
+    setExtraSets(prev => ({ ...prev, [ei]: (prev[ei] || 0) - 1 }));
+  }
+
+  // Build exercise/set objects for saving (includes extra sets)
   function buildSessionExercises() {
-    return plan.exercises.map((ex, ei) => ({
-      name: ex.name,
-      nameVi: ex.nameVi,
-      sets: ex.sets.map((_, si) => {
-        const key = `${ei}-${si}`;
-        return {
-          weight: setsData[key]?.weight ?? '0',
-          reps: setsData[key]?.reps ?? '0',
-          done: !!completed[key],
-        };
-      }),
-    }));
+    return plan.exercises.map((ex, ei) => {
+      const total = ex.sets.length + (extraSets[ei] || 0);
+      return {
+        name: ex.name,
+        nameVi: ex.nameVi,
+        sets: Array.from({ length: total }, (_, si) => {
+          const key = `${ei}-${si}`;
+          return {
+            weight: setsData[key]?.weight ?? '0',
+            reps: setsData[key]?.reps ?? '0',
+            done: !!completed[key],
+          };
+        }),
+      };
+    });
   }
 
   async function finishAndSave() {
@@ -327,8 +361,13 @@ export default function WorkoutScreen({ route, navigation }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{plan.nameVi}</Text>
-          <Text style={styles.subtitle}>{plan.exercises.length} bài · {plan.duration}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{plan.nameVi}</Text>
+            <Text style={styles.subtitle}>{plan.exercises.length} bài · {plan.duration}</Text>
+          </View>
+          <Text style={styles.elapsed}>
+            {Math.floor(elapsedSecs / 60)}:{String(elapsedSecs % 60).padStart(2, '0')}
+          </Text>
         </View>
 
         {/* Progress */}
@@ -363,16 +402,17 @@ export default function WorkoutScreen({ route, navigation }) {
               <Text style={[styles.setHeaderText, { width: 32, textAlign: 'center' }]}>✓</Text>
             </View>
 
-            {ex.sets.map((_, si) => {
+            {Array.from({ length: ex.sets.length + (extraSets[ei] || 0) }, (_, si) => {
               const key = `${ei}-${si}`;
               const isDone = completed[key];
               const prev = getPrevSet(ei, si);
               const enteredW = parseFloat(setsData[key]?.weight) || 0;
               const existingPR = prs[ex.name]?.weight ?? 0;
               const isNewPR = enteredW > 0 && enteredW > existingPR;
+              const isExtra = si >= ex.sets.length;
               return (
                 <View key={si} style={[styles.setRow, isDone && styles.setRowDone]}>
-                  <Text style={styles.setNum}>{si + 1}</Text>
+                  <Text style={[styles.setNum, isExtra && styles.setNumExtra]}>{si + 1}</Text>
                   <TextInput
                     style={[styles.input, isDone && styles.inputDone]}
                     value={setsData[key]?.weight}
@@ -415,6 +455,26 @@ export default function WorkoutScreen({ route, navigation }) {
                 </View>
               );
             })}
+
+            {/* Add / Remove set buttons */}
+            <View style={styles.setActionsRow}>
+              <TouchableOpacity
+                style={styles.setActionBtn}
+                onPress={() => addSet(ei)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.setActionText}>+ Set</Text>
+              </TouchableOpacity>
+              {(extraSets[ei] || 0) > 0 && (
+                <TouchableOpacity
+                  style={[styles.setActionBtn, styles.setActionBtnRemove]}
+                  onPress={() => removeLastSet(ei)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.setActionText, { color: COLORS.muted }]}>− Set</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </Card>
         ))}
 
@@ -491,9 +551,10 @@ function buildInitSets(plan) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1, paddingHorizontal: 20 },
-  header: { paddingTop: 16, marginBottom: 16 },
+  header: { paddingTop: 16, marginBottom: 16, flexDirection: 'row', alignItems: 'flex-start' },
   title: { fontSize: 32, fontWeight: '800', color: COLORS.white },
   subtitle: { fontSize: 13, color: COLORS.muted, marginTop: 4 },
+  elapsed: { fontSize: 18, fontWeight: '700', color: COLORS.muted, paddingTop: 8 },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   progressLabel: { fontSize: 12, color: COLORS.accent, minWidth: 36, textAlign: 'right' },
   exCard: { marginBottom: 14 },
@@ -515,6 +576,17 @@ const styles = StyleSheet.create({
   },
   setRowDone: { opacity: 0.5 },
   setNum: { color: '#444', fontSize: 13, width: 24 },
+  setNumExtra: { color: COLORS.amber },
+  setActionsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  setActionBtn: {
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8,
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.3)',
+    backgroundColor: 'rgba(200,255,87,0.06)',
+  },
+  setActionBtnRemove: {
+    borderColor: COLORS.border, backgroundColor: 'transparent',
+  },
+  setActionText: { color: COLORS.accent, fontSize: 12, fontWeight: '700' },
   input: {
     width: 60, height: 36,
     backgroundColor: COLORS.cardDark,
