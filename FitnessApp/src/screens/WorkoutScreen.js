@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, FlatList, TouchableOpacity,
   TextInput, StyleSheet, Alert, Animated, Modal, Vibration, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import { Card, ProgressBar, PrimaryButton, Divider } from '../components/UI';
 import { WORKOUT_PLANS } from '../data/workoutData';
+import { EXERCISE_CATALOG } from '../data/exerciseCatalog';
 import {
   addSession, updatePRsFromSession, getPRs,
   getPreviousSession, detectNewPRs,
@@ -190,6 +191,102 @@ function SummaryModal({ visible, summary, onClose }) {
   );
 }
 
+// ── Add Exercise Modal ───────────────────────────────────────────────────────
+function AddExerciseModal({ visible, onAdd, onClose, alreadyAdded }) {
+  const [query, setQuery] = useState('');
+
+  const filtered = query.trim()
+    ? EXERCISE_CATALOG.filter(e =>
+        e.name.toLowerCase().includes(query.toLowerCase()) ||
+        e.nameVi.toLowerCase().includes(query.toLowerCase())
+      )
+    : EXERCISE_CATALOG;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={addStyles.overlay}>
+        <SafeAreaView style={addStyles.sheet} edges={['bottom']}>
+          <View style={addStyles.handle} />
+          <View style={addStyles.header}>
+            <Text style={addStyles.title}>Thêm bài tập</Text>
+            <TouchableOpacity onPress={onClose} style={addStyles.closeBtn}>
+              <Text style={addStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            style={addStyles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Tìm kiếm…"
+            placeholderTextColor={COLORS.muted}
+            autoFocus
+            clearButtonMode="while-editing"
+          />
+          <FlatList
+            data={filtered}
+            keyExtractor={item => item.name}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => {
+              const added = alreadyAdded.includes(item.name);
+              return (
+                <TouchableOpacity
+                  style={[addStyles.row, added && addStyles.rowAdded]}
+                  onPress={() => !added && onAdd(item)}
+                  activeOpacity={added ? 1 : 0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[addStyles.rowName, added && addStyles.rowNameAdded]}>{item.nameVi}</Text>
+                    <Text style={addStyles.rowEn}>{item.name} · {item.category}</Text>
+                  </View>
+                  {added
+                    ? <Text style={addStyles.addedText}>Đã có</Text>
+                    : <Text style={addStyles.addIcon}>＋</Text>
+                  }
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+const addStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: COLORS.surface, maxHeight: '80%',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopWidth: 0.5, borderColor: COLORS.border,
+    paddingHorizontal: 0, paddingTop: 12,
+  },
+  handle: {
+    width: 36, height: 4, backgroundColor: COLORS.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 16,
+  },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 },
+  title: { flex: 1, fontSize: 20, fontWeight: '800', color: COLORS.white },
+  closeBtn: { padding: 6 },
+  closeText: { color: COLORS.muted, fontSize: 18 },
+  search: {
+    marginHorizontal: 20, marginBottom: 8, height: 44,
+    backgroundColor: COLORS.card, borderRadius: 12,
+    borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, paddingHorizontal: 14, fontSize: 15,
+  },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12, paddingHorizontal: 20,
+    borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
+  },
+  rowAdded: { opacity: 0.4 },
+  rowName: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
+  rowNameAdded: { color: COLORS.muted },
+  rowEn: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
+  addIcon: { color: COLORS.accent, fontSize: 22, fontWeight: '300' },
+  addedText: { color: COLORS.muted, fontSize: 11 },
+});
+
 // ── Main Screen ──────────────────────────────────────────────────────────────
 export default function WorkoutScreen({ route, navigation }) {
   const planIndex = route?.params?.planIndex ?? 0;
@@ -207,6 +304,8 @@ export default function WorkoutScreen({ route, navigation }) {
   const [intensity, setIntensity] = useState(3); // 1–5
   const [extraSets, setExtraSets] = useState({}); // { [ei]: count }
   const [exerciseNotes, setExerciseNotes] = useState({}); // { [ei]: string }
+  const [customExercises, setCustomExercises] = useState([]); // [{name,nameVi,sets:[{weight,reps,done}]}]
+  const [showAddExercise, setShowAddExercise] = useState(false);
   const [elapsedSecs, setElapsedSecs] = useState(0);
   const startTimeRef = useRef(Date.now());
 
@@ -221,6 +320,7 @@ export default function WorkoutScreen({ route, navigation }) {
     setIntensity(3);
     setExtraSets({});
     setExerciseNotes({});
+    setCustomExercises([]);
     setElapsedSecs(0);
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
@@ -253,9 +353,13 @@ export default function WorkoutScreen({ route, navigation }) {
     });
   }, [prevSession]);
 
-  const totalSets = plan.exercises.reduce((a, e, ei) => a + e.sets.length + (extraSets[ei] || 0), 0);
-  const doneSets = Object.values(completed).filter(Boolean).length;
-  const percent = Math.round((doneSets / totalSets) * 100);
+  const planTotalSets = plan.exercises.reduce((a, e, ei) => a + e.sets.length + (extraSets[ei] || 0), 0);
+  const customTotalSets = customExercises.reduce((a, ex) => a + ex.sets.length, 0);
+  const totalSets = planTotalSets + customTotalSets;
+  const planDoneSets = Object.values(completed).filter(Boolean).length;
+  const customDoneSets = customExercises.reduce((a, ex) => a + ex.sets.filter(s => s.done).length, 0);
+  const doneSets = planDoneSets + customDoneSets;
+  const percent = Math.round((doneSets / Math.max(totalSets, 1)) * 100);
 
   function toggleSet(key) {
     const wasCompleted = !!completed[key];
@@ -270,6 +374,44 @@ export default function WorkoutScreen({ route, navigation }) {
 
   function updateField(key, field, value) {
     setSetsData(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+  }
+
+  function addCustomExercise(ex) {
+    const seed = { weight: '0', reps: '10', done: false };
+    setCustomExercises(prev => [...prev, {
+      name: ex.name, nameVi: ex.nameVi,
+      sets: [{ ...seed }, { ...seed }, { ...seed }],
+    }]);
+    setShowAddExercise(false);
+  }
+
+  function toggleCustomSet(ci, si) {
+    const wasCompleted = customExercises[ci].sets[si].done;
+    setCustomExercises(prev => prev.map((ex, i) => i !== ci ? ex : {
+      ...ex, sets: ex.sets.map((s, j) => j !== si ? s : { ...s, done: !s.done }),
+    }));
+    if (!wasCompleted) { Vibration.vibrate(40); setShowRestTimer(true); }
+    else setShowRestTimer(false);
+  }
+
+  function updateCustomField(ci, si, field, value) {
+    setCustomExercises(prev => prev.map((ex, i) => i !== ci ? ex : {
+      ...ex, sets: ex.sets.map((s, j) => j !== si ? s : { ...s, [field]: value }),
+    }));
+  }
+
+  function addCustomSet(ci) {
+    setCustomExercises(prev => prev.map((ex, i) => i !== ci ? ex : {
+      ...ex, sets: [...ex.sets, { ...ex.sets[ex.sets.length - 1] }],
+    }));
+  }
+
+  function removeCustomSet(ci) {
+    setCustomExercises(prev => prev.map((ex, i) => {
+      if (i !== ci || ex.sets.length <= 1) return ex;
+      if (ex.sets[ex.sets.length - 1].done) return ex;
+      return { ...ex, sets: ex.sets.slice(0, -1) };
+    }));
   }
 
   function addSet(ei) {
@@ -291,9 +433,9 @@ export default function WorkoutScreen({ route, navigation }) {
     setExtraSets(prev => ({ ...prev, [ei]: (prev[ei] || 0) - 1 }));
   }
 
-  // Build exercise/set objects for saving (includes extra sets)
+  // Build exercise/set objects for saving (includes extra sets + custom exercises)
   function buildSessionExercises() {
-    return plan.exercises.map((ex, ei) => {
+    const planExs = plan.exercises.map((ex, ei) => {
       const total = ex.sets.length + (extraSets[ei] || 0);
       return {
         name: ex.name,
@@ -309,6 +451,11 @@ export default function WorkoutScreen({ route, navigation }) {
         }),
       };
     });
+    const custExs = customExercises.map(ex => ({
+      name: ex.name, nameVi: ex.nameVi, note: '',
+      sets: ex.sets.map(s => ({ weight: s.weight, reps: s.reps, done: s.done })),
+    }));
+    return [...planExs, ...custExs];
   }
 
   async function finishAndSave() {
@@ -414,14 +561,22 @@ export default function WorkoutScreen({ route, navigation }) {
         </View>
 
         {/* Exercises */}
-        {plan.exercises.map((ex, ei) => (
+        {plan.exercises.map((ex, ei) => {
+          const prevExData = prevSession?.exercises?.[ei];
+          const allPrevDone = prevExData?.sets?.length > 0 && prevExData.sets.every(s => s.done);
+          return (
           <Card key={ex.id} style={styles.exCard}>
             <View style={styles.exHeader}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.exName}>{ex.nameVi}</Text>
                 <Text style={styles.exNameEn}>{ex.name}</Text>
               </View>
-              {prevSession && (
+              {allPrevDone && (
+                <View style={styles.overloadHint}>
+                  <Text style={styles.overloadHintText}>↑ Tăng tạ?</Text>
+                </View>
+              )}
+              {prevSession && !allPrevDone && (
                 <View style={styles.prevBadge}>
                   <Text style={styles.prevBadgeText}>Lần trước</Text>
                 </View>
@@ -564,7 +719,93 @@ export default function WorkoutScreen({ route, navigation }) {
               )}
             </View>
           </Card>
+          );
+        })}
+
+        {/* Custom exercises */}
+        {customExercises.map((ex, ci) => (
+          <Card key={`custom-${ci}`} style={styles.exCard}>
+            <View style={styles.exHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.exName}>{ex.nameVi}</Text>
+                <Text style={styles.exNameEn}>{ex.name} · Thêm vào</Text>
+              </View>
+            </View>
+            <View style={styles.setHeader}>
+              <Text style={[styles.setHeaderText, { width: 24 }]}>#</Text>
+              <Text style={[styles.setHeaderText, styles.stepperCol]}>KG</Text>
+              <Text style={[styles.setHeaderText, styles.stepperCol]}>REPS</Text>
+              <Text style={[styles.setHeaderText, { width: 32, textAlign: 'center' }]}>✓</Text>
+            </View>
+            {ex.sets.map((set, si) => {
+              const enteredW = parseFloat(set.weight) || 0;
+              const existingPR = prs[ex.name]?.weight ?? 0;
+              const isNewPR = enteredW > 0 && enteredW > existingPR;
+              return (
+                <View key={si} style={[styles.setRow, set.done && styles.setRowDone]}>
+                  <Text style={styles.setNum}>{si + 1}</Text>
+                  <View style={styles.stepperWrap}>
+                    <TouchableOpacity style={[styles.stepperBtn, set.done && styles.stepperBtnDone]}
+                      onPress={() => !set.done && updateCustomField(ci, si, 'weight', String(Math.max(0, Math.round((parseFloat(set.weight || 0) - 2.5) * 10) / 10)))}
+                      activeOpacity={0.6}>
+                      <Text style={styles.stepperBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput style={[styles.inputStepper, set.done && styles.inputDone]}
+                      value={set.weight} onChangeText={v => updateCustomField(ci, si, 'weight', v)}
+                      keyboardType="numeric" editable={!set.done} selectTextOnFocus />
+                    <TouchableOpacity style={[styles.stepperBtn, set.done && styles.stepperBtnDone]}
+                      onPress={() => !set.done && updateCustomField(ci, si, 'weight', String(Math.round((parseFloat(set.weight || 0) + 2.5) * 10) / 10))}
+                      activeOpacity={0.6}>
+                      <Text style={styles.stepperBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.stepperWrap}>
+                    <TouchableOpacity style={[styles.stepperBtn, set.done && styles.stepperBtnDone]}
+                      onPress={() => !set.done && updateCustomField(ci, si, 'reps', String(Math.max(1, parseInt(set.reps || 0) - 1)))}
+                      activeOpacity={0.6}>
+                      <Text style={styles.stepperBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput style={[styles.inputStepper, set.done && styles.inputDone]}
+                      value={set.reps} onChangeText={v => updateCustomField(ci, si, 'reps', v)}
+                      keyboardType="numeric" editable={!set.done} selectTextOnFocus />
+                    <TouchableOpacity style={[styles.stepperBtn, set.done && styles.stepperBtnDone]}
+                      onPress={() => !set.done && updateCustomField(ci, si, 'reps', String(parseInt(set.reps || 0) + 1))}
+                      activeOpacity={0.6}>
+                      <Text style={styles.stepperBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.checkBtn, set.done && styles.checkBtnDone]}
+                    onPress={() => toggleCustomSet(ci, si)} activeOpacity={0.7}>
+                    <Text style={{ color: set.done ? '#0f0f0f' : COLORS.muted, fontSize: 14 }}>
+                      {set.done ? '✓' : '○'}
+                    </Text>
+                  </TouchableOpacity>
+                  {isNewPR && <View style={styles.prLiveBadge}><Text style={styles.prLiveBadgeText}>PR</Text></View>}
+                </View>
+              );
+            })}
+            <View style={styles.setActionsRow}>
+              <TouchableOpacity style={styles.setActionBtn} onPress={() => addCustomSet(ci)} activeOpacity={0.7}>
+                <Text style={styles.setActionText}>+ Set</Text>
+              </TouchableOpacity>
+              {ex.sets.length > 1 && (
+                <TouchableOpacity style={[styles.setActionBtn, styles.setActionBtnRemove]} onPress={() => removeCustomSet(ci)} activeOpacity={0.7}>
+                  <Text style={[styles.setActionText, { color: COLORS.muted }]}>− Set</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </Card>
         ))}
+
+        {/* Add exercise button */}
+        <TouchableOpacity
+          style={styles.addExerciseBtn}
+          onPress={() => setShowAddExercise(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.addExerciseBtnText}>＋ Thêm bài tập</Text>
+        </TouchableOpacity>
 
         {/* Session Note + Intensity */}
         <Card style={styles.noteCard}>
@@ -610,6 +851,16 @@ export default function WorkoutScreen({ route, navigation }) {
         visible={showSummary}
         summary={summary}
         onClose={() => setShowSummary(false)}
+      />
+
+      <AddExerciseModal
+        visible={showAddExercise}
+        alreadyAdded={[
+          ...plan.exercises.map(e => e.name),
+          ...customExercises.map(e => e.name),
+        ]}
+        onAdd={addCustomExercise}
+        onClose={() => setShowAddExercise(false)}
       />
     </SafeAreaView>
   );
@@ -695,6 +946,18 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border, backgroundColor: 'transparent',
   },
   setActionText: { color: COLORS.accent, fontSize: 12, fontWeight: '700' },
+  overloadHint: {
+    backgroundColor: 'rgba(200,255,87,0.15)',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10,
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.4)',
+  },
+  overloadHintText: { color: COLORS.accent, fontSize: 10, fontWeight: '700' },
+  addExerciseBtn: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    borderRadius: 14, borderWidth: 1, borderColor: COLORS.border,
+    borderStyle: 'dashed', paddingVertical: 14, marginBottom: 16,
+  },
+  addExerciseBtnText: { color: COLORS.muted, fontSize: 14, fontWeight: '600' },
   input: {
     width: 60, height: 36,
     backgroundColor: COLORS.cardDark,
