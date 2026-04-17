@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, StyleSheet, Alert, Animated, Modal,
+  TextInput, StyleSheet, Alert, Animated, Modal, Vibration,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
@@ -34,6 +34,7 @@ function InWorkoutTimer({ visible, totalSeconds, onDismiss, onGoToTimer }) {
         setLeft(prev => {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
+            Vibration.vibrate([0, 200, 100, 200]);
             onDismissRef.current();
             return 0;
           }
@@ -166,6 +167,7 @@ export default function WorkoutScreen({ route, navigation }) {
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [defaultRestSecs, setDefaultRestSecs] = useState(60);
   const [prevSession, setPrevSession] = useState(null);
+  const [prs, setPRsState] = useState({});
   const [summary, setSummary] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
   const [sessionNote, setSessionNote] = useState('');
@@ -184,6 +186,7 @@ export default function WorkoutScreen({ route, navigation }) {
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
     getUserProfile().then(p => setDefaultRestSecs(p.defaultRestSeconds ?? 60));
+    getPRs().then(setPRsState);
   }, [planIndex]);
 
   // Auto-fill weights/reps from previous session
@@ -210,8 +213,12 @@ export default function WorkoutScreen({ route, navigation }) {
   function toggleSet(key) {
     const wasCompleted = !!completed[key];
     setCompleted(prev => ({ ...prev, [key]: !prev[key] }));
-    if (!wasCompleted) setShowRestTimer(true);
-    else setShowRestTimer(false);
+    if (!wasCompleted) {
+      Vibration.vibrate(40);
+      setShowRestTimer(true);
+    } else {
+      setShowRestTimer(false);
+    }
   }
 
   function updateField(key, field, value) {
@@ -266,7 +273,8 @@ export default function WorkoutScreen({ route, navigation }) {
     const existingPRs = await getPRs();
     const newPRs = detectNewPRs(session, existingPRs);
     await addSession(session);
-    await updatePRsFromSession(session);
+    const updatedPRs = await updatePRsFromSession(session);
+    setPRsState(updatedPRs);
 
     const mins = Math.round(durationSeconds / 60);
     const durationLabel = mins < 60 ? `${mins} ph` : `${Math.floor(mins / 60)}h ${mins % 60}ph`;
@@ -359,6 +367,9 @@ export default function WorkoutScreen({ route, navigation }) {
               const key = `${ei}-${si}`;
               const isDone = completed[key];
               const prev = getPrevSet(ei, si);
+              const enteredW = parseFloat(setsData[key]?.weight) || 0;
+              const existingPR = prs[ex.name]?.weight ?? 0;
+              const isNewPR = enteredW > 0 && enteredW > existingPR;
               return (
                 <View key={si} style={[styles.setRow, isDone && styles.setRowDone]}>
                   <Text style={styles.setNum}>{si + 1}</Text>
@@ -396,6 +407,11 @@ export default function WorkoutScreen({ route, navigation }) {
                       {isDone ? '✓' : '○'}
                     </Text>
                   </TouchableOpacity>
+                  {isNewPR && (
+                    <View style={styles.prLiveBadge}>
+                      <Text style={styles.prLiveBadgeText}>PR</Text>
+                    </View>
+                  )}
                 </View>
               );
             })}
@@ -514,6 +530,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   checkBtnDone: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  prLiveBadge: {
+    backgroundColor: 'rgba(255,184,71,0.18)',
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+    borderWidth: 0.5, borderColor: 'rgba(255,184,71,0.5)',
+  },
+  prLiveBadgeText: { color: COLORS.amber, fontSize: 9, fontWeight: '800', letterSpacing: 0.3 },
 
   // Note + intensity card
   noteCard: { marginBottom: 16 },
