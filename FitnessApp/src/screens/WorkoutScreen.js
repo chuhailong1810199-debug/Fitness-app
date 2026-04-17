@@ -431,8 +431,8 @@ export default function WorkoutScreen({ route, navigation }) {
             {/* Column headers */}
             <View style={styles.setHeader}>
               <Text style={[styles.setHeaderText, { width: 24 }]}>#</Text>
-              <Text style={[styles.setHeaderText, styles.inputCol]}>KG</Text>
-              <Text style={[styles.setHeaderText, styles.inputCol]}>REPS</Text>
+              <Text style={[styles.setHeaderText, styles.stepperCol]}>KG</Text>
+              <Text style={[styles.setHeaderText, styles.stepperCol]}>REPS</Text>
               {prevSession && (
                 <Text style={[styles.setHeaderText, styles.prevCol]}>TRƯỚC</Text>
               )}
@@ -450,22 +450,61 @@ export default function WorkoutScreen({ route, navigation }) {
               return (
                 <View key={si} style={[styles.setRow, isDone && styles.setRowDone]}>
                   <Text style={[styles.setNum, isExtra && styles.setNumExtra]}>{si + 1}</Text>
-                  <TextInput
-                    style={[styles.input, isDone && styles.inputDone]}
-                    value={setsData[key]?.weight}
-                    onChangeText={v => updateField(key, 'weight', v)}
-                    keyboardType="numeric"
-                    editable={!isDone}
-                    selectTextOnFocus
-                  />
-                  <TextInput
-                    style={[styles.input, isDone && styles.inputDone]}
-                    value={setsData[key]?.reps}
-                    onChangeText={v => updateField(key, 'reps', v)}
-                    keyboardType="numeric"
-                    editable={!isDone}
-                    selectTextOnFocus
-                  />
+                  {/* Weight stepper */}
+                  <View style={styles.stepperWrap}>
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, isDone && styles.stepperBtnDone]}
+                      onPress={() => !isDone && updateField(key, 'weight',
+                        String(Math.max(0, Math.round((parseFloat(setsData[key]?.weight || 0) - 2.5) * 10) / 10)))}
+                      activeOpacity={0.6}
+                    >
+                      <Text style={styles.stepperBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={[styles.inputStepper, isDone && styles.inputDone]}
+                      value={setsData[key]?.weight}
+                      onChangeText={v => updateField(key, 'weight', v)}
+                      keyboardType="numeric"
+                      editable={!isDone}
+                      selectTextOnFocus
+                    />
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, isDone && styles.stepperBtnDone]}
+                      onPress={() => !isDone && updateField(key, 'weight',
+                        String(Math.round((parseFloat(setsData[key]?.weight || 0) + 2.5) * 10) / 10))}
+                      activeOpacity={0.6}
+                    >
+                      <Text style={styles.stepperBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Reps stepper */}
+                  <View style={styles.stepperWrap}>
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, isDone && styles.stepperBtnDone]}
+                      onPress={() => !isDone && updateField(key, 'reps',
+                        String(Math.max(1, (parseInt(setsData[key]?.reps || 0) - 1))))}
+                      activeOpacity={0.6}
+                    >
+                      <Text style={styles.stepperBtnText}>−</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={[styles.inputStepper, isDone && styles.inputDone]}
+                      value={setsData[key]?.reps}
+                      onChangeText={v => updateField(key, 'reps', v)}
+                      keyboardType="numeric"
+                      editable={!isDone}
+                      selectTextOnFocus
+                    />
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, isDone && styles.stepperBtnDone]}
+                      onPress={() => !isDone && updateField(key, 'reps',
+                        String((parseInt(setsData[key]?.reps || 0) + 1)))}
+                      activeOpacity={0.6}
+                    >
+                      <Text style={styles.stepperBtnText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
                   {prevSession && (
                     <View style={styles.prevCell}>
                       {prev?.done ? (
@@ -618,7 +657,22 @@ const styles = StyleSheet.create({
   setHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   setHeaderText: { fontSize: 10, color: '#444', fontWeight: '700', letterSpacing: 0.5 },
   inputCol: { width: 60, textAlign: 'center' },
+  stepperCol: { width: 90, textAlign: 'center' },
   prevCol: { flex: 1, textAlign: 'center' },
+  stepperWrap: { flexDirection: 'row', alignItems: 'center', width: 90 },
+  stepperBtn: {
+    width: 22, height: 34, borderRadius: 6,
+    backgroundColor: COLORS.cardDark, borderWidth: 0.5, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stepperBtnDone: { opacity: 0.3 },
+  stepperBtnText: { color: COLORS.mutedLight, fontSize: 15, fontWeight: '700', lineHeight: 18 },
+  inputStepper: {
+    flex: 1, height: 36,
+    backgroundColor: COLORS.cardDark,
+    borderTopWidth: 0.5, borderBottomWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, textAlign: 'center', fontSize: 13,
+  },
   setRow: {
     flexDirection: 'row', alignItems: 'center',
     gap: 8, marginBottom: 8, padding: 6, borderRadius: 10,
