@@ -1,15 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, StyleSheet, Alert, Animated,
+  TextInput, StyleSheet, Alert, Animated, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
-import { Card, ProgressBar, PrimaryButton } from '../components/UI';
+import { Card, ProgressBar, PrimaryButton, Divider } from '../components/UI';
 import { WORKOUT_PLANS } from '../data/workoutData';
-import { addSession, updatePRsFromSession, toDateStr, toDateLabel } from '../services/storage';
+import {
+  addSession, updatePRsFromSession, getPRs,
+  getPreviousSession, detectNewPRs,
+  toDateStr, toDateLabel,
+} from '../services/storage';
 
-// Rest timer banner that auto-dismisses after 8 seconds
+// ── Rest Timer Banner ────────────────────────────────────────────────────────
 function RestTimerBanner({ visible, onStart, onDismiss }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const dismissTimer = useRef(null);
@@ -27,7 +31,6 @@ function RestTimerBanner({ visible, onStart, onDismiss }) {
   }, [visible]);
 
   if (!visible) return null;
-
   return (
     <Animated.View style={[styles.restBanner, { opacity }]}>
       <Text style={styles.restBannerText}>⏱ Bắt đầu nghỉ?</Text>
@@ -41,37 +44,97 @@ function RestTimerBanner({ visible, onStart, onDismiss }) {
   );
 }
 
+// ── Post-Workout Summary Modal ───────────────────────────────────────────────
+function SummaryModal({ visible, summary, onClose }) {
+  if (!summary) return null;
+  const volumeDelta = summary.prevVolume != null
+    ? Math.round(summary.totalVolume - summary.prevVolume)
+    : null;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={sumStyles.overlay}>
+        <View style={sumStyles.card}>
+          <Text style={sumStyles.title}>🎉 Hoàn thành!</Text>
+          <Text style={sumStyles.planName}>{summary.planName}</Text>
+
+          {/* Key stats */}
+          <View style={sumStyles.statsRow}>
+            <View style={sumStyles.statBox}>
+              <Text style={sumStyles.statVal}>{summary.totalSets}</Text>
+              <Text style={sumStyles.statLbl}>sets</Text>
+            </View>
+            <View style={sumStyles.statBox}>
+              <Text style={sumStyles.statVal}>{summary.totalVolume.toLocaleString()}</Text>
+              <Text style={sumStyles.statLbl}>kg tổng</Text>
+            </View>
+            <View style={sumStyles.statBox}>
+              <Text style={sumStyles.statVal}>{summary.duration}</Text>
+              <Text style={sumStyles.statLbl}>thời gian</Text>
+            </View>
+          </View>
+
+          {/* Volume vs previous */}
+          {volumeDelta !== null && (
+            <View style={[
+              sumStyles.deltaBadge,
+              { backgroundColor: volumeDelta >= 0 ? 'rgba(200,255,87,0.12)' : 'rgba(255,87,87,0.1)' },
+            ]}>
+              <Text style={[sumStyles.deltaText, { color: volumeDelta >= 0 ? COLORS.accent : COLORS.red }]}>
+                {volumeDelta >= 0 ? '↑' : '↓'} {Math.abs(volumeDelta).toLocaleString()} kg so với lần trước
+              </Text>
+            </View>
+          )}
+
+          {/* New PRs */}
+          {summary.newPRs.length > 0 && (
+            <>
+              <View style={sumStyles.prHeader}>
+                <Text style={sumStyles.prHeaderText}>🏆 Kỷ lục mới!</Text>
+              </View>
+              {summary.newPRs.map((pr, i) => (
+                <View key={i} style={sumStyles.prRow}>
+                  <Text style={sumStyles.prName}>{pr.name}</Text>
+                  <Text style={sumStyles.prVal}>{pr.newWeight} kg</Text>
+                  {pr.prevWeight != null && (
+                    <Text style={sumStyles.prPrev}>↑ từ {pr.prevWeight} kg</Text>
+                  )}
+                </View>
+              ))}
+            </>
+          )}
+
+          <TouchableOpacity style={sumStyles.closeBtn} onPress={onClose} activeOpacity={0.85}>
+            <Text style={sumStyles.closeBtnText}>Đóng</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Main Screen ──────────────────────────────────────────────────────────────
 export default function WorkoutScreen({ route, navigation }) {
   const planIndex = route?.params?.planIndex ?? 0;
   const plan = WORKOUT_PLANS[planIndex];
 
-  const [setsData, setSetsData] = useState(() => {
-    const init = {};
-    plan.exercises.forEach((ex, ei) => {
-      ex.sets.forEach((s, si) => {
-        init[`${ei}-${si}`] = { weight: String(s.weight), reps: String(s.reps) };
-      });
-    });
-    return init;
-  });
-
+  const [setsData, setSetsData] = useState(() => buildInitSets(plan));
   const [completed, setCompleted] = useState({});
-  const [saved, setSaved] = useState(false);
   const [showRestBanner, setShowRestBanner] = useState(false);
+  const [prevSession, setPrevSession] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
   const startTimeRef = useRef(Date.now());
 
+  // Load previous session and reset state on plan change
   useEffect(() => {
-    const init = {};
-    plan.exercises.forEach((ex, ei) => {
-      ex.sets.forEach((s, si) => {
-        init[`${ei}-${si}`] = { weight: String(s.weight), reps: String(s.reps) };
-      });
-    });
-    setSetsData(init);
+    setSetsData(buildInitSets(plan));
     setCompleted({});
-    setSaved(false);
     setShowRestBanner(false);
+    setSummary(null);
+    setShowSummary(false);
     startTimeRef.current = Date.now();
+    getPreviousSession(plan.id).then(setPrevSession);
   }, [planIndex]);
 
   const totalSets = plan.exercises.reduce((a, e) => a + e.sets.length, 0);
@@ -81,15 +144,11 @@ export default function WorkoutScreen({ route, navigation }) {
   function toggleSet(key) {
     const wasCompleted = !!completed[key];
     setCompleted(prev => ({ ...prev, [key]: !prev[key] }));
-    // Show rest banner when a set is newly completed
     if (!wasCompleted) setShowRestBanner(true);
   }
 
   function updateField(key, field, value) {
-    setSetsData(prev => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: value },
-    }));
+    setSetsData(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   }
 
   function handleStartRestTimer() {
@@ -97,11 +156,9 @@ export default function WorkoutScreen({ route, navigation }) {
     navigation.navigate('Timer');
   }
 
-  async function saveSession() {
-    const now = new Date();
-    const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
-
-    const exercises = plan.exercises.map((ex, ei) => ({
+  // Build exercise/set objects for saving
+  function buildSessionExercises() {
+    return plan.exercises.map((ex, ei) => ({
       name: ex.name,
       nameVi: ex.nameVi,
       sets: ex.sets.map((_, si) => {
@@ -113,13 +170,17 @@ export default function WorkoutScreen({ route, navigation }) {
         };
       }),
     }));
+  }
+
+  async function finishAndSave() {
+    const now = new Date();
+    const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+    const exercises = buildSessionExercises();
 
     let totalVolume = 0;
     exercises.forEach(ex => {
       ex.sets.forEach(s => {
-        if (s.done) {
-          totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0);
-        }
+        if (s.done) totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps, 10) || 0);
       });
     });
 
@@ -137,9 +198,24 @@ export default function WorkoutScreen({ route, navigation }) {
       durationSeconds,
     };
 
+    // Capture PRs before updating so detectNewPRs can compare
+    const existingPRs = await getPRs();
+    const newPRs = detectNewPRs(session, existingPRs);
     await addSession(session);
     await updatePRsFromSession(session);
-    setSaved(true);
+
+    const mins = Math.round(durationSeconds / 60);
+    const durationLabel = mins < 60 ? `${mins} ph` : `${Math.floor(mins / 60)}h ${mins % 60}ph`;
+
+    setSummary({
+      planName: plan.nameVi,
+      totalSets: doneSets,
+      totalVolume: Math.round(totalVolume),
+      duration: durationLabel,
+      prevVolume: prevSession?.totalVolume ?? null,
+      newPRs,
+    });
+    setShowSummary(true);
   }
 
   async function handleFinish() {
@@ -149,30 +225,23 @@ export default function WorkoutScreen({ route, navigation }) {
         `Bạn mới hoàn thành ${doneSets}/${totalSets} set. Kết thúc sớm?`,
         [
           { text: 'Tiếp tục tập', style: 'cancel' },
-          {
-            text: 'Kết thúc',
-            style: 'destructive',
-            onPress: async () => {
-              await saveSession();
-              Alert.alert('Đã lưu!', `Buổi tập đã được ghi lại (${doneSets}/${totalSets} set).`);
-            },
-          },
+          { text: 'Kết thúc', style: 'destructive', onPress: finishAndSave },
         ]
       );
     } else {
-      await saveSession();
+      await finishAndSave();
     }
   }
 
-  function formatDuration(ms) {
-    const totalMin = Math.round(ms / 60000);
-    if (totalMin < 60) return `${totalMin} phút`;
-    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}ph`;
+  // Previous session lookup helpers
+  function getPrevSet(exIdx, setIdx) {
+    if (!prevSession) return null;
+    const ex = prevSession.exercises?.[exIdx];
+    return ex?.sets?.[setIdx] ?? null;
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Rest timer banner — pinned above the scroll area */}
       <RestTimerBanner
         visible={showRestBanner}
         onStart={handleStartRestTimer}
@@ -196,19 +265,33 @@ export default function WorkoutScreen({ route, navigation }) {
         {/* Exercises */}
         {plan.exercises.map((ex, ei) => (
           <Card key={ex.id} style={styles.exCard}>
-            <Text style={styles.exName}>{ex.nameVi}</Text>
-            <Text style={styles.exNameEn}>{ex.name}</Text>
+            <View style={styles.exHeader}>
+              <View>
+                <Text style={styles.exName}>{ex.nameVi}</Text>
+                <Text style={styles.exNameEn}>{ex.name}</Text>
+              </View>
+              {prevSession && (
+                <View style={styles.prevBadge}>
+                  <Text style={styles.prevBadgeText}>Lần trước</Text>
+                </View>
+              )}
+            </View>
 
+            {/* Column headers */}
             <View style={styles.setHeader}>
               <Text style={[styles.setHeaderText, { width: 24 }]}>#</Text>
               <Text style={[styles.setHeaderText, styles.inputCol]}>KG</Text>
               <Text style={[styles.setHeaderText, styles.inputCol]}>REPS</Text>
-              <Text style={[styles.setHeaderText, { flex: 1, textAlign: 'right' }]}>✓</Text>
+              {prevSession && (
+                <Text style={[styles.setHeaderText, styles.prevCol]}>TRƯỚC</Text>
+              )}
+              <Text style={[styles.setHeaderText, { width: 32, textAlign: 'center' }]}>✓</Text>
             </View>
 
             {ex.sets.map((_, si) => {
               const key = `${ei}-${si}`;
               const isDone = completed[key];
+              const prev = getPrevSet(ei, si);
               return (
                 <View key={si} style={[styles.setRow, isDone && styles.setRowDone]}>
                   <Text style={styles.setNum}>{si + 1}</Text>
@@ -228,6 +311,15 @@ export default function WorkoutScreen({ route, navigation }) {
                     editable={!isDone}
                     selectTextOnFocus
                   />
+                  {prevSession && (
+                    <View style={styles.prevCell}>
+                      {prev?.done ? (
+                        <Text style={styles.prevText}>{prev.weight}×{prev.reps}</Text>
+                      ) : (
+                        <Text style={[styles.prevText, { color: '#333' }]}>—</Text>
+                      )}
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={[styles.checkBtn, isDone && styles.checkBtnDone]}
                     onPress={() => toggleSet(key)}
@@ -243,27 +335,37 @@ export default function WorkoutScreen({ route, navigation }) {
           </Card>
         ))}
 
-        {/* Finish / Complete */}
-        {saved && percent === 100 ? (
-          <View style={styles.completeBox}>
-            <Text style={{ fontSize: 32 }}>🎉</Text>
-            <Text style={styles.completeText}>Hoàn thành xuất sắc!</Text>
-            <Text style={styles.completeSub}>{doneSets} set · {formatDuration(Date.now() - startTimeRef.current)}</Text>
-          </View>
-        ) : (
-          <PrimaryButton
-            label={`Kết thúc (${doneSets}/${totalSets} set)`}
-            onPress={handleFinish}
-            style={{ marginBottom: 24 }}
-          />
-        )}
+        {/* Finish Button */}
+        <PrimaryButton
+          label={`Kết thúc (${doneSets}/${totalSets} set)`}
+          onPress={handleFinish}
+          style={{ marginBottom: 24 }}
+        />
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      <SummaryModal
+        visible={showSummary}
+        summary={summary}
+        onClose={() => setShowSummary(false)}
+      />
     </SafeAreaView>
   );
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function buildInitSets(plan) {
+  const init = {};
+  plan.exercises.forEach((ex, ei) => {
+    ex.sets.forEach((s, si) => {
+      init[`${ei}-${si}`] = { weight: String(s.weight), reps: String(s.reps) };
+    });
+  });
+  return init;
+}
+
+// ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1, paddingHorizontal: 20 },
@@ -273,11 +375,18 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   progressLabel: { fontSize: 12, color: COLORS.accent, minWidth: 36, textAlign: 'right' },
   exCard: { marginBottom: 14 },
-  exName: { fontSize: 16, fontWeight: '700', color: COLORS.white, marginBottom: 2 },
-  exNameEn: { fontSize: 12, color: COLORS.muted, marginBottom: 10 },
+  exHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  exName: { fontSize: 16, fontWeight: '700', color: COLORS.white },
+  exNameEn: { fontSize: 12, color: COLORS.muted, marginTop: 1 },
+  prevBadge: {
+    backgroundColor: 'rgba(255,184,71,0.12)',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12,
+  },
+  prevBadgeText: { color: COLORS.amber, fontSize: 10, fontWeight: '700' },
   setHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   setHeaderText: { fontSize: 10, color: '#444', fontWeight: '700', letterSpacing: 0.5 },
-  inputCol: { width: 64, textAlign: 'center' },
+  inputCol: { width: 60, textAlign: 'center' },
+  prevCol: { flex: 1, textAlign: 'center' },
   setRow: {
     flexDirection: 'row', alignItems: 'center',
     gap: 8, marginBottom: 8, padding: 6, borderRadius: 10,
@@ -285,28 +394,22 @@ const styles = StyleSheet.create({
   setRowDone: { opacity: 0.5 },
   setNum: { color: '#444', fontSize: 13, width: 24 },
   input: {
-    width: 64, height: 36,
+    width: 60, height: 36,
     backgroundColor: COLORS.cardDark,
     borderRadius: 8, borderWidth: 0.5, borderColor: COLORS.border,
     color: COLORS.white, textAlign: 'center', fontSize: 14,
   },
   inputDone: { opacity: 0.4 },
+  prevCell: { flex: 1, alignItems: 'center' },
+  prevText: { color: COLORS.muted, fontSize: 11, fontWeight: '500' },
   checkBtn: {
-    flex: 1, height: 32, borderRadius: 8,
+    width: 32, height: 32, borderRadius: 8,
     borderWidth: 1.5, borderColor: COLORS.border,
-    alignSelf: 'flex-end', marginLeft: 'auto', width: 32,
     alignItems: 'center', justifyContent: 'center',
   },
   checkBtnDone: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  completeBox: {
-    backgroundColor: 'rgba(200,255,87,0.08)',
-    borderRadius: 16, padding: 24, alignItems: 'center',
-    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.3)', marginBottom: 24,
-  },
-  completeText: { color: COLORS.accent, fontWeight: '700', fontSize: 18, marginTop: 8 },
-  completeSub: { color: COLORS.muted, fontSize: 13, marginTop: 4 },
 
-  // Rest timer banner
+  // Rest banner
   restBanner: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: COLORS.surface,
@@ -319,4 +422,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6,
   },
   restBannerBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 12 },
+});
+
+// Summary modal styles
+const sumStyles = StyleSheet.create({
+  overlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'flex-end',
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 28, paddingBottom: 44,
+    borderTopWidth: 0.5, borderColor: COLORS.border,
+  },
+  title: { fontSize: 28, fontWeight: '800', color: COLORS.white, textAlign: 'center', marginBottom: 4 },
+  planName: { fontSize: 14, color: COLORS.muted, textAlign: 'center', marginBottom: 24 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statBox: {
+    flex: 1, backgroundColor: COLORS.card, borderRadius: 14,
+    padding: 14, alignItems: 'center',
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  statVal: { fontSize: 22, fontWeight: '800', color: COLORS.white },
+  statLbl: { fontSize: 11, color: COLORS.muted, marginTop: 2 },
+  deltaBadge: {
+    paddingVertical: 10, paddingHorizontal: 16,
+    borderRadius: 12, marginBottom: 16, alignItems: 'center',
+  },
+  deltaText: { fontWeight: '700', fontSize: 13 },
+  prHeader: { marginBottom: 10, marginTop: 4 },
+  prHeaderText: { color: COLORS.amber, fontWeight: '700', fontSize: 15 },
+  prRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 6,
+    borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
+  },
+  prName: { flex: 1, color: COLORS.white, fontSize: 13 },
+  prVal: { color: COLORS.accent, fontWeight: '700', fontSize: 13 },
+  prPrev: { color: COLORS.muted, fontSize: 11 },
+  closeBtn: {
+    marginTop: 24, backgroundColor: COLORS.accent,
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+  },
+  closeBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },
 });

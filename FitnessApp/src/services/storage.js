@@ -134,6 +134,43 @@ export function computeLifetimeStats(sessions) {
   return { totalSessions, totalVolume, volumeLabel, totalHours, streak };
 }
 
+/**
+ * Returns the most recent saved session for a given planId,
+ * or null if the plan has never been completed before.
+ */
+export async function getPreviousSession(planId) {
+  const sessions = await getSessions();
+  return sessions.find(s => s.planId === planId) ?? null;
+}
+
+/**
+ * Given the current session and the previous session for the same plan,
+ * returns a list of PRs that were broken: [{ name, newWeight, prevWeight }]
+ */
+export function detectNewPRs(session, existingPRs) {
+  const broken = [];
+  session.exercises.forEach(ex => {
+    ex.sets.forEach(set => {
+      if (!set.done) return;
+      const w = parseFloat(set.weight) || 0;
+      if (w <= 0) return;
+      const prev = existingPRs[ex.name];
+      if (!prev || w > prev.weight) {
+        // Only report the highest new weight per exercise
+        const existing = broken.find(b => b.name === ex.name);
+        if (!existing || w > existing.newWeight) {
+          if (!existing) {
+            broken.push({ name: ex.name, newWeight: w, prevWeight: prev?.weight ?? null });
+          } else {
+            existing.newWeight = w;
+          }
+        }
+      }
+    });
+  });
+  return broken;
+}
+
 /** Returns sessions within the last 7 days only */
 export function getThisWeekSessions(sessions) {
   const cutoff = new Date();
