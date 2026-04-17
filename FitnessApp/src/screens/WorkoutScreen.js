@@ -173,6 +173,7 @@ export default function WorkoutScreen({ route, navigation }) {
   const [sessionNote, setSessionNote] = useState('');
   const [intensity, setIntensity] = useState(3); // 1–5
   const [extraSets, setExtraSets] = useState({}); // { [ei]: count }
+  const [exerciseNotes, setExerciseNotes] = useState({}); // { [ei]: string }
   const [elapsedSecs, setElapsedSecs] = useState(0);
   const startTimeRef = useRef(Date.now());
 
@@ -186,6 +187,7 @@ export default function WorkoutScreen({ route, navigation }) {
     setSessionNote('');
     setIntensity(3);
     setExtraSets({});
+    setExerciseNotes({});
     setElapsedSecs(0);
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
@@ -263,6 +265,7 @@ export default function WorkoutScreen({ route, navigation }) {
       return {
         name: ex.name,
         nameVi: ex.nameVi,
+        note: exerciseNotes[ei]?.trim() ?? '',
         sets: Array.from({ length: total }, (_, si) => {
           const key = `${ei}-${si}`;
           return {
@@ -456,6 +459,18 @@ export default function WorkoutScreen({ route, navigation }) {
               );
             })}
 
+            {/* Per-exercise note */}
+            <TextInput
+              style={styles.exNoteInput}
+              value={exerciseNotes[ei] ?? ''}
+              onChangeText={v => setExerciseNotes(prev => ({ ...prev, [ei]: v }))}
+              placeholder="📝 Ghi chú bài tập…"
+              placeholderTextColor="#333"
+              multiline
+              numberOfLines={2}
+              maxLength={200}
+            />
+
             {/* Add / Remove set buttons */}
             <View style={styles.setActionsRow}>
               <TouchableOpacity
@@ -577,6 +592,11 @@ const styles = StyleSheet.create({
   setRowDone: { opacity: 0.5 },
   setNum: { color: '#444', fontSize: 13, width: 24 },
   setNumExtra: { color: COLORS.amber },
+  exNoteInput: {
+    marginTop: 10, paddingHorizontal: 10, paddingVertical: 6,
+    backgroundColor: 'transparent', borderTopWidth: 0.5, borderTopColor: COLORS.border,
+    color: COLORS.mutedLight, fontSize: 12, minHeight: 32, textAlignVertical: 'top',
+  },
   setActionsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   setActionBtn: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8,

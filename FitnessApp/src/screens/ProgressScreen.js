@@ -17,7 +17,11 @@ import {
   getUserProfile,
 } from '../services/storage';
 
-const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
+const DEFAULT_PR_EXERCISES = [
+  'Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row',
+  'Incline Dumbbell Press', 'Lateral Raise', 'Face Pull', 'Barbell Curl',
+  'Leg Press', 'Leg Curl',
+];
 
 function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -640,6 +644,9 @@ function SessionDetailModal({ session, onClose, onDelete }) {
               <View key={ei} style={detailStyles.exBlock}>
                 <Text style={detailStyles.exName}>{ex.nameVi}</Text>
                 <Text style={detailStyles.exNameEn}>{ex.name}</Text>
+                {!!ex.note && (
+                  <Text style={detailStyles.exNote}>"{ex.note}"</Text>
+                )}
                 <View style={detailStyles.setHeaderRow}>
                   <Text style={[detailStyles.setHeaderText, { width: 22 }]}>#</Text>
                   <Text style={[detailStyles.setHeaderText, { flex: 1, textAlign: 'center' }]}>KG</Text>
@@ -706,7 +713,8 @@ const detailStyles = StyleSheet.create({
     borderWidth: 0.5, borderColor: COLORS.border,
   },
   exName: { fontSize: 15, fontWeight: '700', color: COLORS.white },
-  exNameEn: { fontSize: 11, color: COLORS.muted, marginBottom: 10 },
+  exNameEn: { fontSize: 11, color: COLORS.muted, marginBottom: 4 },
+  exNote: { fontSize: 11, color: COLORS.mutedLight, fontStyle: 'italic', marginBottom: 8 },
   setHeaderRow: { flexDirection: 'row', marginBottom: 6 },
   setHeaderText: { fontSize: 10, color: '#444', fontWeight: '700', letterSpacing: 0.5 },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 4 },

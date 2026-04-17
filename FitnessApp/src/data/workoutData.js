@@ -8,7 +8,7 @@ export const WORKOUT_PLANS = [
     color: 'rgba(200,255,87,0.1)',
     borderColor: 'rgba(200,255,87,0.25)',
     emoji: '💪',
-    duration: '~45 phút',
+    duration: '~55 phút',
     exercises: [
       {
         id: 'e1',
@@ -40,6 +40,26 @@ export const WORKOUT_PLANS = [
           { weight: 0, reps: 10 },
         ],
       },
+      {
+        id: 'e3b',
+        name: 'Incline Dumbbell Press',
+        nameVi: 'Đẩy tạ đôi nghiêng',
+        sets: [
+          { weight: 22, reps: 12 },
+          { weight: 24, reps: 10 },
+          { weight: 26, reps: 8 },
+        ],
+      },
+      {
+        id: 'e3c',
+        name: 'Lateral Raise',
+        nameVi: 'Nâng tạ ngang',
+        sets: [
+          { weight: 10, reps: 15 },
+          { weight: 10, reps: 15 },
+          { weight: 12, reps: 12 },
+        ],
+      },
     ],
   },
   {
@@ -51,7 +71,7 @@ export const WORKOUT_PLANS = [
     color: 'rgba(255,184,71,0.1)',
     borderColor: 'rgba(255,184,71,0.25)',
     emoji: '🏋️',
-    duration: '~42 phút',
+    duration: '~52 phút',
     exercises: [
       {
         id: 'e4',
@@ -81,6 +101,26 @@ export const WORKOUT_PLANS = [
           { weight: 16, reps: 12 },
           { weight: 18, reps: 10 },
           { weight: 18, reps: 10 },
+        ],
+      },
+      {
+        id: 'e6b',
+        name: 'Face Pull',
+        nameVi: 'Kéo mặt dây cáp',
+        sets: [
+          { weight: 20, reps: 15 },
+          { weight: 22, reps: 15 },
+          { weight: 22, reps: 12 },
+        ],
+      },
+      {
+        id: 'e6c',
+        name: 'Barbell Curl',
+        nameVi: 'Curl tạ đòn',
+        sets: [
+          { weight: 30, reps: 12 },
+          { weight: 35, reps: 10 },
+          { weight: 35, reps: 8 },
         ],
       },
     ],
@@ -124,6 +164,26 @@ export const WORKOUT_PLANS = [
           { weight: 120, reps: 12 },
           { weight: 140, reps: 10 },
           { weight: 150, reps: 10 },
+        ],
+      },
+      {
+        id: 'e9b',
+        name: 'Leg Curl',
+        nameVi: 'Curl chân máy',
+        sets: [
+          { weight: 40, reps: 12 },
+          { weight: 45, reps: 12 },
+          { weight: 50, reps: 10 },
+        ],
+      },
+      {
+        id: 'e9c',
+        name: 'Calf Raise',
+        nameVi: 'Nâng gót',
+        sets: [
+          { weight: 60, reps: 20 },
+          { weight: 60, reps: 20 },
+          { weight: 70, reps: 15 },
         ],
       },
     ],
