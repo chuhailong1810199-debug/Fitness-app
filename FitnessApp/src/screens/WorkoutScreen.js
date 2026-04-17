@@ -10,36 +10,62 @@ import { WORKOUT_PLANS } from '../data/workoutData';
 import {
   addSession, updatePRsFromSession, getPRs,
   getPreviousSession, detectNewPRs,
-  toDateStr, toDateLabel,
+  toDateStr, toDateLabel, getUserProfile,
 } from '../services/storage';
 
-// ── Rest Timer Banner ────────────────────────────────────────────────────────
-function RestTimerBanner({ visible, onStart, onDismiss }) {
+// ── In-Workout Rest Timer ─────────────────────────────────────────────────────
+function InWorkoutTimer({ visible, totalSeconds, onDismiss, onGoToTimer }) {
+  const [left, setLeft] = useState(totalSeconds);
   const opacity = useRef(new Animated.Value(0)).current;
-  const dismissTimer = useRef(null);
+  const intervalRef = useRef(null);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: visible ? 1 : 0,
+      duration: visible ? 180 : 120,
+      useNativeDriver: true,
+    }).start();
     if (visible) {
-      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-      clearTimeout(dismissTimer.current);
-      dismissTimer.current = setTimeout(onDismiss, 8000);
+      setLeft(totalSeconds);
+      clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        setLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(intervalRef.current);
+            onDismissRef.current();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } else {
-      Animated.timing(opacity, { toValue: 0, duration: 150, useNativeDriver: true }).start();
-      clearTimeout(dismissTimer.current);
+      clearInterval(intervalRef.current);
     }
-    return () => clearTimeout(dismissTimer.current);
-  }, [visible]);
+    return () => clearInterval(intervalRef.current);
+  }, [visible, totalSeconds]);
 
   if (!visible) return null;
+  const pct = Math.round(((totalSeconds - left) / totalSeconds) * 100);
+  const mins = Math.floor(left / 60);
+  const secs = left % 60;
+  const timeStr = mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${left}s`;
+
   return (
-    <Animated.View style={[styles.restBanner, { opacity }]}>
-      <Text style={styles.restBannerText}>⏱ Bắt đầu nghỉ?</Text>
-      <TouchableOpacity style={styles.restBannerBtn} onPress={onStart} activeOpacity={0.8}>
-        <Text style={styles.restBannerBtnText}>Bắt đầu 60s</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={onDismiss} style={{ paddingHorizontal: 8 }}>
-        <Text style={{ color: COLORS.muted, fontSize: 18 }}>×</Text>
-      </TouchableOpacity>
+    <Animated.View style={[styles.restTimer, { opacity }]}>
+      <Text style={styles.restTimerTime}>{timeStr}</Text>
+      <View style={styles.restTimerBarBg}>
+        <View style={[styles.restTimerBarFill, { width: `${pct}%` }]} />
+      </View>
+      <View style={styles.restTimerBtns}>
+        <TouchableOpacity style={styles.restTimerSkip} onPress={onDismiss} activeOpacity={0.7}>
+          <Text style={styles.restTimerSkipText}>Bỏ qua</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.restTimerFull} onPress={onGoToTimer} activeOpacity={0.7}>
+          <Text style={styles.restTimerFullText}>⏱ Đầy đủ</Text>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
@@ -137,7 +163,8 @@ export default function WorkoutScreen({ route, navigation }) {
 
   const [setsData, setSetsData] = useState(() => buildInitSets(plan));
   const [completed, setCompleted] = useState({});
-  const [showRestBanner, setShowRestBanner] = useState(false);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [defaultRestSecs, setDefaultRestSecs] = useState(60);
   const [prevSession, setPrevSession] = useState(null);
   const [summary, setSummary] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -145,18 +172,36 @@ export default function WorkoutScreen({ route, navigation }) {
   const [intensity, setIntensity] = useState(3); // 1–5
   const startTimeRef = useRef(Date.now());
 
-  // Load previous session and reset state on plan change
+  // Load previous session, profile, and reset state on plan change
   useEffect(() => {
     setSetsData(buildInitSets(plan));
     setCompleted({});
-    setShowRestBanner(false);
+    setShowRestTimer(false);
     setSummary(null);
     setShowSummary(false);
     setSessionNote('');
     setIntensity(3);
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
+    getUserProfile().then(p => setDefaultRestSecs(p.defaultRestSeconds ?? 60));
   }, [planIndex]);
+
+  // Auto-fill weights/reps from previous session
+  useEffect(() => {
+    if (!prevSession) return;
+    setSetsData(prev => {
+      const next = { ...prev };
+      prevSession.exercises.forEach((ex, ei) => {
+        ex.sets.forEach((set, si) => {
+          const key = `${ei}-${si}`;
+          if (set.done && parseFloat(set.weight) > 0) {
+            next[key] = { weight: set.weight, reps: set.reps };
+          }
+        });
+      });
+      return next;
+    });
+  }, [prevSession]);
 
   const totalSets = plan.exercises.reduce((a, e) => a + e.sets.length, 0);
   const doneSets = Object.values(completed).filter(Boolean).length;
@@ -165,16 +210,12 @@ export default function WorkoutScreen({ route, navigation }) {
   function toggleSet(key) {
     const wasCompleted = !!completed[key];
     setCompleted(prev => ({ ...prev, [key]: !prev[key] }));
-    if (!wasCompleted) setShowRestBanner(true);
+    if (!wasCompleted) setShowRestTimer(true);
+    else setShowRestTimer(false);
   }
 
   function updateField(key, field, value) {
     setSetsData(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
-  }
-
-  function handleStartRestTimer() {
-    setShowRestBanner(false);
-    navigation.navigate('Timer');
   }
 
   // Build exercise/set objects for saving
@@ -267,10 +308,11 @@ export default function WorkoutScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <RestTimerBanner
-        visible={showRestBanner}
-        onStart={handleStartRestTimer}
-        onDismiss={() => setShowRestBanner(false)}
+      <InWorkoutTimer
+        visible={showRestTimer}
+        totalSeconds={defaultRestSecs}
+        onDismiss={() => setShowRestTimer(false)}
+        onGoToTimer={() => { setShowRestTimer(false); navigation.navigate('Timer'); }}
       />
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -493,19 +535,27 @@ const styles = StyleSheet.create({
     minHeight: 72, textAlignVertical: 'top',
   },
 
-  // Rest banner
-  restBanner: {
+  // In-workout rest timer
+  restTimer: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: 'rgba(22,22,22,0.97)',
     borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
     paddingHorizontal: 16, paddingVertical: 10, gap: 10,
   },
-  restBannerText: { flex: 1, color: COLORS.mutedLight, fontSize: 13 },
-  restBannerBtn: {
-    backgroundColor: COLORS.accent, borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 6,
+  restTimerTime: { fontSize: 22, fontWeight: '800', color: COLORS.accent, minWidth: 46 },
+  restTimerBarBg: { flex: 1, height: 4, backgroundColor: COLORS.border, borderRadius: 2 },
+  restTimerBarFill: { height: 4, backgroundColor: COLORS.accent, borderRadius: 2 },
+  restTimerBtns: { flexDirection: 'row', gap: 6 },
+  restTimerSkip: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 8, borderWidth: 0.5, borderColor: COLORS.border,
   },
-  restBannerBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 12 },
+  restTimerSkipText: { color: COLORS.muted, fontSize: 11, fontWeight: '600' },
+  restTimerFull: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 8, backgroundColor: 'rgba(200,255,87,0.12)',
+  },
+  restTimerFullText: { color: COLORS.accent, fontSize: 11, fontWeight: '600' },
 });
 
 // Summary modal styles
