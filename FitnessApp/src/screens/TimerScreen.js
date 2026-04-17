@@ -1,33 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
 import { COLORS } from '../theme/colors';
 import { Card, SectionHeader, GhostButton, PrimaryButton } from '../components/UI';
+import { getSessions } from '../services/storage';
 
-const DURATIONS = [30, 60, 90, 120];
-
-const RECENT_RESTS = [
-  { name: 'Bench Press', date: '29/3', rest: '60s' },
-  { name: 'Squat', date: '26/3', rest: '90s' },
-  { name: 'Pull-Ups', date: '24/3', rest: '45s' },
-  { name: 'Overhead Press', date: '22/3', rest: '60s' },
-];
+const PRESET_DURATIONS = [30, 60, 90, 120];
 
 export default function TimerScreen() {
   const [duration, setDuration] = useState(60);
   const [remaining, setRemaining] = useState(60);
   const [running, setRunning] = useState(false);
+  const [customInput, setCustomInput] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
+  const [recentSessions, setRecentSessions] = useState([]);
   const intervalRef = useRef(null);
 
   useEffect(() => {
     return () => clearInterval(intervalRef.current);
   }, []);
 
+  // Reload recent sessions on focus so data is fresh after a workout
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      async function load() {
+        const sessions = await getSessions();
+        if (!active) return;
+        setRecentSessions(sessions.slice(0, 5));
+      }
+      load();
+      return () => { active = false; };
+    }, [])
+  );
+
   function start() {
-    if (remaining === 0) return;
+    if (remaining === 0 || running) return;
     setRunning(true);
     intervalRef.current = setInterval(() => {
       setRemaining(prev => {
@@ -57,6 +69,15 @@ export default function TimerScreen() {
     setRunning(false);
     setDuration(d);
     setRemaining(d);
+    setShowCustom(false);
+  }
+
+  function applyCustomDuration() {
+    const secs = parseInt(customInput, 10);
+    if (secs && secs >= 5 && secs <= 600) {
+      selectDuration(secs);
+      setCustomInput('');
+    }
   }
 
   function formatTime(s) {
@@ -65,7 +86,14 @@ export default function TimerScreen() {
     return `${m}:${String(sec).padStart(2, '0')}`;
   }
 
-  // SVG circle
+  function formatDuration(durationSeconds) {
+    if (!durationSeconds) return '—';
+    const h = Math.floor(durationSeconds / 3600);
+    const m = Math.round((durationSeconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}ph`;
+    return `${m} phút`;
+  }
+
   const SIZE = 180;
   const cx = SIZE / 2;
   const cy = SIZE / 2;
@@ -74,6 +102,7 @@ export default function TimerScreen() {
   const pct = remaining / duration;
   const dash = CIRC * pct;
   const timerColor = remaining === 0 ? COLORS.red : COLORS.accent;
+  const isPreset = PRESET_DURATIONS.includes(duration);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -88,9 +117,7 @@ export default function TimerScreen() {
         <Card style={styles.timerCard}>
           <View style={styles.circleWrap}>
             <Svg width={SIZE} height={SIZE}>
-              {/* Track */}
               <Circle cx={cx} cy={cy} r={R} fill="none" stroke="#222" strokeWidth={10} />
-              {/* Progress */}
               <Circle
                 cx={cx} cy={cy} r={R}
                 fill="none"
@@ -115,11 +142,7 @@ export default function TimerScreen() {
           {/* Controls */}
           <View style={styles.controls}>
             {!running ? (
-              <PrimaryButton
-                label="Bắt đầu"
-                onPress={start}
-                style={{ flex: 1 }}
-              />
+              <PrimaryButton label="Bắt đầu" onPress={start} style={{ flex: 1 }} />
             ) : (
               <GhostButton label="Tạm dừng" onPress={pause} style={{ flex: 1 }} />
             )}
@@ -132,7 +155,7 @@ export default function TimerScreen() {
         <SectionHeader title="Thời gian nghỉ" />
         <Card>
           <View style={styles.presets}>
-            {DURATIONS.map(d => (
+            {PRESET_DURATIONS.map(d => (
               <TouchableOpacity
                 key={d}
                 style={[styles.presetBtn, duration === d && styles.presetBtnActive]}
@@ -144,22 +167,57 @@ export default function TimerScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+            <TouchableOpacity
+              style={[styles.presetBtn, !isPreset && styles.presetBtnActive, { flex: 1.2 }]}
+              onPress={() => setShowCustom(v => !v)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.presetText, !isPreset && styles.presetTextActive]}>
+                {!isPreset ? `${duration}s` : 'Tùy chỉnh'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {showCustom && (
+            <View style={styles.customRow}>
+              <TextInput
+                style={styles.customInput}
+                value={customInput}
+                onChangeText={setCustomInput}
+                keyboardType="number-pad"
+                placeholder="vd: 150"
+                placeholderTextColor={COLORS.muted}
+                returnKeyType="done"
+                onSubmitEditing={applyCustomDuration}
+                selectTextOnFocus
+              />
+              <Text style={styles.customUnit}>giây</Text>
+              <TouchableOpacity style={styles.customApply} onPress={applyCustomDuration} activeOpacity={0.8}>
+                <Text style={styles.customApplyText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </Card>
 
-        {/* Recent Sessions */}
+        {/* Recent Workouts */}
         <SectionHeader title="Buổi tập gần đây" />
-        {RECENT_RESTS.map((r, i) => (
-          <View key={i} style={styles.recentRow}>
-            <View>
-              <Text style={styles.recentName}>{r.name}</Text>
-              <Text style={styles.recentDate}>{r.date}</Text>
-            </View>
-            <View style={styles.restBadge}>
-              <Text style={styles.restBadgeText}>{r.rest}</Text>
-            </View>
+        {recentSessions.length === 0 ? (
+          <View style={styles.emptyRow}>
+            <Text style={styles.emptyText}>Chưa có buổi tập nào. Hãy tập ngay! 💪</Text>
           </View>
-        ))}
+        ) : (
+          recentSessions.map((s) => (
+            <View key={s.id} style={styles.recentRow}>
+              <View>
+                <Text style={styles.recentName}>{s.planName}</Text>
+                <Text style={styles.recentDate}>{s.dateLabel}</Text>
+              </View>
+              <View style={styles.restBadge}>
+                <Text style={styles.restBadgeText}>{formatDuration(s.durationSeconds)}</Text>
+              </View>
+            </View>
+          ))
+        )}
 
         <View style={{ height: 20 }} />
       </ScrollView>
@@ -174,37 +232,54 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, color: COLORS.muted, marginBottom: 4 },
   title: { fontSize: 36, fontWeight: '800', color: COLORS.white },
   timerCard: { alignItems: 'center', paddingVertical: 28 },
-  circleWrap: { position: 'relative', width: 180, height: 180, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  circleWrap: {
+    position: 'relative', width: 180, height: 180,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  },
   timerCenter: { position: 'absolute', alignItems: 'center' },
   timerText: { fontSize: 44, fontWeight: '800', letterSpacing: -1 },
   timerStatus: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
   controls: { flexDirection: 'row', width: '100%', paddingHorizontal: 8 },
-  presets: { flexDirection: 'row', gap: 10 },
+  presets: { flexDirection: 'row', gap: 8 },
   presetBtn: {
-    flex: 1, paddingVertical: 12,
-    borderRadius: 10,
+    flex: 1, paddingVertical: 12, borderRadius: 10,
     borderWidth: 1, borderColor: COLORS.border,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
+    backgroundColor: 'transparent', alignItems: 'center',
   },
-  presetBtnActive: {
-    borderColor: COLORS.accent,
-    backgroundColor: 'rgba(200,255,87,0.1)',
-  },
-  presetText: { fontSize: 14, color: COLORS.muted, fontWeight: '500' },
+  presetBtnActive: { borderColor: COLORS.accent, backgroundColor: 'rgba(200,255,87,0.1)' },
+  presetText: { fontSize: 13, color: COLORS.muted, fontWeight: '500' },
   presetTextActive: { color: COLORS.accent },
+  customRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginTop: 12, paddingTop: 12,
+    borderTopWidth: 0.5, borderTopColor: COLORS.border,
+  },
+  customInput: {
+    flex: 1, height: 40, backgroundColor: COLORS.cardDark,
+    borderRadius: 10, borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, textAlign: 'center', fontSize: 16,
+  },
+  customUnit: { color: COLORS.muted, fontSize: 13 },
+  customApply: {
+    backgroundColor: COLORS.accent, borderRadius: 10,
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
+  customApplyText: { color: '#0f0f0f', fontWeight: '700', fontSize: 14 },
   recentRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: COLORS.card,
-    padding: 14, borderRadius: 12, marginBottom: 8,
+    backgroundColor: COLORS.card, padding: 14, borderRadius: 12, marginBottom: 8,
     borderWidth: 0.5, borderColor: COLORS.border,
   },
   recentName: { color: COLORS.white, fontSize: 14, fontWeight: '500' },
   recentDate: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
   restBadge: {
     backgroundColor: 'rgba(200,255,87,0.15)',
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
   },
   restBadgeText: { color: COLORS.accent, fontSize: 12, fontWeight: '700' },
+  emptyRow: {
+    backgroundColor: COLORS.card, padding: 16, borderRadius: 12,
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  emptyText: { color: COLORS.muted, fontSize: 13, textAlign: 'center' },
 });

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SESSIONS_KEY = 'ftn_sessions';
 const PRS_KEY = 'ftn_personal_records';
+const BODY_WEIGHT_KEY = 'ftn_body_weight';
 
 // ── Sessions ──────────────────────────────────────────
 // Session shape:
@@ -157,4 +158,45 @@ export function toDateLabel(date) {
 export function formatVolume(kg) {
   if (kg >= 1000) return `${(kg / 1000).toFixed(1)}k kg`;
   return `${kg} kg`;
+}
+
+// ── Body Weight Log ───────────────────────────────────
+// Entry shape: { id: string, date: string (YYYY-MM-DD), dateLabel: string, weight: number }
+
+export async function getBodyWeightLog() {
+  try {
+    const json = await AsyncStorage.getItem(BODY_WEIGHT_KEY);
+    return json ? JSON.parse(json) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addBodyWeightEntry(weightKg) {
+  const entries = await getBodyWeightLog();
+  const now = new Date();
+  const entry = {
+    id: String(Date.now()),
+    date: toDateStr(now),
+    dateLabel: toDateLabel(now),
+    weight: Math.round(weightKg * 10) / 10, // 1 decimal
+  };
+  // Replace today's entry if it already exists
+  const filtered = entries.filter(e => e.date !== entry.date);
+  filtered.unshift(entry);
+  await AsyncStorage.setItem(BODY_WEIGHT_KEY, JSON.stringify(filtered));
+  return filtered;
+}
+
+/** Returns last N body weight entries sorted newest-first */
+export function getRecentWeightEntries(entries, n = 10) {
+  return entries.slice(0, n);
+}
+
+/** Compute weight trend: difference between latest and the entry 7 days before */
+export function computeWeightTrend(entries) {
+  if (entries.length < 2) return null;
+  const latest = entries[0].weight;
+  const ref = entries[entries.length - 1].weight;
+  return Math.round((latest - ref) * 10) / 10;
 }

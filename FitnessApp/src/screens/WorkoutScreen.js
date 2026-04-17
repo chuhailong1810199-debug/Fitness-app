@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, StyleSheet, Alert,
+  TextInput, StyleSheet, Alert, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
@@ -9,11 +9,42 @@ import { Card, ProgressBar, PrimaryButton } from '../components/UI';
 import { WORKOUT_PLANS } from '../data/workoutData';
 import { addSession, updatePRsFromSession, toDateStr, toDateLabel } from '../services/storage';
 
-export default function WorkoutScreen({ route }) {
+// Rest timer banner that auto-dismisses after 8 seconds
+function RestTimerBanner({ visible, onStart, onDismiss }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const dismissTimer = useRef(null);
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      clearTimeout(dismissTimer.current);
+      dismissTimer.current = setTimeout(onDismiss, 8000);
+    } else {
+      Animated.timing(opacity, { toValue: 0, duration: 150, useNativeDriver: true }).start();
+      clearTimeout(dismissTimer.current);
+    }
+    return () => clearTimeout(dismissTimer.current);
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={[styles.restBanner, { opacity }]}>
+      <Text style={styles.restBannerText}>⏱ Bắt đầu nghỉ?</Text>
+      <TouchableOpacity style={styles.restBannerBtn} onPress={onStart} activeOpacity={0.8}>
+        <Text style={styles.restBannerBtnText}>Bắt đầu 60s</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={onDismiss} style={{ paddingHorizontal: 8 }}>
+        <Text style={{ color: COLORS.muted, fontSize: 18 }}>×</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+export default function WorkoutScreen({ route, navigation }) {
   const planIndex = route?.params?.planIndex ?? 0;
   const plan = WORKOUT_PLANS[planIndex];
 
-  // Track sets data: { 'exIdx-setIdx': { weight, reps } }
   const [setsData, setSetsData] = useState(() => {
     const init = {};
     plan.exercises.forEach((ex, ei) => {
@@ -24,12 +55,11 @@ export default function WorkoutScreen({ route }) {
     return init;
   });
 
-  // Track completed sets
   const [completed, setCompleted] = useState({});
   const [saved, setSaved] = useState(false);
+  const [showRestBanner, setShowRestBanner] = useState(false);
   const startTimeRef = useRef(Date.now());
 
-  // Reset state if planIndex changes (tab reselected with different plan)
   useEffect(() => {
     const init = {};
     plan.exercises.forEach((ex, ei) => {
@@ -40,6 +70,7 @@ export default function WorkoutScreen({ route }) {
     setSetsData(init);
     setCompleted({});
     setSaved(false);
+    setShowRestBanner(false);
     startTimeRef.current = Date.now();
   }, [planIndex]);
 
@@ -48,7 +79,10 @@ export default function WorkoutScreen({ route }) {
   const percent = Math.round((doneSets / totalSets) * 100);
 
   function toggleSet(key) {
+    const wasCompleted = !!completed[key];
     setCompleted(prev => ({ ...prev, [key]: !prev[key] }));
+    // Show rest banner when a set is newly completed
+    if (!wasCompleted) setShowRestBanner(true);
   }
 
   function updateField(key, field, value) {
@@ -56,6 +90,11 @@ export default function WorkoutScreen({ route }) {
       ...prev,
       [key]: { ...prev[key], [field]: value },
     }));
+  }
+
+  function handleStartRestTimer() {
+    setShowRestBanner(false);
+    navigation.navigate('Timer');
   }
 
   async function saveSession() {
@@ -75,7 +114,6 @@ export default function WorkoutScreen({ route }) {
       }),
     }));
 
-    // Volume = sum of weight*reps for completed sets
     let totalVolume = 0;
     exercises.forEach(ex => {
       ex.sets.forEach(s => {
@@ -134,6 +172,13 @@ export default function WorkoutScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Rest timer banner — pinned above the scroll area */}
+      <RestTimerBanner
+        visible={showRestBanner}
+        onStart={handleStartRestTimer}
+        onDismiss={() => setShowRestBanner(false)}
+      />
+
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -154,7 +199,6 @@ export default function WorkoutScreen({ route }) {
             <Text style={styles.exName}>{ex.nameVi}</Text>
             <Text style={styles.exNameEn}>{ex.name}</Text>
 
-            {/* Column headers */}
             <View style={styles.setHeader}>
               <Text style={[styles.setHeaderText, { width: 24 }]}>#</Text>
               <Text style={[styles.setHeaderText, styles.inputCol]}>KG</Text>
@@ -236,47 +280,43 @@ const styles = StyleSheet.create({
   inputCol: { width: 64, textAlign: 'center' },
   setRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 8, marginBottom: 8, padding: 6,
-    borderRadius: 10,
+    gap: 8, marginBottom: 8, padding: 6, borderRadius: 10,
   },
   setRowDone: { opacity: 0.5 },
   setNum: { color: '#444', fontSize: 13, width: 24 },
   input: {
     width: 64, height: 36,
     backgroundColor: COLORS.cardDark,
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: COLORS.border,
-    color: COLORS.white,
-    textAlign: 'center',
-    fontSize: 14,
+    borderRadius: 8, borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, textAlign: 'center', fontSize: 14,
   },
   inputDone: { opacity: 0.4 },
   checkBtn: {
-    flex: 1,
-    height: 32,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    alignSelf: 'flex-end',
-    marginLeft: 'auto',
-    width: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1, height: 32, borderRadius: 8,
+    borderWidth: 1.5, borderColor: COLORS.border,
+    alignSelf: 'flex-end', marginLeft: 'auto', width: 32,
+    alignItems: 'center', justifyContent: 'center',
   },
-  checkBtnDone: {
-    backgroundColor: COLORS.accent,
-    borderColor: COLORS.accent,
-  },
+  checkBtnDone: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
   completeBox: {
     backgroundColor: 'rgba(200,255,87,0.08)',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: 'rgba(200,255,87,0.3)',
-    marginBottom: 24,
+    borderRadius: 16, padding: 24, alignItems: 'center',
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.3)', marginBottom: 24,
   },
   completeText: { color: COLORS.accent, fontWeight: '700', fontSize: 18, marginTop: 8 },
   completeSub: { color: COLORS.muted, fontSize: 13, marginTop: 4 },
+
+  // Rest timer banner
+  restBanner: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
+    paddingHorizontal: 16, paddingVertical: 10, gap: 10,
+  },
+  restBannerText: { flex: 1, color: COLORS.mutedLight, fontSize: 13 },
+  restBannerBtn: {
+    backgroundColor: COLORS.accent, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  restBannerBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 12 },
 });
