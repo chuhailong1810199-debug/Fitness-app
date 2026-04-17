@@ -136,6 +136,7 @@ export default function ProgressScreen() {
   const [weightInput, setWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
+  const [detailSession, setDetailSession] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -299,31 +300,49 @@ export default function ProgressScreen() {
           </Card>
         ) : (
           sessions.slice(0, 20).map((entry) => (
-            <Card key={entry.id} style={styles.logCard}>
-              <View style={styles.logTop}>
-                <View>
-                  <Text style={styles.logName}>{entry.planName}</Text>
-                  <Text style={styles.logDate}>{entry.dateLabel}</Text>
+            <TouchableOpacity
+              key={entry.id}
+              onPress={() => setDetailSession(entry)}
+              activeOpacity={0.8}
+            >
+              <Card style={styles.logCard}>
+                <View style={styles.logTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.logName}>{entry.planName}</Text>
+                    <Text style={styles.logDate}>{entry.dateLabel}</Text>
+                  </View>
+                  <View style={styles.logTopRight}>
+                    {entry.intensity != null && (
+                      <Text style={styles.logIntensity}>
+                        {INTENSITY_EMOJIS[entry.intensity] ?? ''}
+                      </Text>
+                    )}
+                    <View style={styles.durationBadge}>
+                      <Text style={styles.durationText}>
+                        {formatDuration(entry.durationSeconds)}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.durationBadge}>
-                  <Text style={styles.durationText}>
-                    {formatDuration(entry.durationSeconds)}
+                {!!entry.note && (
+                  <Text style={styles.logNote} numberOfLines={1}>
+                    "{entry.note}"
                   </Text>
+                )}
+                <Divider />
+                <View style={styles.logStats}>
+                  <View>
+                    <Text style={styles.logStatVal}>{entry.totalSets} sets</Text>
+                    <Text style={styles.logStatLabel}>bộ</Text>
+                  </View>
+                  <View style={styles.logStatDivider} />
+                  <View>
+                    <Text style={styles.logStatVal}>{entry.totalVolume.toLocaleString()} kg</Text>
+                    <Text style={styles.logStatLabel}>tổng kg</Text>
+                  </View>
                 </View>
-              </View>
-              <Divider />
-              <View style={styles.logStats}>
-                <View>
-                  <Text style={styles.logStatVal}>{entry.totalSets} sets</Text>
-                  <Text style={styles.logStatLabel}>bộ</Text>
-                </View>
-                <View style={styles.logStatDivider} />
-                <View>
-                  <Text style={styles.logStatVal}>{entry.totalVolume.toLocaleString()} kg</Text>
-                  <Text style={styles.logStatLabel}>tổng kg</Text>
-                </View>
-              </View>
-            </Card>
+              </Card>
+            </TouchableOpacity>
           ))
         )}
 
@@ -368,9 +387,147 @@ export default function ProgressScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Session Detail Modal */}
+      <SessionDetailModal
+        session={detailSession}
+        onClose={() => setDetailSession(null)}
+      />
     </SafeAreaView>
   );
 }
+
+// ── Session Detail Modal ──────────────────────────────
+const INTENSITY_LABELS = { 1: '😴 Nhẹ', 2: '😊 Ổn', 3: '💪 Tốt', 4: '🔥 Khó', 5: '⚡ Max' };
+const INTENSITY_EMOJIS = { 1: '😴', 2: '😊', 3: '💪', 4: '🔥', 5: '⚡' };
+
+function SessionDetailModal({ session, onClose }) {
+  if (!session) return null;
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={detailStyles.overlay}>
+        <SafeAreaView style={detailStyles.sheet} edges={['bottom']}>
+          <View style={detailStyles.handle} />
+
+          {/* Header */}
+          <View style={detailStyles.header}>
+            <View style={{ flex: 1 }}>
+              <Text style={detailStyles.planName}>{session.planName}</Text>
+              <Text style={detailStyles.meta}>{session.dateLabel} · {formatDuration(session.durationSeconds)}</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={detailStyles.closeBtn}>
+              <Text style={detailStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Intensity + Note */}
+          {(session.intensity != null || session.note) && (
+            <View style={detailStyles.metaRow}>
+              {session.intensity != null && (
+                <View style={detailStyles.intensityBadge}>
+                  <Text style={detailStyles.intensityText}>
+                    {INTENSITY_LABELS[session.intensity] ?? ''}
+                  </Text>
+                </View>
+              )}
+              {!!session.note && (
+                <Text style={detailStyles.noteText}>"{session.note}"</Text>
+              )}
+            </View>
+          )}
+
+          {/* Summary stats */}
+          <View style={detailStyles.statsRow}>
+            <View style={detailStyles.statBox}>
+              <Text style={detailStyles.statVal}>{session.totalSets}</Text>
+              <Text style={detailStyles.statLbl}>sets</Text>
+            </View>
+            <View style={detailStyles.statBox}>
+              <Text style={detailStyles.statVal}>{(session.totalVolume ?? 0).toLocaleString()}</Text>
+              <Text style={detailStyles.statLbl}>kg tổng</Text>
+            </View>
+          </View>
+
+          {/* Exercise list */}
+          <ScrollView style={detailStyles.scroll} showsVerticalScrollIndicator={false}>
+            {(session.exercises ?? []).map((ex, ei) => (
+              <View key={ei} style={detailStyles.exBlock}>
+                <Text style={detailStyles.exName}>{ex.nameVi}</Text>
+                <Text style={detailStyles.exNameEn}>{ex.name}</Text>
+                <View style={detailStyles.setHeaderRow}>
+                  <Text style={[detailStyles.setHeaderText, { width: 22 }]}>#</Text>
+                  <Text style={[detailStyles.setHeaderText, { flex: 1, textAlign: 'center' }]}>KG</Text>
+                  <Text style={[detailStyles.setHeaderText, { flex: 1, textAlign: 'center' }]}>REPS</Text>
+                  <Text style={[detailStyles.setHeaderText, { width: 22, textAlign: 'right' }]}>✓</Text>
+                </View>
+                {ex.sets.map((s, si) => (
+                  <View key={si} style={[detailStyles.setRow, !s.done && detailStyles.setRowSkipped]}>
+                    <Text style={detailStyles.setNum}>{si + 1}</Text>
+                    <Text style={detailStyles.setVal}>{s.weight}</Text>
+                    <Text style={detailStyles.setVal}>{s.reps}</Text>
+                    <Text style={[detailStyles.setDone, s.done && detailStyles.setDoneActive]}>
+                      {s.done ? '✓' : '—'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+const detailStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: COLORS.surface, maxHeight: '85%',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopWidth: 0.5, borderColor: COLORS.border,
+    paddingHorizontal: 20, paddingTop: 12,
+  },
+  handle: {
+    width: 36, height: 4, backgroundColor: COLORS.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 16,
+  },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+  planName: { fontSize: 20, fontWeight: '800', color: COLORS.white },
+  meta: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
+  closeBtn: { padding: 6 },
+  closeText: { color: COLORS.muted, fontSize: 18 },
+  metaRow: { marginBottom: 14, gap: 6 },
+  intensityBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(200,255,87,0.1)',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+  },
+  intensityText: { color: COLORS.accent, fontSize: 13, fontWeight: '600' },
+  noteText: { color: COLORS.mutedLight, fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statBox: {
+    flex: 1, backgroundColor: COLORS.card, borderRadius: 12, padding: 12, alignItems: 'center',
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  statVal: { fontSize: 20, fontWeight: '800', color: COLORS.white },
+  statLbl: { fontSize: 11, color: COLORS.muted, marginTop: 2 },
+  scroll: { flex: 1 },
+  exBlock: {
+    backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  exName: { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  exNameEn: { fontSize: 11, color: COLORS.muted, marginBottom: 10 },
+  setHeaderRow: { flexDirection: 'row', marginBottom: 6 },
+  setHeaderText: { fontSize: 10, color: '#444', fontWeight: '700', letterSpacing: 0.5 },
+  setRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 4 },
+  setRowSkipped: { opacity: 0.3 },
+  setNum: { color: '#444', fontSize: 12, width: 22 },
+  setVal: { flex: 1, color: COLORS.white, fontSize: 13, textAlign: 'center', fontWeight: '500' },
+  setDone: { color: '#333', fontSize: 13, width: 22, textAlign: 'right' },
+  setDoneActive: { color: COLORS.accent },
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
@@ -433,6 +590,9 @@ const styles = StyleSheet.create({
   logStatVal: { color: COLORS.white, fontSize: 14, fontWeight: '600' },
   logStatLabel: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
   logStatDivider: { width: 0.5, height: 28, backgroundColor: COLORS.border },
+  logTopRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  logIntensity: { fontSize: 16 },
+  logNote: { color: COLORS.muted, fontSize: 12, fontStyle: 'italic', marginTop: 4, marginBottom: 2 },
 
   emptyText: {
     color: COLORS.muted, fontSize: 14, textAlign: 'center', lineHeight: 22, paddingVertical: 8,

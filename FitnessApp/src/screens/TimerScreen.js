@@ -18,6 +18,8 @@ export default function TimerScreen() {
   const [customInput, setCustomInput] = useState('');
   const [showCustom, setShowCustom] = useState(false);
   const [recentSessions, setRecentSessions] = useState([]);
+  const [plateTarget, setPlateTarget] = useState('');
+  const [barbellKg, setBarbellKg] = useState(20);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -219,11 +221,141 @@ export default function TimerScreen() {
           ))
         )}
 
-        <View style={{ height: 20 }} />
+        {/* Plate Calculator */}
+        <SectionHeader title="Tính tạ đĩa" />
+        <PlateCalculator
+          target={plateTarget}
+          onTargetChange={setPlateTarget}
+          barbellKg={barbellKg}
+          onBarbellChange={setBarbellKg}
+        />
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ── Plate Calculator ─────────────────────────────────
+const PLATE_SIZES = [20, 15, 10, 5, 2.5, 1.25]; // kg
+const BARBELL_OPTIONS = [20, 15, 10]; // common bar weights
+
+function computePlates(targetKg, barbellKg) {
+  const perSide = (targetKg - barbellKg) / 2;
+  if (perSide <= 0) return [];
+  const plates = [];
+  let rem = perSide;
+  for (const size of PLATE_SIZES) {
+    const count = Math.floor(rem / size + 0.001);
+    if (count > 0) {
+      plates.push({ size, count });
+      rem -= size * count;
+    }
+  }
+  return plates;
+}
+
+function PlateCalculator({ target, onTargetChange, barbellKg, onBarbellChange }) {
+  const targetNum = parseFloat(target) || 0;
+  const plates = targetNum > barbellKg ? computePlates(targetNum, barbellKg) : [];
+  const achievable = plates.reduce((sum, p) => sum + p.size * p.count * 2, 0) + barbellKg;
+  const exact = Math.abs(achievable - targetNum) < 0.01;
+
+  const PLATE_COLORS = {
+    20: '#FF5757', 15: '#FFB847', 10: '#4FC3F7',
+    5:  '#81C784', 2.5: '#CE93D8', 1.25: '#BCAAA4',
+  };
+
+  return (
+    <Card style={plateStyles.card}>
+      {/* Bar weight selector */}
+      <View style={plateStyles.barRow}>
+        <Text style={plateStyles.label}>Đòn tạ:</Text>
+        {BARBELL_OPTIONS.map(b => (
+          <TouchableOpacity
+            key={b}
+            style={[plateStyles.barBtn, barbellKg === b && plateStyles.barBtnActive]}
+            onPress={() => onBarbellChange(b)}
+            activeOpacity={0.7}
+          >
+            <Text style={[plateStyles.barBtnText, barbellKg === b && plateStyles.barBtnTextActive]}>
+              {b} kg
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Target input */}
+      <View style={plateStyles.inputRow}>
+        <TextInput
+          style={plateStyles.input}
+          value={target}
+          onChangeText={onTargetChange}
+          keyboardType="decimal-pad"
+          placeholder="Nhập tổng kg…"
+          placeholderTextColor={COLORS.muted}
+          selectTextOnFocus
+        />
+        <Text style={plateStyles.inputUnit}>kg</Text>
+      </View>
+
+      {/* Result */}
+      {targetNum > 0 && targetNum <= barbellKg && (
+        <Text style={plateStyles.hint}>Nhỏ hơn hoặc bằng đòn tạ ({barbellKg} kg)</Text>
+      )}
+      {plates.length > 0 && (
+        <>
+          <Text style={plateStyles.perSideLabel}>Mỗi bên:</Text>
+          <View style={plateStyles.platesRow}>
+            {plates.map((p, i) => (
+              <View
+                key={i}
+                style={[plateStyles.plateDisk, { backgroundColor: PLATE_COLORS[p.size] ?? COLORS.border }]}
+              >
+                <Text style={plateStyles.plateSize}>{p.size}</Text>
+                {p.count > 1 && <Text style={plateStyles.plateCount}>×{p.count}</Text>}
+              </View>
+            ))}
+          </View>
+          {!exact && (
+            <Text style={plateStyles.hint}>
+              Tổng thực tế: {achievable} kg (gần nhất có thể)
+            </Text>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+const plateStyles = StyleSheet.create({
+  card: { marginBottom: 8 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  label: { color: COLORS.muted, fontSize: 13, marginRight: 4 },
+  barBtn: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  barBtnActive: { borderColor: COLORS.accent, backgroundColor: 'rgba(200,255,87,0.1)' },
+  barBtnText: { color: COLORS.muted, fontSize: 12, fontWeight: '500' },
+  barBtnTextActive: { color: COLORS.accent },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  input: {
+    flex: 1, height: 48, backgroundColor: COLORS.cardDark,
+    borderRadius: 10, borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, fontSize: 20, fontWeight: '700', textAlign: 'center',
+  },
+  inputUnit: { color: COLORS.muted, fontSize: 16, minWidth: 24 },
+  perSideLabel: { color: COLORS.muted, fontSize: 12, marginBottom: 10 },
+  platesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  plateDisk: {
+    width: 52, height: 52, borderRadius: 26,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  plateSize: { color: '#0f0f0f', fontWeight: '800', fontSize: 13 },
+  plateCount: { color: '#0f0f0f', fontSize: 9, fontWeight: '700', marginTop: -2 },
+  hint: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
