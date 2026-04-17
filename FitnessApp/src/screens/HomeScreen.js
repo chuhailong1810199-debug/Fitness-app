@@ -17,6 +17,7 @@ import {
   saveUserProfile,
   getLastSessionIsoDates,
   getRecoveryStatus,
+  computeWeeklyVolumeHistory,
 } from '../services/storage';
 
 // Map JS day of week (0=Sun) to plan index: Mon/Thu=Push, Tue/Fri=Pull, Wed/Sat=Leg
@@ -158,6 +159,7 @@ export default function HomeScreen({ navigation }) {
   const [showSettings, setShowSettings] = useState(false);
   const [recoveryByPlan, setRecoveryByPlan] = useState({});
   const [planFreqThisWeek, setPlanFreqThisWeek] = useState({});
+  const [weekInsight, setWeekInsight] = useState(null); // { volumePct, needsTraining }
 
   useFocusEffect(
     useCallback(() => {
@@ -184,6 +186,15 @@ export default function HomeScreen({ navigation }) {
         const freq = {};
         thisWeek.forEach(s => { freq[s.planId] = (freq[s.planId] || 0) + 1; });
         setPlanFreqThisWeek(freq);
+        // Weekly volume insight
+        const volHistory = computeWeeklyVolumeHistory(all, 2);
+        if (volHistory.length === 2) {
+          const prevVol = volHistory[0].volume;
+          const curVol = volHistory[1].volume;
+          const volumePct = prevVol > 0 ? Math.round(((curVol - prevVol) / prevVol) * 100) : null;
+          const needsTraining = WORKOUT_PLANS.find(p => !freq[p.id])?.nameVi ?? null;
+          setWeekInsight({ volumePct, needsTraining });
+        }
       }
       load();
       return () => { active = false; };
@@ -296,6 +307,24 @@ export default function HomeScreen({ navigation }) {
           })}
         </View>
 
+        {/* Weekly insight */}
+        {weekInsight && (weekInsight.volumePct !== null || weekInsight.needsTraining) && (
+          <View style={styles.insightRow}>
+            {weekInsight.volumePct !== null && (
+              <Text style={[styles.insightText, {
+                color: weekInsight.volumePct >= 0 ? COLORS.accent : COLORS.amber,
+              }]}>
+                📊 Khối lượng {weekInsight.volumePct >= 0 ? '↑' : '↓'}{Math.abs(weekInsight.volumePct)}% tuần trước
+              </Text>
+            )}
+            {weekInsight.needsTraining && (
+              <Text style={styles.insightTextMuted}>
+                {weekInsight.volumePct !== null ? ' · ' : ''}{weekInsight.needsTraining} cần tập
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* Today's Plan */}
         <SectionHeader title="Kế hoạch hôm nay" />
         {(() => {
@@ -398,6 +427,13 @@ const styles = StyleSheet.create({
   freqLabel: { fontSize: 11, color: COLORS.muted, fontWeight: '600', flex: 1 },
   freqCount: { fontSize: 11, fontWeight: '800' },
   freqDot: { width: 6, height: 6, borderRadius: 3 },
+  insightRow: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    backgroundColor: COLORS.card, borderRadius: 12, padding: 10,
+    marginBottom: 16, borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  insightText: { fontSize: 12, fontWeight: '600' },
+  insightTextMuted: { fontSize: 12, color: COLORS.amber, fontWeight: '500' },
   recentCard: { marginBottom: 12 },
   recentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   recentName: { color: COLORS.white, fontWeight: '600', fontSize: 15 },
