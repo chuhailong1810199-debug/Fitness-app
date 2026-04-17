@@ -14,6 +14,7 @@ import {
   computeWeeklyVolumeHistory, deleteSession,
   getExerciseBestPerSession,
   computeTrainingHeatmap, computeMaxStreak,
+  getUserProfile,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
@@ -232,6 +233,7 @@ export default function ProgressScreen() {
   const [weightLog, setWeightLog] = useState([]);
   const [weightInput, setWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const [heightCm, setHeightCm] = useState(null);
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
   const [heatmapData, setHeatmapData] = useState([]);
   const [maxStreak, setMaxStreak] = useState(0);
@@ -252,8 +254,8 @@ export default function ProgressScreen() {
     useCallback(() => {
       let active = true;
       async function load() {
-        const [allSessions, allPRs, wLog] = await Promise.all([
-          getSessions(), getPRs(), getBodyWeightLog(),
+        const [allSessions, allPRs, wLog, profile] = await Promise.all([
+          getSessions(), getPRs(), getBodyWeightLog(), getUserProfile(),
         ]);
         if (!active) return;
         setSessions(allSessions);
@@ -263,6 +265,7 @@ export default function ProgressScreen() {
         setWeeklyVolumeData(computeWeeklyVolumeHistory(allSessions));
         setHeatmapData(computeTrainingHeatmap(allSessions));
         setMaxStreak(computeMaxStreak(allSessions));
+        setHeightCm(profile.heightCm ?? null);
       }
       load();
       return () => { active = false; };
@@ -281,6 +284,19 @@ export default function ProgressScreen() {
   const recentWeight = getRecentWeightEntries(weightLog, 8);
   const weightTrend = computeWeightTrend(recentWeight);
   const latestWeight = recentWeight[0]?.weight;
+
+  function computeBMI(weightKg, heightCmVal) {
+    if (!weightKg || !heightCmVal) return null;
+    return Math.round((weightKg / Math.pow(heightCmVal / 100, 2)) * 10) / 10;
+  }
+  function getBMICategory(bmi) {
+    if (bmi < 18.5) return { label: 'Thiếu cân', color: COLORS.amber };
+    if (bmi < 25)   return { label: 'Bình thường', color: COLORS.accent };
+    if (bmi < 30)   return { label: 'Thừa cân', color: COLORS.amber };
+    return { label: 'Béo phì', color: COLORS.red };
+  }
+  const bmi = computeBMI(latestWeight, heightCm);
+  const bmiCategory = bmi ? getBMICategory(bmi) : null;
 
   const prExercises = Object.keys(prs);
   const prRows = [
@@ -368,6 +384,17 @@ export default function ProgressScreen() {
                   </View>
                 )}
               </View>
+              {bmi && bmiCategory && (
+                <View style={styles.bmiRow}>
+                  <Text style={styles.bmiLabel}>BMI</Text>
+                  <Text style={[styles.bmiValue, { color: bmiCategory.color }]}>{bmi}</Text>
+                  <View style={[styles.bmiCatBadge, { backgroundColor: bmiCategory.color + '18' }]}>
+                    <Text style={[styles.bmiCatText, { color: bmiCategory.color }]}>
+                      {bmiCategory.label}
+                    </Text>
+                  </View>
+                </View>
+              )}
               <WeightSparkline entries={recentWeight} />
               <View style={styles.weightHistory}>
                 {recentWeight.slice(0, 5).map((e, i) => (
@@ -905,6 +932,12 @@ const styles = StyleSheet.create({
   logTopRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   logIntensity: { fontSize: 16 },
   logNote: { color: COLORS.muted, fontSize: 12, fontStyle: 'italic', marginTop: 4, marginBottom: 2 },
+
+  bmiRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  bmiLabel: { color: COLORS.muted, fontSize: 12 },
+  bmiValue: { fontSize: 22, fontWeight: '800' },
+  bmiCatBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  bmiCatText: { fontSize: 11, fontWeight: '700' },
 
   heatLegend: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
   heatLegendCell: { width: 11, height: 11, borderRadius: 2 },

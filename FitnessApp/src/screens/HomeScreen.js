@@ -47,17 +47,25 @@ function SettingsModal({ visible, profile, onSave, onClose }) {
   const [name, setName] = useState(profile.name ?? '');
   const [goal, setGoal] = useState(profile.goal ?? 'strength');
   const [restSecs, setRestSecs] = useState(String(profile.defaultRestSeconds ?? 60));
+  const [heightCm, setHeightCm] = useState(String(profile.heightCm ?? ''));
 
   // Sync when profile changes (e.g. first open)
   React.useEffect(() => {
     setName(profile.name ?? '');
     setGoal(profile.goal ?? 'strength');
     setRestSecs(String(profile.defaultRestSeconds ?? 60));
+    setHeightCm(String(profile.heightCm ?? ''));
   }, [profile]);
 
   function handleSave() {
     const secs = parseInt(restSecs, 10);
-    onSave({ name: name.trim(), goal, defaultRestSeconds: isNaN(secs) ? 60 : secs });
+    const cm = parseInt(heightCm, 10);
+    onSave({
+      name: name.trim(),
+      goal,
+      defaultRestSeconds: isNaN(secs) ? 60 : secs,
+      heightCm: isNaN(cm) || cm < 100 || cm > 250 ? null : cm,
+    });
   }
 
   return (
@@ -97,6 +105,20 @@ function SettingsModal({ visible, profile, onSave, onClose }) {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          {/* Height */}
+          <Text style={settStyles.label}>Chiều cao</Text>
+          <View style={settStyles.restRow}>
+            <TextInput
+              style={[settStyles.input, { flex: 1 }]}
+              value={heightCm}
+              onChangeText={setHeightCm}
+              keyboardType="number-pad"
+              placeholder="175"
+              placeholderTextColor={COLORS.muted}
+            />
+            <Text style={settStyles.restUnit}>cm</Text>
           </View>
 
           {/* Default rest time */}
