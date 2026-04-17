@@ -15,10 +15,15 @@ import {
   getThisWeekSessions,
   getUserProfile,
   saveUserProfile,
+  getLastSessionIsoDates,
+  getRecoveryStatus,
 } from '../services/storage';
 
 // Map JS day of week (0=Sun) to plan index: Mon/Thu=Push, Tue/Fri=Pull, Wed/Sat=Leg
 const DAY_TO_PLAN = { 1: 0, 4: 0, 2: 1, 5: 1, 3: 2, 6: 2 };
+
+const RECOVERY_COLORS = { ready: COLORS.accent, almost: COLORS.amber, recovering: COLORS.red };
+const RECOVERY_LABELS = { ready: '🟢 Sẵn sàng', almost: '🟡 Gần xong', recovering: '🔴 Nghỉ' };
 
 const GOALS = [
   { key: 'strength',    label: '💪 Tăng sức mạnh' },
@@ -129,6 +134,8 @@ export default function HomeScreen({ navigation }) {
   const [totalSets, setTotalSets] = useState(0);
   const [profile, setProfile] = useState({ name: '', goal: 'strength', defaultRestSeconds: 60 });
   const [showSettings, setShowSettings] = useState(false);
+  const [recoveryByPlan, setRecoveryByPlan] = useState({});
+  const [planFreqThisWeek, setPlanFreqThisWeek] = useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -144,6 +151,17 @@ export default function HomeScreen({ navigation }) {
         setWeekSessions(thisWeek.length);
         setTotalSets(weekly.reduce((sum, d) => sum + d.sets, 0));
         setProfile(prof);
+        // Recovery status per plan
+        const isoDates = getLastSessionIsoDates(all);
+        const recovery = {};
+        Object.entries(isoDates).forEach(([planId, iso]) => {
+          recovery[planId] = getRecoveryStatus(iso);
+        });
+        setRecoveryByPlan(recovery);
+        // This-week frequency per plan
+        const freq = {};
+        thisWeek.forEach(s => { freq[s.planId] = (freq[s.planId] || 0) + 1; });
+        setPlanFreqThisWeek(freq);
       }
       load();
       return () => { active = false; };
@@ -229,22 +247,60 @@ export default function HomeScreen({ navigation }) {
           )}
         </Card>
 
+        {/* Weekly plan frequency pills */}
+        <View style={styles.freqRow}>
+          {WORKOUT_PLANS.map(plan => {
+            const count = planFreqThisWeek[plan.id] || 0;
+            const rec = recoveryByPlan[plan.id];
+            return (
+              <TouchableOpacity
+                key={plan.id}
+                style={[styles.freqPill, count > 0 && styles.freqPillActive]}
+                onPress={() => navigation.navigate('Workout', { planIndex: WORKOUT_PLANS.indexOf(plan) })}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.freqEmoji}>{plan.emoji}</Text>
+                <Text style={[styles.freqLabel, count > 0 && { color: COLORS.white }]}>
+                  {plan.name.split(' ')[0]}
+                </Text>
+                <Text style={[styles.freqCount, { color: count > 0 ? COLORS.accent : '#333' }]}>
+                  ×{count}
+                </Text>
+                {rec && (
+                  <View style={[styles.freqDot, { backgroundColor: RECOVERY_COLORS[rec] ?? '#333' }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {/* Today's Plan */}
         <SectionHeader title="Kế hoạch hôm nay" />
-        <TouchableOpacity
-          style={styles.todayCard}
-          onPress={() => navigation.navigate('Workout', { planIndex: todayPlanIndex })}
-          activeOpacity={0.85}
-        >
-          <View style={styles.planIcon}>
-            <Text style={{ fontSize: 24 }}>{todayPlan.emoji}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.planName}>{todayPlan.nameVi}</Text>
-            <Text style={styles.planMeta}>{todayPlan.exercises.length} bài · {todayPlan.duration}</Text>
-          </View>
-          <Text style={{ color: COLORS.accent, fontSize: 20 }}>›</Text>
-        </TouchableOpacity>
+        {(() => {
+          const rec = recoveryByPlan[todayPlan.id];
+          const recLabel = rec ? RECOVERY_LABELS[rec] : null;
+          return (
+            <TouchableOpacity
+              style={styles.todayCard}
+              onPress={() => navigation.navigate('Workout', { planIndex: todayPlanIndex })}
+              activeOpacity={0.85}
+            >
+              <View style={styles.planIcon}>
+                <Text style={{ fontSize: 24 }}>{todayPlan.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.planName}>{todayPlan.nameVi}</Text>
+                <Text style={styles.planMeta}>{todayPlan.exercises.length} bài · {todayPlan.duration}</Text>
+                {recLabel && (
+                  <Text style={[styles.planRecovery, { color: RECOVERY_COLORS[rec] }]}>
+                    {recLabel}
+                  </Text>
+                )}
+              </View>
+              <Text style={{ color: COLORS.accent, fontSize: 20 }}>›</Text>
+            </TouchableOpacity>
+          );
+        })()}
 
         {/* Recent Session Summary (if any) */}
         {sessions.length > 0 && (
@@ -308,6 +364,18 @@ const styles = StyleSheet.create({
   },
   planName: { fontWeight: '700', color: COLORS.white, fontSize: 16 },
   planMeta: { color: COLORS.muted, fontSize: 13, marginTop: 2 },
+  planRecovery: { fontSize: 11, fontWeight: '600', marginTop: 4 },
+  freqRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  freqPill: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: COLORS.card, borderRadius: 12, padding: 10,
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  freqPillActive: { borderColor: 'rgba(200,255,87,0.3)', backgroundColor: 'rgba(200,255,87,0.06)' },
+  freqEmoji: { fontSize: 14 },
+  freqLabel: { fontSize: 11, color: COLORS.muted, fontWeight: '600', flex: 1 },
+  freqCount: { fontSize: 11, fontWeight: '800' },
+  freqDot: { width: 6, height: 6, borderRadius: 3 },
   recentCard: { marginBottom: 12 },
   recentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   recentName: { color: COLORS.white, fontWeight: '600', fontSize: 15 },
