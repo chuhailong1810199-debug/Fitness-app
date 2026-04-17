@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Modal, TextInput, KeyboardAvoidingView, Platform,
+  StyleSheet, Modal, TextInput, KeyboardAvoidingView, Platform, Share, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -18,6 +18,9 @@ import {
   getLastSessionIsoDates,
   getRecoveryStatus,
   computeWeeklyVolumeHistory,
+  getPRs, getBodyWeightLog, getMeasurements,
+  clearAllData,
+  importDataSnapshot,
 } from '../services/storage';
 
 // Map JS day of week (0=Sun) to plan index: Mon/Thu=Push, Tue/Fri=Pull, Wed/Sat=Leg
@@ -33,6 +36,9 @@ const GOALS = [
   { key: 'endurance',   label: '🏃 Sức bền' },
 ];
 
+const EMPTY_WEEK_DATA = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+  .map(day => ({ day, sets: 0, date: '' }));
+
 function getGreeting(name) {
   const h = new Date().getHours();
   const base = h < 12 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
@@ -44,7 +50,7 @@ function getTodayPlanIndex() {
 }
 
 // ── Settings Modal ────────────────────────────────────
-function SettingsModal({ visible, profile, onSave, onClose }) {
+function SettingsModal({ visible, profile, onSave, onClose, onExport, onImport, onResetData }) {
   const [name, setName] = useState(profile.name ?? '');
   const [goal, setGoal] = useState(profile.goal ?? 'strength');
   const [restSecs, setRestSecs] = useState(String(profile.defaultRestSeconds ?? 60));
@@ -139,6 +145,18 @@ function SettingsModal({ visible, profile, onSave, onClose }) {
           <TouchableOpacity style={settStyles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
             <Text style={settStyles.saveBtnText}>Lưu</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={settStyles.exportBtn} onPress={onExport} activeOpacity={0.8}>
+            <Text style={settStyles.exportBtnText}>📤 Xuất dữ liệu</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={settStyles.importBtn} onPress={onImport} activeOpacity={0.8}>
+            <Text style={settStyles.importBtnText}>📥 Nhập dữ liệu</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={settStyles.resetBtn} onPress={onResetData} activeOpacity={0.8}>
+            <Text style={settStyles.resetBtnText}>🧹 Đặt lại toàn bộ dữ liệu</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -149,9 +167,7 @@ function SettingsModal({ visible, profile, onSave, onClose }) {
 export default function HomeScreen({ navigation }) {
   const [selectedBar, setSelectedBar] = useState(null);
   const [sessions, setSessions] = useState([]);
-  const [weeklyData, setWeeklyData] = useState(
-    ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(day => ({ day, sets: 0, date: '' }))
-  );
+  const [weeklyData, setWeeklyData] = useState(EMPTY_WEEK_DATA);
   const [streak, setStreak] = useState(0);
   const [weekSessions, setWeekSessions] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
@@ -160,6 +176,38 @@ export default function HomeScreen({ navigation }) {
   const [recoveryByPlan, setRecoveryByPlan] = useState({});
   const [planFreqThisWeek, setPlanFreqThisWeek] = useState({});
   const [weekInsight, setWeekInsight] = useState(null); // { volumePct, needsTraining }
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+
+  function applyHomeData(all, prof) {
+    setSessions(all);
+    setStreak(computeStreak(all));
+    const weekly = computeWeeklyData(all);
+    setWeeklyData(weekly);
+    const thisWeek = getThisWeekSessions(all);
+    setWeekSessions(thisWeek.length);
+    setTotalSets(weekly.reduce((sum, d) => sum + d.sets, 0));
+    setProfile(prof);
+    const isoDates = getLastSessionIsoDates(all);
+    const recovery = {};
+    Object.entries(isoDates).forEach(([planId, iso]) => {
+      recovery[planId] = getRecoveryStatus(iso);
+    });
+    setRecoveryByPlan(recovery);
+    const freq = {};
+    thisWeek.forEach(s => { freq[s.planId] = (freq[s.planId] || 0) + 1; });
+    setPlanFreqThisWeek(freq);
+    const volHistory = computeWeeklyVolumeHistory(all, 2);
+    if (volHistory.length === 2) {
+      const prevVol = volHistory[0].volume;
+      const curVol = volHistory[1].volume;
+      const volumePct = prevVol > 0 ? Math.round(((curVol - prevVol) / prevVol) * 100) : null;
+      const needsTraining = WORKOUT_PLANS.find(p => !freq[p.id])?.nameVi ?? null;
+      setWeekInsight({ volumePct, needsTraining });
+      return;
+    }
+    setWeekInsight(null);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -167,44 +215,99 @@ export default function HomeScreen({ navigation }) {
       async function load() {
         const [all, prof] = await Promise.all([getSessions(), getUserProfile()]);
         if (!active) return;
-        setSessions(all);
-        setStreak(computeStreak(all));
-        const weekly = computeWeeklyData(all);
-        setWeeklyData(weekly);
-        const thisWeek = getThisWeekSessions(all);
-        setWeekSessions(thisWeek.length);
-        setTotalSets(weekly.reduce((sum, d) => sum + d.sets, 0));
-        setProfile(prof);
-        // Recovery status per plan
-        const isoDates = getLastSessionIsoDates(all);
-        const recovery = {};
-        Object.entries(isoDates).forEach(([planId, iso]) => {
-          recovery[planId] = getRecoveryStatus(iso);
-        });
-        setRecoveryByPlan(recovery);
-        // This-week frequency per plan
-        const freq = {};
-        thisWeek.forEach(s => { freq[s.planId] = (freq[s.planId] || 0) + 1; });
-        setPlanFreqThisWeek(freq);
-        // Weekly volume insight
-        const volHistory = computeWeeklyVolumeHistory(all, 2);
-        if (volHistory.length === 2) {
-          const prevVol = volHistory[0].volume;
-          const curVol = volHistory[1].volume;
-          const volumePct = prevVol > 0 ? Math.round(((curVol - prevVol) / prevVol) * 100) : null;
-          const needsTraining = WORKOUT_PLANS.find(p => !freq[p.id])?.nameVi ?? null;
-          setWeekInsight({ volumePct, needsTraining });
-        }
+        applyHomeData(all, prof);
       }
       load();
       return () => { active = false; };
     }, [])
   );
 
+  async function handleExportData() {
+    try {
+      const [allSessions, prs, weightLog, meas] = await Promise.all([
+        getSessions(), getPRs(), getBodyWeightLog(), getMeasurements(),
+      ]);
+      const payload = {
+        schemaVersion: 1,
+        exportDate: new Date().toISOString(),
+        profile,
+        sessions: allSessions,
+        personalRecords: prs,
+        bodyWeightLog: weightLog,
+        measurements: meas,
+      };
+      const payloadText = JSON.stringify(payload, null, 2);
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payloadText);
+        Alert.alert('Đã sao chép', 'Dữ liệu đã được sao chép vào clipboard.');
+        return;
+      }
+      await Share.share({ message: payloadText, title: 'FTN Fitness Data' });
+    } catch {
+      Alert.alert('Lỗi', 'Không thể xuất dữ liệu.');
+    }
+  }
+
   async function handleSaveProfile(updated) {
     const saved = await saveUserProfile(updated);
     setProfile(saved);
     setShowSettings(false);
+  }
+
+  async function handleImportData() {
+    const input = importText.trim();
+    if (!input) {
+      Alert.alert('Thiếu dữ liệu', 'Vui lòng dán JSON đã xuất trước khi nhập.');
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(input);
+    } catch {
+      Alert.alert('Lỗi', 'JSON không hợp lệ.');
+      return;
+    }
+    try {
+      const {
+        sessions: importedSessions,
+        profile: importedProfile,
+        stats,
+      } = await importDataSnapshot(parsed);
+      applyHomeData(importedSessions, importedProfile);
+      setShowImportModal(false);
+      setShowSettings(false);
+      setImportText('');
+      Alert.alert(
+        'Hoàn tất',
+        `Đã nhập ${stats?.sessions ?? 0} buổi tập, ${stats?.personalRecords ?? 0} PR, ${stats?.bodyWeightEntries ?? 0} cân nặng, ${stats?.measurementEntries ?? 0} số đo.`
+      );
+    } catch (error) {
+      if (error?.message === 'INVALID_SNAPSHOT') {
+        Alert.alert('Lỗi', 'Định dạng bản sao lưu không hợp lệ.');
+        return;
+      }
+      Alert.alert('Lỗi', 'Không thể nhập dữ liệu.');
+    }
+  }
+
+  async function handleResetAllData() {
+    Alert.alert(
+      'Đặt lại dữ liệu?',
+      'Tất cả buổi tập, PR, cân nặng, số đo và hồ sơ sẽ bị xóa.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tất cả',
+          style: 'destructive',
+          onPress: async () => {
+            await clearAllData();
+            applyHomeData([], { name: '', goal: 'strength', defaultRestSeconds: 60 });
+            setShowSettings(false);
+            Alert.alert('Đã đặt lại', 'Toàn bộ dữ liệu đã được xóa.');
+          },
+        },
+      ]
+    );
   }
 
   const todayPlanIndex = getTodayPlanIndex();
@@ -380,8 +483,45 @@ export default function HomeScreen({ navigation }) {
         visible={showSettings}
         profile={profile}
         onSave={handleSaveProfile}
+        onExport={handleExportData}
+        onImport={() => setShowImportModal(true)}
+        onResetData={handleResetAllData}
         onClose={() => setShowSettings(false)}
       />
+
+      <Modal
+        visible={showImportModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowImportModal(false)}
+      >
+        <KeyboardAvoidingView
+          style={settStyles.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <TouchableOpacity style={settStyles.backdrop} activeOpacity={1} onPress={() => setShowImportModal(false)} />
+          <View style={settStyles.sheet}>
+            <View style={settStyles.handle} />
+            <Text style={settStyles.title}>Nhập dữ liệu JSON</Text>
+            <TextInput
+              style={settStyles.importInput}
+              value={importText}
+              onChangeText={setImportText}
+              multiline
+              placeholder="Dán JSON đã xuất vào đây…"
+              placeholderTextColor={COLORS.muted}
+            />
+            <View style={settStyles.importActions}>
+              <TouchableOpacity style={settStyles.importCancel} onPress={() => setShowImportModal(false)} activeOpacity={0.75}>
+                <Text style={settStyles.importCancelText}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={settStyles.importSave} onPress={handleImportData} activeOpacity={0.85}>
+                <Text style={settStyles.importSaveText}>Nhập</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -478,4 +618,44 @@ const settStyles = StyleSheet.create({
     borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   saveBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },
+  exportBtn: {
+    marginTop: 10, backgroundColor: COLORS.card,
+    borderRadius: 14, paddingVertical: 13, alignItems: 'center',
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  exportBtnText: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
+  importBtn: {
+    marginTop: 10, backgroundColor: 'rgba(89,179,255,0.12)',
+    borderRadius: 14, paddingVertical: 13, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(89,179,255,0.25)',
+  },
+  importBtnText: { color: '#8ec9ff', fontWeight: '700', fontSize: 14 },
+  resetBtn: {
+    marginTop: 10, backgroundColor: 'rgba(255,87,87,0.1)',
+    borderRadius: 14, paddingVertical: 13, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,87,87,0.25)',
+  },
+  resetBtnText: { color: COLORS.red, fontWeight: '700', fontSize: 14 },
+  importInput: {
+    minHeight: 180,
+    maxHeight: 260,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: COLORS.border,
+    color: COLORS.white,
+    fontSize: 13,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  importActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 14 },
+  importCancel: {
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 10, backgroundColor: COLORS.card,
+  },
+  importCancelText: { color: COLORS.mutedLight, fontWeight: '600' },
+  importSave: {
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.accent,
+  },
+  importSaveText: { color: '#111', fontWeight: '700' },
 });

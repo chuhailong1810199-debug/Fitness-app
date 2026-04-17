@@ -9,13 +9,13 @@ import { COLORS } from '../theme/colors';
 import { Card, SectionHeader, Divider } from '../components/UI';
 import {
   getSessions, getPRs, computeLifetimeStats,
-  getBodyWeightLog, addBodyWeightEntry,
+  getBodyWeightLog, addBodyWeightEntry, deleteBodyWeightEntry,
   getRecentWeightEntries, computeWeightTrend,
   computeWeeklyVolumeHistory, deleteSession,
   getExerciseBestPerSession,
   computeTrainingHeatmap, computeMaxStreak,
   getUserProfile,
-  getMeasurements, addMeasurementEntry, computeMeasurementTrends,
+  getMeasurements, addMeasurementEntry, deleteMeasurementEntry, computeMeasurementTrends,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = [
@@ -386,6 +386,18 @@ export default function ProgressScreen() {
     setShowWeightModal(false);
   }
 
+  async function handleDeleteWeightEntry(entryId) {
+    const updated = await deleteBodyWeightEntry(entryId);
+    setWeightLog(updated);
+  }
+
+  async function handleDeleteLatestMeasurement() {
+    const latestId = measurements[0]?.id;
+    if (!latestId) return;
+    const updated = await deleteMeasurementEntry(latestId);
+    setMeasurements(updated);
+  }
+
   const recentWeight = getRecentWeightEntries(weightLog, 8);
   const weightTrend = computeWeightTrend(recentWeight);
   const latestWeight = recentWeight[0]?.weight;
@@ -505,9 +517,28 @@ export default function ProgressScreen() {
                 {recentWeight.slice(0, 5).map((e, i) => (
                   <View key={e.id} style={styles.weightHistoryRow}>
                     <Text style={styles.weightHistoryDate}>{e.dateLabel}</Text>
-                    <Text style={[styles.weightHistoryVal, i === 0 && { color: COLORS.white }]}>
-                      {e.weight} kg
-                    </Text>
+                    <View style={styles.weightHistoryRight}>
+                      <Text style={[styles.weightHistoryVal, i === 0 && { color: COLORS.white }]}>
+                        {e.weight} kg
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.rowDeleteBtn}
+                        onPress={() =>
+                          Alert.alert(
+                            'Xóa bản ghi cân nặng?',
+                            `Bản ghi ngày ${e.dateLabel} sẽ bị xóa.`,
+                            [
+                              { text: 'Hủy', style: 'cancel' },
+                              { text: 'Xóa', style: 'destructive', onPress: () => handleDeleteWeightEntry(e.id) },
+                            ]
+                          )
+                        }
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.rowDeleteText}>🗑</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -534,6 +565,24 @@ export default function ProgressScreen() {
                 >
                   <Text style={styles.addBtnText}>+ Cập nhật</Text>
                 </TouchableOpacity>
+                {latest && (
+                  <TouchableOpacity
+                    style={styles.addBtnSecondary}
+                    onPress={() =>
+                      Alert.alert(
+                        'Xóa số đo mới nhất?',
+                        `Bản ghi ngày ${latest.dateLabel} sẽ bị xóa.`,
+                        [
+                          { text: 'Hủy', style: 'cancel' },
+                          { text: 'Xóa', style: 'destructive', onPress: handleDeleteLatestMeasurement },
+                        ]
+                      )
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.addBtnSecondaryText}>🗑 Xóa mới nhất</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <Card style={{ marginBottom: 24 }}>
                 {latest ? (
@@ -1053,6 +1102,16 @@ const styles = StyleSheet.create({
     borderRadius: 20, marginBottom: 12,
   },
   addBtnText: { color: COLORS.accent, fontSize: 12, fontWeight: '700' },
+  addBtnSecondary: {
+    backgroundColor: COLORS.card,
+    borderWidth: 0.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  addBtnSecondaryText: { color: COLORS.mutedLight, fontSize: 12, fontWeight: '600' },
 
   weightRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   weightValue: { fontSize: 36, fontWeight: '800', color: COLORS.white },
@@ -1063,7 +1122,10 @@ const styles = StyleSheet.create({
   weightHistory: { marginTop: 10, gap: 4 },
   weightHistoryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   weightHistoryDate: { color: COLORS.muted, fontSize: 13 },
+  weightHistoryRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   weightHistoryVal: { color: COLORS.mutedLight, fontSize: 13, fontWeight: '500' },
+  rowDeleteBtn: { paddingVertical: 2, paddingHorizontal: 2 },
+  rowDeleteText: { fontSize: 14, color: COLORS.muted },
 
   prRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

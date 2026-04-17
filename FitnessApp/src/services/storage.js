@@ -4,6 +4,10 @@ const SESSIONS_KEY = 'ftn_sessions';
 const PRS_KEY = 'ftn_personal_records';
 const BODY_WEIGHT_KEY = 'ftn_body_weight';
 const USER_PROFILE_KEY = 'ftn_user_profile';
+const MEASUREMENTS_KEY = 'ftn_measurements';
+
+const DEFAULT_PROFILE = { name: '', goal: 'strength', defaultRestSeconds: 60, heightCm: null };
+const VALID_GOALS = new Set(['strength', 'muscle', 'fat_loss', 'endurance']);
 
 // ── Sessions ──────────────────────────────────────────
 // Session shape:
@@ -306,6 +310,13 @@ export async function addBodyWeightEntry(weightKg) {
   return filtered;
 }
 
+export async function deleteBodyWeightEntry(entryId) {
+  const entries = await getBodyWeightLog();
+  const filtered = entries.filter(e => e.id !== entryId);
+  await AsyncStorage.setItem(BODY_WEIGHT_KEY, JSON.stringify(filtered));
+  return filtered;
+}
+
 /** Returns last N body weight entries sorted newest-first */
 export function getRecentWeightEntries(entries, n = 10) {
   return entries.slice(0, n);
@@ -321,8 +332,6 @@ export function computeWeightTrend(entries) {
 
 // ── Body Measurements ─────────────────────────────────
 // Entry shape: { id, date (YYYY-MM-DD), dateLabel, chest?, waist?, arms?, hips? }  — all in cm
-
-const MEASUREMENTS_KEY = 'ftn_measurements';
 
 export async function getMeasurements() {
   try {
@@ -349,6 +358,13 @@ export async function addMeasurementEntry(data) {
   return filtered;
 }
 
+export async function deleteMeasurementEntry(entryId) {
+  const entries = await getMeasurements();
+  const filtered = entries.filter(e => e.id !== entryId);
+  await AsyncStorage.setItem(MEASUREMENTS_KEY, JSON.stringify(filtered));
+  return filtered;
+}
+
 /** Returns delta for each measurement key between newest and previous entry */
 export function computeMeasurementTrends(entries) {
   if (entries.length < 2) return {};
@@ -370,15 +386,164 @@ export function computeMeasurementTrends(entries) {
 export async function getUserProfile() {
   try {
     const json = await AsyncStorage.getItem(USER_PROFILE_KEY);
-    return json ? JSON.parse(json) : { name: '', goal: 'strength', defaultRestSeconds: 60 };
+    return json ? sanitizeProfile(JSON.parse(json)) : DEFAULT_PROFILE;
   } catch {
-    return { name: '', goal: 'strength', defaultRestSeconds: 60 };
+    return DEFAULT_PROFILE;
   }
 }
 
 export async function saveUserProfile(profile) {
-  await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
-  return profile;
+  const safeProfile = sanitizeProfile(profile);
+  await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(safeProfile));
+  return safeProfile;
+}
+
+export async function clearAllData() {
+  await AsyncStorage.multiRemove([
+    SESSIONS_KEY,
+    PRS_KEY,
+    BODY_WEIGHT_KEY,
+    MEASUREMENTS_KEY,
+    USER_PROFILE_KEY,
+  ]);
+}
+
+export async function importDataSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    throw new Error('INVALID_SNAPSHOT');
+  }
+  const sessions = sanitizeSessions(snapshot.sessions);
+  const personalRecords = sanitizePersonalRecords(snapshot.personalRecords);
+  const bodyWeightLog = sanitizeBodyWeightLog(snapshot.bodyWeightLog);
+  const measurements = sanitizeMeasurements(snapshot.measurements);
+  const profile = sanitizeProfile(snapshot.profile);
+
+  await AsyncStorage.multiSet([
+    [SESSIONS_KEY, JSON.stringify(sessions)],
+    [PRS_KEY, JSON.stringify(personalRecords)],
+    [BODY_WEIGHT_KEY, JSON.stringify(bodyWeightLog)],
+    [MEASUREMENTS_KEY, JSON.stringify(measurements)],
+    [USER_PROFILE_KEY, JSON.stringify(profile)],
+  ]);
+
+  return {
+    sessions,
+    profile,
+    stats: {
+      sessions: sessions.length,
+      personalRecords: Object.keys(personalRecords).length,
+      bodyWeightEntries: bodyWeightLog.length,
+      measurementEntries: measurements.length,
+    },
+  };
+}
+
+function sanitizeProfile(profile) {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return DEFAULT_PROFILE;
+  const name = typeof profile.name === 'string' ? profile.name.trim().slice(0, 30) : '';
+  const goal = VALID_GOALS.has(profile.goal) ? profile.goal : 'strength';
+  const restSecs = Number(profile.defaultRestSeconds);
+  const defaultRestSeconds = Number.isFinite(restSecs) && restSecs >= 10 && restSecs <= 900
+    ? Math.round(restSecs)
+    : 60;
+  const rawHeight = Number(profile.heightCm);
+  const heightCm = Number.isFinite(rawHeight) && rawHeight >= 100 && rawHeight <= 250
+    ? Math.round(rawHeight)
+    : null;
+  return { name, goal, defaultRestSeconds, heightCm };
+}
+
+function sanitizeSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+}
+
+function sanitizePersonalRecords(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const result = {};
+  Object.entries(raw).forEach(([exercise, rec]) => {
+    if (typeof exercise !== 'string' || !rec || typeof rec !== 'object') return;
+    const weight = Number(rec.weight);
+    if (!Number.isFinite(weight) || weight <= 0) return;
+    result[exercise] = {
+      weight: Math.round(weight * 10) / 10,
+      reps: Number.isFinite(Number(rec.reps)) ? Math.max(0, Math.round(Number(rec.reps))) : 0,
+      date: typeof rec.date === 'string' ? rec.date : '',
+    };
+  });
+  return result;
+}
+
+function sanitizeBodyWeightLog(raw) {
+  if (!Array.isArray(raw)) return [];
+  const byDate = {};
+  raw
+    .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+    .map((item, idx) => {
+      const weight = Number(item.weight);
+      if (!Number.isFinite(weight) || weight <= 0) return null;
+      const date = normalizeIsoDate(item.date);
+      return {
+        id: item.id != null ? String(item.id) : `${Date.now()}-w-${idx}`,
+        date,
+        dateLabel: typeof item.dateLabel === 'string' && item.dateLabel ? item.dateLabel : toDateLabelFromIso(date),
+        weight: Math.round(weight * 10) / 10,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .forEach(entry => {
+      if (!byDate[entry.date]) byDate[entry.date] = entry;
+    });
+  return Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function sanitizeMeasurements(raw) {
+  if (!Array.isArray(raw)) return [];
+  const keys = ['chest', 'waist', 'arms', 'hips'];
+  const byDate = {};
+  raw
+    .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+    .map((item, idx) => {
+      const date = normalizeIsoDate(item.date);
+      const normalized = {
+        id: item.id != null ? String(item.id) : `${Date.now()}-m-${idx}`,
+        date,
+        dateLabel: typeof item.dateLabel === 'string' && item.dateLabel ? item.dateLabel : toDateLabelFromIso(date),
+      };
+      let hasAnyMetric = false;
+      keys.forEach(k => {
+        const val = Number(item[k]);
+        if (Number.isFinite(val) && val > 0) {
+          normalized[k] = Math.round(val * 10) / 10;
+          hasAnyMetric = true;
+        }
+      });
+      return hasAnyMetric ? normalized : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .forEach(entry => {
+      if (!byDate[entry.date]) byDate[entry.date] = entry;
+    });
+  return Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function normalizeIsoDate(value) {
+  if (typeof value !== 'string') return toDateStr(new Date());
+  const v = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return toDateStr(new Date());
+  const d = new Date(`${v}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return toDateStr(new Date());
+  return toDateStr(d) === v ? v : toDateStr(new Date());
+}
+
+function toDateLabelFromIso(isoDate) {
+  const d = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return toDateLabel(new Date());
+  return toDateLabel(d);
 }
 
 /**
