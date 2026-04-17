@@ -72,9 +72,11 @@ let _programUnsub = null;
 let _exerciseCache = [];
 let _exerciseCacheLoaded = false;
 let _pickerPhaseIndex = null;
+let _lastPickedExercise = null;
 let _dashVolumeChart = null;
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MUSCLE_WEIGHTS = {P:1.0, S:0.5, T:0.333, Q:0.25};
 const phaseTagClass = {warmup:'phase-warmup',core:'phase-core',strength:'phase-strength',accessories:'phase-accessories'};
 const COMPLIMENTS = [
   'Xuất sắc! Cơ thể đang phản ứng rất tốt với chương trình.',
@@ -551,9 +553,28 @@ async function finishWorkout() {
     const prog  = getProgram();
     const day   = prog[activeDay];
     const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
-    const doneN = Object.values(exerciseState[activeClient.id] || {}).filter(Boolean).length;
+    const clientState = exerciseState[activeClient.id] || {};
+    const doneN = Object.values(clientState).filter(Boolean).length;
+
+    // Compute volumeByMuscle from completed exercises that have muscles data
+    const volumeByMuscle = {};
+    if (day) {
+      day.phases.forEach((phase, pi) => {
+        phase.exercises.forEach((ex, ei) => {
+          const key = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
+          if (clientState[key] && ex.muscles && typeof ex.muscles === 'object') {
+            Object.entries(ex.muscles).forEach(([muscle, role]) => {
+              const weight = MUSCLE_WEIGHTS[role] || 0;
+              if (weight > 0) volumeByMuscle[muscle] = (volumeByMuscle[muscle] || 0) + weight;
+            });
+          }
+        });
+      });
+    }
+
     await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), {
-      date: serverTimestamp(), day: activeDay, done: doneN, total, volume: 0
+      date: serverTimestamp(), day: activeDay, done: doneN, total,
+      volume: 0, volumeByMuscle, totalVolume: 0
     });
     exerciseState[activeClient.id] = {};
     renderExercises();
@@ -1182,12 +1203,22 @@ function toggleAddPhaseForm() { document.getElementById('add-phase-form')?.class
 async function addExercise(pi) {
   const name = document.getElementById('new-name-'+pi).value.trim();
   if (!name) return;
-  getOrCreateProgram()[activeDay].phases[pi].exercises.push({
-    name, setsReps: document.getElementById('new-sets-'+pi).value.trim() || '3 × 8',
-    tempo: document.getElementById('new-tempo-'+pi).value.trim() || '—',
-    cue:   document.getElementById('new-cue-'+pi).value.trim()   || '',
-    type:  document.getElementById('new-type-'+pi).value
-  });
+  const exData = {
+    name,
+    setsReps: document.getElementById('new-sets-'+pi).value.trim() || '3 × 8',
+    tempo:    document.getElementById('new-tempo-'+pi).value.trim() || '—',
+    cue:      document.getElementById('new-cue-'+pi).value.trim()   || '',
+    type:     document.getElementById('new-type-'+pi).value
+  };
+  // Attach library metadata if exercise came from the picker
+  if (_lastPickedExercise && _lastPickedExercise.name === name) {
+    exData.exerciseId  = _lastPickedExercise.id          || '';
+    exData.muscles     = _lastPickedExercise.muscles     || {};
+    exData.tool        = _lastPickedExercise.tool        || '';
+    exData.difficulty  = _lastPickedExercise.difficulty  || '';
+    _lastPickedExercise = null;
+  }
+  getOrCreateProgram()[activeDay].phases[pi].exercises.push(exData);
   await saveProgramToFirestore(); renderExercises();
 }
 async function addPhase() {
@@ -1650,9 +1681,13 @@ function renderPickerResults() {
 }
 
 function selectExercise(name) {
+  // Store the full exercise object so addExercise() can attach muscles/tool/difficulty
+  _lastPickedExercise = _exerciseCache.find(e => e.name === name) || null;
   if (_pickerPhaseIndex !== null) {
     const input = document.getElementById('new-name-' + _pickerPhaseIndex);
     if (input) input.value = name;
+    // Show the add-form so user can set setsReps/tempo
+    document.getElementById('add-form-' + _pickerPhaseIndex)?.classList.add('show');
   }
   closeExercisePicker();
 }
