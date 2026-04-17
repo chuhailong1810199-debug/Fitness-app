@@ -69,6 +69,10 @@ let editMode = false;
 let customPrograms = {};
 let _wChart = null, _sChart = null;
 let _programUnsub = null;
+let _exerciseCache = [];
+let _exerciseCacheLoaded = false;
+let _pickerPhaseIndex = null;
+let _dashVolumeChart = null;
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const phaseTagClass = {warmup:'phase-warmup',core:'phase-core',strength:'phase-strength',accessories:'phase-accessories'};
@@ -355,6 +359,7 @@ async function switchClient(id) {
   // subscribeProgram will trigger renderDayTabs + renderExercises on first snapshot
   subscribeProgram();
   await renderStats();
+  renderCoachDashboard();
 }
 
 // ── EDIT CLIENT INFO (coach only) ─────────────────────
@@ -1081,7 +1086,7 @@ function renderExercises() {
       html += `<button class="add-exercise-btn" onclick="toggleAddForm(${pi})">+ Add Exercise</button>
       <div class="add-form" id="add-form-${pi}">
         <div class="form-row">
-          <div class="form-group full"><label class="form-label">Exercise Name</label><input class="form-input" id="new-name-${pi}" placeholder="e.g. Barbell Row"></div>
+          <div class="form-group full"><label class="form-label">Exercise Name</label><div style="display:flex;gap:6px"><input class="form-input" id="new-name-${pi}" placeholder="e.g. Barbell Row" style="flex:1"><button class="btn-browse" type="button" onclick="openExercisePicker(${pi})">Browse</button></div></div>
           <div class="form-group"><label class="form-label">Sets × Reps</label><input class="form-input" id="new-sets-${pi}" placeholder="3 × 8"></div>
           <div class="form-group"><label class="form-label">Tempo</label><input class="form-input" id="new-tempo-${pi}" placeholder="3-1-2"></div>
           <div class="form-group full"><label class="form-label">Coaching Cue</label><input class="form-input" id="new-cue-${pi}" placeholder="Focus cue..."></div>
@@ -1362,6 +1367,7 @@ function showPage(page) {
     checkCheckpointReminder();
     renderProgressData();
     renderProgressPage();
+    renderCoachDashboard();
   }
 }
 
@@ -1579,8 +1585,211 @@ window._addDay = addDay;
 window._finishWorkout = finishWorkout;
 window.__finishWorkout = finishWorkout;
 
+// ── EXERCISE LIBRARY CACHE (Bước 6) ───────────────────
+async function loadExerciseCache() {
+  if (_exerciseCacheLoaded) return;
+  try {
+    const snap = await getDocs(collection(db, 'exercises'));
+    _exerciseCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _exerciseCacheLoaded = true;
+  } catch(e) { console.warn('loadExerciseCache error:', e); }
+}
+
+function openExercisePicker(pi) {
+  _pickerPhaseIndex = pi;
+  loadExerciseCache().then(() => renderPickerResults());
+  document.getElementById('picker-search').value = '';
+  document.getElementById('picker-muscle').value = '';
+  document.getElementById('picker-tool').value   = '';
+  document.getElementById('picker-diff').value   = '';
+  document.getElementById('exercise-picker-modal').classList.add('open');
+  setTimeout(() => document.getElementById('picker-search').focus(), 100);
+}
+
+function closeExercisePicker() {
+  document.getElementById('exercise-picker-modal').classList.remove('open');
+}
+
+function renderPickerResults() {
+  const q    = (document.getElementById('picker-search').value || '').toLowerCase();
+  const mus  = document.getElementById('picker-muscle').value;
+  const tool = document.getElementById('picker-tool').value;
+  const diff = document.getElementById('picker-diff').value;
+
+  let list = _exerciseCache;
+  if (q)    list = list.filter(e => e.name && e.name.toLowerCase().includes(q));
+  if (mus)  list = list.filter(e => e.muscles && Object.keys(e.muscles).some(m => m.toLowerCase().includes(mus.toLowerCase())));
+  if (tool) list = list.filter(e => (e.tool || '').toLowerCase() === tool.toLowerCase());
+  if (diff) list = list.filter(e => (e.difficulty || '').toLowerCase() === diff.toLowerCase());
+
+  const wrap = document.getElementById('picker-results');
+  if (!_exerciseCacheLoaded) { wrap.innerHTML = '<div class="picker-loading">Đang tải thư viện...</div>'; return; }
+  if (list.length === 0)     { wrap.innerHTML = '<div class="picker-loading">Không tìm thấy bài tập nào.</div>'; return; }
+
+  const diffColor = { beginner:'#44cc66', intermediate:'#e09535', advanced:'#e05535' };
+  const muscleRole = (ms) => {
+    if (!ms) return '';
+    return Object.entries(ms).map(([m, r]) => {
+      const cls = r==='P'?'mr-p':r==='S'?'mr-s':r==='T'?'mr-t':'mr-q';
+      return `<span class="muscle-role-tag ${cls}">${m}</span>`;
+    }).join('');
+  };
+
+  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  wrap.innerHTML = list.slice(0, 80).map(e => {
+    const dc = diffColor[(e.difficulty||'').toLowerCase()] || '#888';
+    return `<div class="picker-item" onclick="selectExercise(${JSON.stringify(e.name).replace(/"/g,'&quot;')})">
+      <div class="picker-item-name">${esc(e.name)}</div>
+      <div class="picker-item-meta">
+        ${e.difficulty ? `<span class="picker-badge" style="color:${dc};border-color:${dc}40">${esc(e.difficulty)}</span>` : ''}
+        ${e.tool ? `<span class="picker-badge">${esc(e.tool)}</span>` : ''}
+      </div>
+      <div class="picker-muscles">${muscleRole(e.muscles)}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectExercise(name) {
+  if (_pickerPhaseIndex !== null) {
+    const input = document.getElementById('new-name-' + _pickerPhaseIndex);
+    if (input) input.value = name;
+  }
+  closeExercisePicker();
+}
+
+// ── COACH DASHBOARD (Bước 5) ───────────────────────────
+async function renderCoachDashboard() {
+  const wrap = document.getElementById('coach-dashboard');
+  if (!wrap) return;
+  if (userRole !== 'coach') { wrap.style.display = 'none'; return; }
+  if (!activeClient) { wrap.innerHTML = '<div class="cd-empty">Chọn client để xem dashboard.</div>'; return; }
+  wrap.style.display = 'block';
+
+  const hist = await getHistory();
+  if (hist.length === 0) {
+    wrap.innerHTML = '<div class="cd-empty">Chưa có buổi tập nào được ghi nhận.</div>';
+    return;
+  }
+
+  // Compute weekly buckets (last 6 weeks)
+  const now = new Date(); now.setHours(0,0,0,0);
+  const weeks = [];
+  for (let i = 5; i >= 0; i--) {
+    const start = new Date(now);
+    start.setDate(now.getDate() - now.getDay() - i * 7 + (now.getDay() === 0 ? -6 : 1));
+    start.setHours(0,0,0,0);
+    const end = new Date(start); end.setDate(start.getDate() + 7);
+    weeks.push({ start, end, sessions: 0, label: start.toLocaleDateString('vi-VN', {day:'numeric', month:'numeric'}) });
+  }
+
+  // Accumulate muscle volume map
+  const muscleVolMap = {};
+  hist.forEach(s => {
+    const d = s.date?.toDate ? s.date.toDate() : new Date(s.date);
+    d.setHours(0,0,0,0);
+    weeks.forEach(w => { if (d >= w.start && d < w.end) w.sessions++; });
+    if (s.volumeByMuscle) {
+      Object.entries(s.volumeByMuscle).forEach(([m, v]) => {
+        muscleVolMap[m] = (muscleVolMap[m] || 0) + v;
+      });
+    }
+  });
+
+  // Week-over-week comparison (last 2 weeks)
+  const lastWeek = weeks[4]?.sessions || 0;
+  const thisWeek = weeks[5]?.sessions || 0;
+  const wowChange = lastWeek === 0 ? null : ((thisWeek - lastWeek) / lastWeek * 100).toFixed(0);
+  const wowLabel = wowChange === null
+    ? '—'
+    : (wowChange >= 0 ? `+${wowChange}%` : `${wowChange}%`);
+  const wowColor = wowChange === null ? '#888' : wowChange >= 0 ? '#44cc66' : '#e05535';
+
+  // Top 5 muscles
+  const top5 = Object.entries(muscleVolMap)
+    .sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+  // History table (last 10)
+  const recent = hist.slice(0, 10);
+
+  wrap.innerHTML = `
+    <div class="cd-section-title">Coach Dashboard — ${activeClient.name}</div>
+    <div class="cd-stats-row">
+      <div class="cd-stat"><div class="cd-stat-num">${hist.length}</div><div class="cd-stat-lbl">Tổng buổi</div></div>
+      <div class="cd-stat"><div class="cd-stat-num">${thisWeek}</div><div class="cd-stat-lbl">Tuần này</div></div>
+      <div class="cd-stat"><div class="cd-stat-num" style="color:${wowColor}">${wowLabel}</div><div class="cd-stat-lbl">So tuần trước</div></div>
+    </div>
+
+    <div class="cd-card">
+      <div class="cd-card-title">Buổi tập / tuần (6 tuần gần nhất)</div>
+      <div style="position:relative;height:140px"><canvas id="dash-vol-chart"></canvas></div>
+    </div>
+
+    ${top5.length > 0 ? `
+    <div class="cd-card">
+      <div class="cd-card-title">Top 5 nhóm cơ tập nhiều nhất</div>
+      <div class="cd-muscle-list">
+        ${top5.map(([m, v], i) => `
+          <div class="cd-muscle-row">
+            <span class="cd-muscle-rank">#${i+1}</span>
+            <span class="cd-muscle-name">${m}</span>
+            <span class="cd-muscle-vol">${v.toFixed(1)} vol</span>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="cd-card">
+      <div class="cd-card-title">Lịch sử tập (10 buổi gần nhất)</div>
+      <table class="cd-hist-table">
+        <thead><tr><th>Ngày</th><th>Ca</th><th>Bài</th><th>Vol</th></tr></thead>
+        <tbody>
+          ${recent.map(s => {
+            const d = s.date?.toDate ? s.date.toDate() : new Date(s.date);
+            const totalVol = s.totalVolume || s.volume || 0;
+            return `<tr>
+              <td>${d.toLocaleDateString('vi-VN',{day:'numeric',month:'numeric'})}</td>
+              <td>${s.day || '—'}</td>
+              <td>${s.done ?? s.exercises?.length ?? '—'}</td>
+              <td>${totalVol > 0 ? totalVol.toLocaleString() : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  // Render Chart.js bar chart
+  if (_dashVolumeChart) { try { _dashVolumeChart.destroy(); } catch(e) {} _dashVolumeChart = null; }
+  const ctx = document.getElementById('dash-vol-chart');
+  if (ctx) {
+    _dashVolumeChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: weeks.map(w => w.label),
+        datasets: [{
+          label: 'Buổi tập',
+          data: weeks.map(w => w.sessions),
+          backgroundColor: weeks.map((w, i) => i === weeks.length-1 ? '#e05535' : '#e0553566'),
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', font: { size: 10 }, stepSize: 1, precision: 0 }, beginAtZero: true }
+        }
+      }
+    });
+  }
+}
+
 // Signal that module is fully loaded — queued _call() callbacks will fire
 // (queue flush moved to end)
+window._openExercisePicker = openExercisePicker;
+window._closeExercisePicker = closeExercisePicker;
+window._renderPickerResults = renderPickerResults;
+window._selectExercise = selectExercise;
+window._renderCoachDashboard = renderCoachDashboard;
 window._blGender = blGender;
 window._blCalc = blCalc;
 window._saveBaseline = saveBaseline;
@@ -1931,6 +2140,43 @@ h1 span{color:#e05535;}
 .celebration-btn{padding:14px 36px;border-radius:6px;background:#e05535;color:#0d0d0d;border:none;font-family:'Oswald',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .15s;}
 .celebration-btn:hover{background:#ea6848;transform:translateY(-1px);}
 .confetti{position:absolute;pointer-events:none;}
+
+/* ── COACH DASHBOARD (Bước 5) ─────────────────────── */
+.cd-section-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#e05535;margin:16px 0 10px;}
+.cd-stats-row{display:flex;gap:8px;margin-bottom:12px;}
+.cd-stat{flex:1;background:#161616;border:1px solid #222;border-radius:8px;padding:10px;text-align:center;}
+.cd-stat-num{font-family:'Oswald',sans-serif;font-size:22px;font-weight:800;color:#f0f0f0;}
+.cd-stat-lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.cd-card{background:#161616;border:1px solid #222;border-radius:8px;padding:12px;margin-bottom:10px;}
+.cd-card-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.cd-empty{color:#444;font-size:13px;padding:16px 0;text-align:center;}
+.cd-muscle-list{display:flex;flex-direction:column;gap:6px;}
+.cd-muscle-row{display:flex;align-items:center;gap:8px;font-size:13px;}
+.cd-muscle-rank{color:#555;width:24px;font-size:11px;}
+.cd-muscle-name{flex:1;color:#ccc;}
+.cd-muscle-vol{color:#e05535;font-size:11px;font-weight:700;}
+.cd-hist-table{width:100%;border-collapse:collapse;font-size:12px;}
+.cd-hist-table th{color:#555;text-align:left;padding:4px 0;border-bottom:1px solid #222;font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:10px;}
+.cd-hist-table td{color:#ccc;padding:5px 0;border-bottom:1px solid #1a1a1a;}
+.cd-hist-table tr:last-child td{border-bottom:none;}
+
+/* ── EXERCISE PICKER (Bước 6) ─────────────────────── */
+.picker-modal{max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
+.picker-results{overflow-y:auto;flex:1;max-height:380px;display:flex;flex-direction:column;gap:6px;}
+.picker-loading{color:#555;font-size:13px;padding:20px;text-align:center;}
+.picker-item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:10px;cursor:pointer;transition:border-color .15s;}
+.picker-item:hover{border-color:#e05535;}
+.picker-item-name{font-size:13px;font-weight:700;color:#f0f0f0;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;}
+.picker-item-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;}
+.picker-badge{font-size:10px;border:1px solid #444;border-radius:3px;padding:1px 5px;color:#888;}
+.picker-muscles{display:flex;flex-wrap:wrap;gap:4px;}
+.muscle-role-tag{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.mr-p{background:#e0553520;color:#e05535;}
+.mr-s{background:#e0953520;color:#e09535;}
+.mr-t{background:#cccc0020;color:#cccc44;}
+.mr-q{background:#44444420;color:#888;}
+.btn-browse{background:#1a1a1a;border:1px solid #333;border-radius:5px;color:#aaa;font-size:11px;font-weight:600;padding:0 10px;cursor:pointer;white-space:nowrap;transition:border-color .15s;}
+.btn-browse:hover{border-color:#e05535;color:#e05535;}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -2000,6 +2246,10 @@ window.closeCelebration  = function() {
   _q('_finishWorkout',[]);
 };
 window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
+window.openExercisePicker  = function(pi){ _q('_openExercisePicker',[pi]); };
+window.closeExercisePicker = function() { _q('_closeExercisePicker',[]); };
+window.renderPickerResults = function() { _q('_renderPickerResults',[]); };
+window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </script>
 </head>
 <body>
@@ -2223,6 +2473,9 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
 
   <!-- PROGRESS PAGE -->
   <div class="progress-page" id="progress-page">
+    <!-- COACH DASHBOARD (Bước 5) -->
+    <div id="coach-dashboard" style="display:none"></div>
+
     <div class="checkpoint-banner hidden" id="checkpoint-banner">
       <div class="cp-icon">📋</div>
       <div class="cp-body">
@@ -2406,6 +2659,37 @@ window.toggleDoneExercises = function() { _q('_toggleDone',[]); };
   </div>
 </div>
 
+
+<!-- EXERCISE PICKER MODAL (Bước 6) -->
+<div class="modal-overlay" id="exercise-picker-modal" onclick="if(event.target===this)closeExercisePicker()">
+  <div class="modal picker-modal">
+    <div class="modal-title">Chọn bài tập</div>
+    <input class="form-input" id="picker-search" placeholder="Tìm tên bài tập..." oninput="renderPickerResults()" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select class="form-select" id="picker-muscle" onchange="renderPickerResults()" style="flex:1">
+        <option value="">Tất cả cơ</option>
+        <option>Chest</option><option>Back</option><option>Shoulders</option>
+        <option>Biceps</option><option>Triceps</option><option>Glutes</option>
+        <option>Quads</option><option>Hamstrings</option><option>Core</option>
+        <option>Calves</option><option>Traps</option><option>Lats</option>
+      </select>
+      <select class="form-select" id="picker-tool" onchange="renderPickerResults()" style="flex:1">
+        <option value="">Tất cả dụng cụ</option>
+        <option>Barbell</option><option>Dumbbell</option><option>Cable</option>
+        <option>Machine</option><option>Bodyweight</option><option>Kettlebell</option>
+        <option>Band</option><option>TRX</option>
+      </select>
+      <select class="form-select" id="picker-diff" onchange="renderPickerResults()" style="flex:1">
+        <option value="">Độ khó</option>
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </div>
+    <div class="picker-results" id="picker-results"><div class="picker-loading">Đang tải...</div></div>
+    <button class="modal-close" onclick="closeExercisePicker()" style="margin-top:12px">Đóng</button>
+  </div>
+</div>
 
 <!-- QUOTE TOAST -->
 <div class="quote-toast" id="quote-toast">
