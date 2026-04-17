@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, Alert,
+  TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import {
   getExerciseBestPerSession,
   computeTrainingHeatmap, computeMaxStreak,
   getUserProfile,
+  getMeasurements, addMeasurementEntry, computeMeasurementTrends,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = [
@@ -135,6 +136,97 @@ const volStyles = StyleSheet.create({
   volLabel: { fontSize: 8, color: '#444', marginTop: -2 },
 });
 
+// ── Body Measurements ─────────────────────────────────
+const MEASURE_FIELDS = [
+  { key: 'chest', label: 'Vòng ngực', icon: '📏' },
+  { key: 'waist', label: 'Vòng eo',   icon: '📐' },
+  { key: 'arms',  label: 'Vòng tay',  icon: '💪' },
+  { key: 'hips',  label: 'Vòng hông', icon: '🍑' },
+];
+
+function MeasurementModal({ visible, latestEntry, onSave, onClose }) {
+  const [vals, setVals] = React.useState({});
+  React.useEffect(() => {
+    if (visible) {
+      const init = {};
+      MEASURE_FIELDS.forEach(f => { init[f.key] = latestEntry?.[f.key] != null ? String(latestEntry[f.key]) : ''; });
+      setVals(init);
+    }
+  }, [visible]);
+
+  function handleSave() {
+    const data = {};
+    MEASURE_FIELDS.forEach(f => {
+      const v = parseFloat(vals[f.key]);
+      if (!isNaN(v) && v > 0) data[f.key] = Math.round(v * 10) / 10;
+    });
+    onSave(data);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableOpacity style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' }} activeOpacity={1} onPress={onClose} />
+        <View style={measStyles.sheet}>
+          <View style={measStyles.handle} />
+          <Text style={measStyles.title}>Số đo cơ thể</Text>
+          {MEASURE_FIELDS.map(f => (
+            <View key={f.key} style={measStyles.row}>
+              <Text style={measStyles.icon}>{f.icon}</Text>
+              <Text style={measStyles.fieldLabel}>{f.label}</Text>
+              <View style={measStyles.inputWrap}>
+                <TextInput
+                  style={measStyles.input}
+                  value={vals[f.key] ?? ''}
+                  onChangeText={v => setVals(prev => ({ ...prev, [f.key]: v }))}
+                  keyboardType="decimal-pad"
+                  placeholder="—"
+                  placeholderTextColor={COLORS.muted}
+                  selectTextOnFocus
+                />
+                <Text style={measStyles.unit}>cm</Text>
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity style={measStyles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
+            <Text style={measStyles.saveBtnText}>Lưu</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const measStyles = StyleSheet.create({
+  sheet: {
+    backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40, borderTopWidth: 0.5, borderColor: COLORS.border,
+  },
+  handle: {
+    width: 36, height: 4, backgroundColor: COLORS.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 20,
+  },
+  title: { fontSize: 20, fontWeight: '800', color: COLORS.white, marginBottom: 20 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  icon: { fontSize: 20, width: 26 },
+  fieldLabel: { flex: 1, color: COLORS.mutedLight, fontSize: 14 },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  input: {
+    width: 80, height: 42, backgroundColor: COLORS.card,
+    borderRadius: 10, borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, textAlign: 'center', fontSize: 15,
+  },
+  unit: { color: COLORS.muted, fontSize: 13, width: 24 },
+  saveBtn: {
+    marginTop: 10, backgroundColor: COLORS.accent,
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+  },
+  saveBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },
+});
+
 // ── Training Heatmap ──────────────────────────────────
 function TrainingHeatmap({ grid }) {
   const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -241,6 +333,8 @@ export default function ProgressScreen() {
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
   const [heatmapData, setHeatmapData] = useState([]);
   const [maxStreak, setMaxStreak] = useState(0);
+  const [measurements, setMeasurements] = useState([]);
+  const [showMeasureModal, setShowMeasureModal] = useState(false);
   const [detailSession, setDetailSession] = useState(null);
   const [exHistoryExercise, setExHistoryExercise] = useState(null); // exercise name
 
@@ -258,8 +352,8 @@ export default function ProgressScreen() {
     useCallback(() => {
       let active = true;
       async function load() {
-        const [allSessions, allPRs, wLog, profile] = await Promise.all([
-          getSessions(), getPRs(), getBodyWeightLog(), getUserProfile(),
+        const [allSessions, allPRs, wLog, profile, meas] = await Promise.all([
+          getSessions(), getPRs(), getBodyWeightLog(), getUserProfile(), getMeasurements(),
         ]);
         if (!active) return;
         setSessions(allSessions);
@@ -270,11 +364,18 @@ export default function ProgressScreen() {
         setHeatmapData(computeTrainingHeatmap(allSessions));
         setMaxStreak(computeMaxStreak(allSessions));
         setHeightCm(profile.heightCm ?? null);
+        setMeasurements(meas);
       }
       load();
       return () => { active = false; };
     }, [])
   );
+
+  async function handleSaveMeasurement(data) {
+    const updated = await addMeasurementEntry(data);
+    setMeasurements(updated);
+    setShowMeasureModal(false);
+  }
 
   async function handleSaveWeight() {
     const kg = parseFloat(weightInput.replace(',', '.'));
@@ -418,6 +519,53 @@ export default function ProgressScreen() {
           )}
         </Card>
 
+        {/* Body Measurements */}
+        {(() => {
+          const latest = measurements[0];
+          const trends = computeMeasurementTrends(measurements);
+          return (
+            <>
+              <View style={styles.sectionRow}>
+                <SectionHeader title="Số đo cơ thể" />
+                <TouchableOpacity
+                  style={styles.addBtn}
+                  onPress={() => setShowMeasureModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.addBtnText}>+ Cập nhật</Text>
+                </TouchableOpacity>
+              </View>
+              <Card style={{ marginBottom: 24 }}>
+                {latest ? (
+                  <View style={styles.measureGrid}>
+                    {MEASURE_FIELDS.map(f => {
+                      const val = latest[f.key];
+                      if (val == null) return null;
+                      const delta = trends[f.key];
+                      return (
+                        <View key={f.key} style={styles.measureCell}>
+                          <Text style={styles.measureIcon}>{f.icon}</Text>
+                          <Text style={styles.measureVal}>{val}</Text>
+                          <Text style={styles.measureLabel}>{f.label.replace('Vòng ', '')}</Text>
+                          {delta != null && (
+                            <Text style={[styles.measureDelta, { color: delta === 0 ? COLORS.muted : delta < 0 ? COLORS.accent : COLORS.red }]}>
+                              {delta > 0 ? '+' : ''}{delta} cm
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <TouchableOpacity onPress={() => setShowMeasureModal(true)} activeOpacity={0.7}>
+                    <Text style={styles.emptyText}>Chưa có số đo.{'\n'}Nhấn để ghi lần đầu! 📏</Text>
+                  </TouchableOpacity>
+                )}
+              </Card>
+            </>
+          );
+        })()}
+
         {/* Personal Records */}
         <SectionHeader title="Kỷ lục cá nhân (PR)" />
         <Card>
@@ -558,6 +706,14 @@ export default function ProgressScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Body Measurement Modal */}
+      <MeasurementModal
+        visible={showMeasureModal}
+        latestEntry={measurements[0]}
+        onSave={handleSaveMeasurement}
+        onClose={() => setShowMeasureModal(false)}
+      />
 
       {/* Session Detail Modal */}
       <SessionDetailModal
@@ -940,6 +1096,16 @@ const styles = StyleSheet.create({
   logTopRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   logIntensity: { fontSize: 16 },
   logNote: { color: COLORS.muted, fontSize: 12, fontStyle: 'italic', marginTop: 4, marginBottom: 2 },
+
+  measureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  measureCell: {
+    width: '47%', backgroundColor: COLORS.cardDark, borderRadius: 12,
+    padding: 12, borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  measureIcon: { fontSize: 18, marginBottom: 4 },
+  measureVal: { fontSize: 22, fontWeight: '800', color: COLORS.white },
+  measureLabel: { fontSize: 11, color: COLORS.muted, marginTop: 2 },
+  measureDelta: { fontSize: 11, fontWeight: '700', marginTop: 3 },
 
   bmiRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   bmiLabel: { color: COLORS.muted, fontSize: 12 },

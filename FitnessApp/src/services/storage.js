@@ -319,6 +319,51 @@ export function computeWeightTrend(entries) {
   return Math.round((latest - ref) * 10) / 10;
 }
 
+// ── Body Measurements ─────────────────────────────────
+// Entry shape: { id, date (YYYY-MM-DD), dateLabel, chest?, waist?, arms?, hips? }  — all in cm
+
+const MEASUREMENTS_KEY = 'ftn_measurements';
+
+export async function getMeasurements() {
+  try {
+    const json = await AsyncStorage.getItem(MEASUREMENTS_KEY);
+    return json ? JSON.parse(json) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addMeasurementEntry(data) {
+  const entries = await getMeasurements();
+  const now = new Date();
+  const entry = {
+    id: String(Date.now()),
+    date: toDateStr(now),
+    dateLabel: toDateLabel(now),
+    ...data,
+  };
+  // Replace today's entry
+  const filtered = entries.filter(e => e.date !== entry.date);
+  filtered.unshift(entry);
+  await AsyncStorage.setItem(MEASUREMENTS_KEY, JSON.stringify(filtered));
+  return filtered;
+}
+
+/** Returns delta for each measurement key between newest and previous entry */
+export function computeMeasurementTrends(entries) {
+  if (entries.length < 2) return {};
+  const latest = entries[0];
+  const prev = entries[1];
+  const keys = ['chest', 'waist', 'arms', 'hips'];
+  const trends = {};
+  keys.forEach(k => {
+    if (latest[k] != null && prev[k] != null) {
+      trends[k] = Math.round((latest[k] - prev[k]) * 10) / 10;
+    }
+  });
+  return trends;
+}
+
 // ── User Profile ──────────────────────────────────────
 // Profile shape: { name: string, goal: string, defaultRestSeconds: number }
 
