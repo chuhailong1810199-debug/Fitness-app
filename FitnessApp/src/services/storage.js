@@ -179,6 +179,51 @@ export function getThisWeekSessions(sessions) {
   return sessions.filter(s => new Date(s.date) >= cutoff);
 }
 
+/**
+ * Returns weekly volume totals for the past numWeeks calendar weeks (Mon–Sun).
+ * Each item: { label: string, volume: number, sessionCount: number }
+ */
+export function computeWeeklyVolumeHistory(sessions, numWeeks = 6) {
+  const result = [];
+  const now = new Date();
+  // Anchor to start of current week (Monday)
+  const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon … 6=Sun
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - dayOfWeek);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  for (let i = numWeeks - 1; i >= 0; i--) {
+    const weekStart = new Date(thisMonday);
+    weekStart.setDate(thisMonday.getDate() - i * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+
+    const weekSessions = sessions.filter(s => {
+      const d = new Date(s.date);
+      return d >= weekStart && d < weekEnd;
+    });
+
+    const volume = weekSessions.reduce((sum, s) => sum + (s.totalVolume || 0), 0);
+    const label = i === 0
+      ? 'T.này'
+      : `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+    result.push({ label, volume, sessionCount: weekSessions.length });
+  }
+  return result;
+}
+
+/**
+ * Returns the most recent session date for each planId.
+ * Result: { [planId]: dateLabel }
+ */
+export function getLastSessionByPlan(sessions) {
+  const map = {};
+  sessions.forEach(s => {
+    if (!map[s.planId]) map[s.planId] = s.dateLabel;
+  });
+  return map;
+}
+
 // ── Helpers ───────────────────────────────────────────
 
 export function toDateStr(date) {

@@ -104,6 +104,23 @@ function SummaryModal({ visible, summary, onClose }) {
             </>
           )}
 
+          {/* Intensity */}
+          {summary.intensity != null && (
+            <View style={sumStyles.intensityRow}>
+              <Text style={sumStyles.intensityText}>
+                {INTENSITY_OPTIONS.find(o => o.value === summary.intensity)?.emoji}{' '}
+                {INTENSITY_OPTIONS.find(o => o.value === summary.intensity)?.label}
+              </Text>
+            </View>
+          )}
+
+          {/* Note */}
+          {!!summary.note && (
+            <View style={sumStyles.noteBox}>
+              <Text style={sumStyles.noteText}>"{summary.note}"</Text>
+            </View>
+          )}
+
           <TouchableOpacity style={sumStyles.closeBtn} onPress={onClose} activeOpacity={0.85}>
             <Text style={sumStyles.closeBtnText}>Đóng</Text>
           </TouchableOpacity>
@@ -124,6 +141,8 @@ export default function WorkoutScreen({ route, navigation }) {
   const [prevSession, setPrevSession] = useState(null);
   const [summary, setSummary] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [sessionNote, setSessionNote] = useState('');
+  const [intensity, setIntensity] = useState(3); // 1–5
   const startTimeRef = useRef(Date.now());
 
   // Load previous session and reset state on plan change
@@ -133,6 +152,8 @@ export default function WorkoutScreen({ route, navigation }) {
     setShowRestBanner(false);
     setSummary(null);
     setShowSummary(false);
+    setSessionNote('');
+    setIntensity(3);
     startTimeRef.current = Date.now();
     getPreviousSession(plan.id).then(setPrevSession);
   }, [planIndex]);
@@ -196,6 +217,8 @@ export default function WorkoutScreen({ route, navigation }) {
       totalSets: doneSets,
       totalVolume: Math.round(totalVolume),
       durationSeconds,
+      note: sessionNote.trim(),
+      intensity,
     };
 
     // Capture PRs before updating so detectNewPRs can compare
@@ -214,6 +237,8 @@ export default function WorkoutScreen({ route, navigation }) {
       duration: durationLabel,
       prevVolume: prevSession?.totalVolume ?? null,
       newPRs,
+      intensity,
+      note: sessionNote.trim(),
     });
     setShowSummary(true);
   }
@@ -335,6 +360,36 @@ export default function WorkoutScreen({ route, navigation }) {
           </Card>
         ))}
 
+        {/* Session Note + Intensity */}
+        <Card style={styles.noteCard}>
+          <Text style={styles.noteLabel}>Cảm nhận buổi tập</Text>
+          <View style={styles.intensityRow}>
+            {INTENSITY_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.intensityBtn, intensity === opt.value && styles.intensityBtnActive]}
+                onPress={() => setIntensity(opt.value)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.intensityEmoji}>{opt.emoji}</Text>
+                <Text style={[styles.intensityLabel, intensity === opt.value && styles.intensityLabelActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TextInput
+            style={styles.noteInput}
+            value={sessionNote}
+            onChangeText={setSessionNote}
+            placeholder="Ghi chú buổi tập (không bắt buộc)…"
+            placeholderTextColor={COLORS.muted}
+            multiline
+            numberOfLines={3}
+            maxLength={300}
+          />
+        </Card>
+
         {/* Finish Button */}
         <PrimaryButton
           label={`Kết thúc (${doneSets}/${totalSets} set)`}
@@ -353,6 +408,15 @@ export default function WorkoutScreen({ route, navigation }) {
     </SafeAreaView>
   );
 }
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+const INTENSITY_OPTIONS = [
+  { value: 1, emoji: '😴', label: 'Nhẹ' },
+  { value: 2, emoji: '😊', label: 'Ổn' },
+  { value: 3, emoji: '💪', label: 'Tốt' },
+  { value: 4, emoji: '🔥', label: 'Khó' },
+  { value: 5, emoji: '⚡', label: 'Max' },
+];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function buildInitSets(plan) {
@@ -409,6 +473,26 @@ const styles = StyleSheet.create({
   },
   checkBtnDone: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
 
+  // Note + intensity card
+  noteCard: { marginBottom: 16 },
+  noteLabel: { color: COLORS.white, fontWeight: '700', fontSize: 14, marginBottom: 12 },
+  intensityRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  intensityBtn: {
+    flex: 1, alignItems: 'center', paddingVertical: 10,
+    borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: 'transparent',
+  },
+  intensityBtnActive: { borderColor: COLORS.accent, backgroundColor: 'rgba(200,255,87,0.1)' },
+  intensityEmoji: { fontSize: 20 },
+  intensityLabel: { fontSize: 10, color: COLORS.muted, marginTop: 3, fontWeight: '500' },
+  intensityLabelActive: { color: COLORS.accent },
+  noteInput: {
+    backgroundColor: COLORS.cardDark, borderRadius: 10,
+    borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, fontSize: 14, padding: 12,
+    minHeight: 72, textAlignVertical: 'top',
+  },
+
   // Rest banner
   restBanner: {
     flexDirection: 'row', alignItems: 'center',
@@ -461,8 +545,18 @@ const sumStyles = StyleSheet.create({
   prName: { flex: 1, color: COLORS.white, fontSize: 13 },
   prVal: { color: COLORS.accent, fontWeight: '700', fontSize: 13 },
   prPrev: { color: COLORS.muted, fontSize: 11 },
+  intensityRow: {
+    alignItems: 'center', marginBottom: 12,
+  },
+  intensityText: { color: COLORS.mutedLight, fontSize: 15 },
+  noteBox: {
+    backgroundColor: COLORS.card, borderRadius: 12,
+    padding: 12, marginBottom: 12,
+    borderWidth: 0.5, borderColor: COLORS.border,
+  },
+  noteText: { color: COLORS.mutedLight, fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
   closeBtn: {
-    marginTop: 24, backgroundColor: COLORS.accent,
+    marginTop: 16, backgroundColor: COLORS.accent,
     borderRadius: 14, paddingVertical: 15, alignItems: 'center',
   },
   closeBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },

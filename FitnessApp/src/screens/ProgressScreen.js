@@ -11,6 +11,7 @@ import {
   getSessions, getPRs, computeLifetimeStats,
   getBodyWeightLog, addBodyWeightEntry,
   getRecentWeightEntries, computeWeightTrend,
+  computeWeeklyVolumeHistory,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
@@ -76,6 +77,57 @@ const sparkStyles = StyleSheet.create({
   dotLatest: { backgroundColor: COLORS.accent, width: 8, height: 8, borderRadius: 4 },
 });
 
+// Volume bar chart for weekly trend
+function VolumeTrendChart({ weeklyData }) {
+  const maxVolume = Math.max(...weeklyData.map(w => w.volume), 1);
+  const BAR_H = 60;
+
+  return (
+    <View style={volStyles.wrap}>
+      <View style={volStyles.barsRow}>
+        {weeklyData.map((w, i) => {
+          const barH = w.volume ? Math.max(4, Math.round((w.volume / maxVolume) * BAR_H)) : 4;
+          const isLatest = i === weeklyData.length - 1;
+          return (
+            <View key={i} style={volStyles.col}>
+              <View style={[volStyles.barBg, { height: BAR_H }]}>
+                <View style={[
+                  volStyles.barFill,
+                  {
+                    height: barH,
+                    backgroundColor: isLatest
+                      ? COLORS.accent
+                      : w.volume ? 'rgba(200,255,87,0.35)' : COLORS.border,
+                  },
+                ]} />
+              </View>
+              <Text style={[volStyles.label, isLatest && { color: COLORS.accent }]}>{w.label}</Text>
+              {w.volume > 0 && (
+                <Text style={volStyles.volLabel}>
+                  {w.volume >= 1000 ? `${Math.round(w.volume / 1000)}k` : w.volume}
+                </Text>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const volStyles = StyleSheet.create({
+  wrap: { marginTop: 4 },
+  barsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  col: { flex: 1, alignItems: 'center', gap: 4 },
+  barBg: {
+    width: '100%', justifyContent: 'flex-end',
+    backgroundColor: '#1f1f1f', borderRadius: 6,
+  },
+  barFill: { width: '100%', borderRadius: 6 },
+  label: { fontSize: 9, color: COLORS.muted, fontWeight: '500' },
+  volLabel: { fontSize: 8, color: '#444', marginTop: -2 },
+});
+
 export default function ProgressScreen() {
   const [sessions, setSessions] = useState([]);
   const [prs, setPRs] = useState({});
@@ -83,6 +135,7 @@ export default function ProgressScreen() {
   const [weightLog, setWeightLog] = useState([]);
   const [weightInput, setWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,6 +149,7 @@ export default function ProgressScreen() {
         setPRs(allPRs);
         setStats(computeLifetimeStats(allSessions));
         setWeightLog(wLog);
+        setWeeklyVolumeData(computeWeeklyVolumeHistory(allSessions));
       }
       load();
       return () => { active = false; };
@@ -149,6 +203,16 @@ export default function ProgressScreen() {
             </View>
           ))}
         </View>
+
+        {/* Volume Trend */}
+        <SectionHeader title="Xu hướng khối lượng (6 tuần)" />
+        <Card style={{ marginBottom: 24 }}>
+          {weeklyVolumeData.every(w => w.volume === 0) ? (
+            <Text style={styles.emptyText}>Chưa có dữ liệu. Tập luyện để xem xu hướng! 📈</Text>
+          ) : (
+            <VolumeTrendChart weeklyData={weeklyVolumeData} />
+          )}
+        </Card>
 
         {/* Body Weight Tracker */}
         <View style={styles.sectionRow}>
