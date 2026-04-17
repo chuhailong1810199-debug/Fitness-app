@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SESSIONS_KEY = 'ftn_sessions';
 const PRS_KEY = 'ftn_personal_records';
 const BODY_WEIGHT_KEY = 'ftn_body_weight';
+const USER_PROFILE_KEY = 'ftn_user_profile';
 
 // ── Sessions ──────────────────────────────────────────
 // Session shape:
@@ -316,4 +317,76 @@ export function computeWeightTrend(entries) {
   const latest = entries[0].weight;
   const ref = entries[entries.length - 1].weight;
   return Math.round((latest - ref) * 10) / 10;
+}
+
+// ── User Profile ──────────────────────────────────────
+// Profile shape: { name: string, goal: string, defaultRestSeconds: number }
+
+export async function getUserProfile() {
+  try {
+    const json = await AsyncStorage.getItem(USER_PROFILE_KEY);
+    return json ? JSON.parse(json) : { name: '', goal: 'strength', defaultRestSeconds: 60 };
+  } catch {
+    return { name: '', goal: 'strength', defaultRestSeconds: 60 };
+  }
+}
+
+export async function saveUserProfile(profile) {
+  await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+  return profile;
+}
+
+// ── Exercise History ──────────────────────────────────
+/**
+ * Returns all recorded sets for a given exercise name across all sessions.
+ * Result (newest first): [{ dateLabel, date, weight, reps, sessionName }]
+ * Only includes sets where done === true.
+ */
+export function getExerciseHistory(exerciseName, sessions) {
+  const records = [];
+  sessions.forEach(s => {
+    const ex = s.exercises?.find(e => e.name === exerciseName);
+    if (!ex) return;
+    ex.sets.forEach(set => {
+      if (!set.done) return;
+      const w = parseFloat(set.weight) || 0;
+      if (w <= 0) return;
+      records.push({
+        date: s.date,
+        dateLabel: s.dateLabel,
+        weight: w,
+        reps: parseInt(set.reps, 10) || 0,
+        sessionName: s.planName,
+      });
+    });
+  });
+  // sessions are already newest-first so records come out newest-first too
+  return records;
+}
+
+/**
+ * Aggregates exercise history into per-session best sets (highest weight).
+ * Returns newest-first: [{ date, dateLabel, bestWeight, bestReps, sessionName }]
+ */
+export function getExerciseBestPerSession(exerciseName, sessions) {
+  const byDate = {};
+  sessions.forEach(s => {
+    const ex = s.exercises?.find(e => e.name === exerciseName);
+    if (!ex) return;
+    ex.sets.forEach(set => {
+      if (!set.done) return;
+      const w = parseFloat(set.weight) || 0;
+      if (w <= 0) return;
+      if (!byDate[s.date] || w > byDate[s.date].bestWeight) {
+        byDate[s.date] = {
+          date: s.date,
+          dateLabel: s.dateLabel,
+          bestWeight: w,
+          bestReps: parseInt(set.reps, 10) || 0,
+          sessionName: s.planName,
+        };
+      }
+    });
+  });
+  return Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
 }

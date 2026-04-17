@@ -12,6 +12,7 @@ import {
   getBodyWeightLog, addBodyWeightEntry,
   getRecentWeightEntries, computeWeightTrend,
   computeWeeklyVolumeHistory, deleteSession,
+  getExerciseBestPerSession,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
@@ -137,6 +138,7 @@ export default function ProgressScreen() {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
   const [detailSession, setDetailSession] = useState(null);
+  const [exHistoryExercise, setExHistoryExercise] = useState(null); // exercise name
 
   async function handleDeleteSession(sessionId) {
     const updated = await deleteSession(sessionId);
@@ -283,9 +285,13 @@ export default function ProgressScreen() {
         <SectionHeader title="Kỷ lục cá nhân (PR)" />
         <Card>
           {prRows.map((r, i, arr) => (
-            <View key={r.name}>
+            <TouchableOpacity
+              key={r.name}
+              onPress={() => r.weight ? setExHistoryExercise(r.name) : null}
+              activeOpacity={r.weight ? 0.7 : 1}
+            >
               <View style={styles.prRow}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.prName}>{r.name}</Text>
                   <Text style={styles.prDate}>{r.date ?? '—'}</Text>
                 </View>
@@ -294,9 +300,10 @@ export default function ProgressScreen() {
                     {r.weight ? `${r.weight} kg` : 'Chưa có'}
                   </Text>
                 </View>
+                {r.weight && <Text style={styles.prArrow}>›</Text>}
               </View>
               {i < arr.length - 1 && <Divider />}
-            </View>
+            </TouchableOpacity>
           ))}
         </Card>
 
@@ -401,6 +408,13 @@ export default function ProgressScreen() {
         session={detailSession}
         onClose={() => setDetailSession(null)}
         onDelete={handleDeleteSession}
+      />
+
+      {/* Exercise History Modal */}
+      <ExerciseHistoryModal
+        exerciseName={exHistoryExercise}
+        sessions={sessions}
+        onClose={() => setExHistoryExercise(null)}
       />
     </SafeAreaView>
   );
@@ -551,6 +565,156 @@ const detailStyles = StyleSheet.create({
   setDoneActive: { color: COLORS.accent },
 });
 
+// ── Exercise History Modal ────────────────────────────
+
+function ExerciseHistoryMiniChart({ data }) {
+  if (data.length < 2) return null;
+  const weights = data.map(d => d.bestWeight).reverse(); // oldest → newest
+  const min = Math.min(...weights);
+  const max = Math.max(...weights);
+  const range = max - min || 1;
+  const BAR_H = 48;
+
+  return (
+    <View style={exStyles.chartWrap}>
+      <View style={exStyles.chartBars}>
+        {weights.map((w, i) => {
+          const h = Math.max(4, Math.round(((w - min) / range) * BAR_H));
+          const isLatest = i === weights.length - 1;
+          return (
+            <View key={i} style={[exStyles.chartBarBg, { height: BAR_H }]}>
+              <View style={[
+                exStyles.chartBarFill,
+                { height: h, backgroundColor: isLatest ? COLORS.accent : 'rgba(200,255,87,0.35)' },
+              ]} />
+            </View>
+          );
+        })}
+      </View>
+      <View style={exStyles.chartLabels}>
+        <Text style={exStyles.chartLabelMin}>{min} kg</Text>
+        <Text style={exStyles.chartLabelMax}>{max} kg</Text>
+      </View>
+    </View>
+  );
+}
+
+function ExerciseHistoryModal({ exerciseName, sessions, onClose }) {
+  if (!exerciseName) return null;
+  const history = getExerciseBestPerSession(exerciseName, sessions);
+  const improvement = history.length >= 2
+    ? Math.round((history[0].bestWeight - history[history.length - 1].bestWeight) * 10) / 10
+    : null;
+
+  return (
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={exStyles.overlay}>
+        <SafeAreaView style={exStyles.sheet} edges={['bottom']}>
+          <View style={exStyles.handle} />
+
+          <View style={exStyles.header}>
+            <View style={{ flex: 1 }}>
+              <Text style={exStyles.title}>{exerciseName}</Text>
+              <Text style={exStyles.subtitle}>{history.length} buổi tập đã ghi</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={exStyles.closeBtn}>
+              <Text style={exStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {improvement !== null && (
+            <View style={[
+              exStyles.improveBadge,
+              { backgroundColor: improvement >= 0 ? 'rgba(200,255,87,0.1)' : 'rgba(255,87,87,0.1)' },
+            ]}>
+              <Text style={[exStyles.improveText, { color: improvement >= 0 ? COLORS.accent : COLORS.red }]}>
+                {improvement >= 0 ? '↑' : '↓'} {Math.abs(improvement)} kg so với lần đầu
+              </Text>
+            </View>
+          )}
+
+          <ExerciseHistoryMiniChart data={history} />
+
+          <ScrollView style={exStyles.list} showsVerticalScrollIndicator={false}>
+            {history.map((entry, i) => (
+              <View key={i} style={exStyles.row}>
+                <View style={exStyles.rowLeft}>
+                  <Text style={exStyles.rowDate}>{entry.dateLabel}</Text>
+                  <Text style={exStyles.rowSession}>{entry.sessionName}</Text>
+                </View>
+                <View style={exStyles.rowRight}>
+                  <Text style={exStyles.rowWeight}>{entry.bestWeight} kg</Text>
+                  <Text style={exStyles.rowReps}>× {entry.bestReps} reps</Text>
+                </View>
+                {i === 0 && (
+                  <View style={exStyles.prBadge}>
+                    <Text style={exStyles.prBadgeText}>PR</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+            {history.length === 0 && (
+              <Text style={exStyles.empty}>Chưa có dữ liệu cho bài tập này.</Text>
+            )}
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+const exStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: COLORS.surface, maxHeight: '80%',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopWidth: 0.5, borderColor: COLORS.border,
+    paddingHorizontal: 20, paddingTop: 12,
+  },
+  handle: {
+    width: 36, height: 4, backgroundColor: COLORS.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 16,
+  },
+  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+  title: { fontSize: 20, fontWeight: '800', color: COLORS.white },
+  subtitle: { fontSize: 12, color: COLORS.muted, marginTop: 2 },
+  closeBtn: { padding: 6 },
+  closeText: { color: COLORS.muted, fontSize: 18 },
+  improveBadge: {
+    alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 12, marginBottom: 14,
+  },
+  improveText: { fontWeight: '700', fontSize: 13 },
+  // Mini chart
+  chartWrap: { marginBottom: 16 },
+  chartBars: { flexDirection: 'row', alignItems: 'flex-end', height: 48, gap: 4, marginBottom: 4 },
+  chartBarBg: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#1f1f1f', borderRadius: 4 },
+  chartBarFill: { width: '100%', borderRadius: 4 },
+  chartLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  chartLabelMin: { color: '#444', fontSize: 10 },
+  chartLabelMax: { color: COLORS.accent, fontSize: 10 },
+  // List
+  list: { flex: 1 },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: COLORS.border,
+    gap: 8,
+  },
+  rowLeft: { flex: 1 },
+  rowDate: { color: COLORS.white, fontWeight: '600', fontSize: 14 },
+  rowSession: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
+  rowRight: { alignItems: 'flex-end' },
+  rowWeight: { color: COLORS.accent, fontWeight: '700', fontSize: 15 },
+  rowReps: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
+  prBadge: {
+    backgroundColor: 'rgba(255,184,71,0.15)', paddingHorizontal: 8,
+    paddingVertical: 3, borderRadius: 8,
+  },
+  prBadgeText: { color: COLORS.amber, fontSize: 10, fontWeight: '800' },
+  empty: { color: COLORS.muted, textAlign: 'center', paddingVertical: 20, fontSize: 14 },
+});
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1, paddingHorizontal: 20 },
@@ -598,6 +762,7 @@ const styles = StyleSheet.create({
   prBadgeEmpty: { backgroundColor: COLORS.cardDark },
   prValue: { color: COLORS.accent, fontWeight: '700', fontSize: 13 },
   prValueEmpty: { color: COLORS.muted },
+  prArrow: { color: COLORS.muted, fontSize: 18, marginLeft: 6 },
 
   logCard: { marginBottom: 10 },
   logTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },

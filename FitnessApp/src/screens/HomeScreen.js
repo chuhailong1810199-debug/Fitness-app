@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Dimensions,
+  StyleSheet, Modal, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,26 +13,111 @@ import {
   computeStreak,
   computeWeeklyData,
   getThisWeekSessions,
+  getUserProfile,
+  saveUserProfile,
 } from '../services/storage';
-
-const { width } = Dimensions.get('window');
-const BAR_MAX = 80;
 
 // Map JS day of week (0=Sun) to plan index: Mon/Thu=Push, Tue/Fri=Pull, Wed/Sat=Leg
 const DAY_TO_PLAN = { 1: 0, 4: 0, 2: 1, 5: 1, 3: 2, 6: 2 };
 
-function getGreeting() {
+const GOALS = [
+  { key: 'strength',    label: '💪 Tăng sức mạnh' },
+  { key: 'muscle',      label: '🏋️ Tăng cơ bắp' },
+  { key: 'fat_loss',    label: '🔥 Giảm mỡ' },
+  { key: 'endurance',   label: '🏃 Sức bền' },
+];
+
+function getGreeting(name) {
   const h = new Date().getHours();
-  if (h < 12) return 'Chào buổi sáng 👋';
-  if (h < 18) return 'Chào buổi chiều 👋';
-  return 'Chào buổi tối 👋';
+  const base = h < 12 ? 'Chào buổi sáng' : h < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  return name ? `${base}, ${name}! 👋` : `${base} 👋`;
 }
 
 function getTodayPlanIndex() {
-  const day = new Date().getDay(); // 0=Sun, 1=Mon, ...
-  return DAY_TO_PLAN[day] ?? 0;
+  return DAY_TO_PLAN[new Date().getDay()] ?? 0;
 }
 
+// ── Settings Modal ────────────────────────────────────
+function SettingsModal({ visible, profile, onSave, onClose }) {
+  const [name, setName] = useState(profile.name ?? '');
+  const [goal, setGoal] = useState(profile.goal ?? 'strength');
+  const [restSecs, setRestSecs] = useState(String(profile.defaultRestSeconds ?? 60));
+
+  // Sync when profile changes (e.g. first open)
+  React.useEffect(() => {
+    setName(profile.name ?? '');
+    setGoal(profile.goal ?? 'strength');
+    setRestSecs(String(profile.defaultRestSeconds ?? 60));
+  }, [profile]);
+
+  function handleSave() {
+    const secs = parseInt(restSecs, 10);
+    onSave({ name: name.trim(), goal, defaultRestSeconds: isNaN(secs) ? 60 : secs });
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={settStyles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableOpacity style={settStyles.backdrop} activeOpacity={1} onPress={onClose} />
+        <View style={settStyles.sheet}>
+          <View style={settStyles.handle} />
+          <Text style={settStyles.title}>Hồ sơ cá nhân</Text>
+
+          {/* Name */}
+          <Text style={settStyles.label}>Tên của bạn</Text>
+          <TextInput
+            style={settStyles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Nhập tên…"
+            placeholderTextColor={COLORS.muted}
+            maxLength={30}
+          />
+
+          {/* Goal */}
+          <Text style={settStyles.label}>Mục tiêu</Text>
+          <View style={settStyles.goalsGrid}>
+            {GOALS.map(g => (
+              <TouchableOpacity
+                key={g.key}
+                style={[settStyles.goalBtn, goal === g.key && settStyles.goalBtnActive]}
+                onPress={() => setGoal(g.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[settStyles.goalText, goal === g.key && settStyles.goalTextActive]}>
+                  {g.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Default rest time */}
+          <Text style={settStyles.label}>Thời gian nghỉ mặc định</Text>
+          <View style={settStyles.restRow}>
+            <TextInput
+              style={[settStyles.input, { flex: 1 }]}
+              value={restSecs}
+              onChangeText={setRestSecs}
+              keyboardType="number-pad"
+              placeholder="60"
+              placeholderTextColor={COLORS.muted}
+            />
+            <Text style={settStyles.restUnit}>giây</Text>
+          </View>
+
+          <TouchableOpacity style={settStyles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
+            <Text style={settStyles.saveBtnText}>Lưu</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ── Main Screen ───────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const [selectedBar, setSelectedBar] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -42,13 +127,14 @@ export default function HomeScreen({ navigation }) {
   const [streak, setStreak] = useState(0);
   const [weekSessions, setWeekSessions] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
+  const [profile, setProfile] = useState({ name: '', goal: 'strength', defaultRestSeconds: 60 });
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Reload on every focus so stats update after finishing a workout
   useFocusEffect(
     useCallback(() => {
       let active = true;
       async function load() {
-        const all = await getSessions();
+        const [all, prof] = await Promise.all([getSessions(), getUserProfile()]);
         if (!active) return;
         setSessions(all);
         setStreak(computeStreak(all));
@@ -57,15 +143,24 @@ export default function HomeScreen({ navigation }) {
         const thisWeek = getThisWeekSessions(all);
         setWeekSessions(thisWeek.length);
         setTotalSets(weekly.reduce((sum, d) => sum + d.sets, 0));
+        setProfile(prof);
       }
       load();
       return () => { active = false; };
     }, [])
   );
 
+  async function handleSaveProfile(updated) {
+    const saved = await saveUserProfile(updated);
+    setProfile(saved);
+    setShowSettings(false);
+  }
+
   const todayPlanIndex = getTodayPlanIndex();
   const todayPlan = WORKOUT_PLANS[todayPlanIndex];
   const barMax = Math.max(...weeklyData.map(d => d.sets), 1);
+
+  const goalLabel = GOALS.find(g => g.key === profile.goal)?.label ?? '';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -73,8 +168,14 @@ export default function HomeScreen({ navigation }) {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.title}>Tuần này</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{getGreeting(profile.name)}</Text>
+            <Text style={styles.title}>Tuần này</Text>
+            {!!goalLabel && <Text style={styles.goalLabel}>{goalLabel}</Text>}
+          </View>
+          <TouchableOpacity onPress={() => setShowSettings(true)} style={styles.settingsBtn} activeOpacity={0.7}>
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
@@ -167,6 +268,13 @@ export default function HomeScreen({ navigation }) {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      <SettingsModal
+        visible={showSettings}
+        profile={profile}
+        onSave={handleSaveProfile}
+        onClose={() => setShowSettings(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -174,9 +282,12 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
   scroll: { flex: 1, paddingHorizontal: 20 },
-  header: { paddingTop: 16, marginBottom: 20 },
+  header: { paddingTop: 16, marginBottom: 20, flexDirection: 'row', alignItems: 'flex-start' },
   greeting: { fontSize: 13, color: COLORS.muted, marginBottom: 4 },
   title: { fontSize: 36, fontWeight: '800', color: COLORS.white, letterSpacing: 0.5 },
+  goalLabel: { fontSize: 12, color: COLORS.amber, marginTop: 4 },
+  settingsBtn: { paddingTop: 14, paddingLeft: 12 },
+  settingsIcon: { fontSize: 22 },
   statsRow: { flexDirection: 'row', marginBottom: 24 },
   chart: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
   barCol: { flex: 1, alignItems: 'center', gap: 4 },
@@ -186,14 +297,9 @@ const styles = StyleSheet.create({
   barDetail: { marginTop: 10, fontSize: 12, color: COLORS.accent },
   todayCard: {
     backgroundColor: 'rgba(200,255,87,0.08)',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    borderWidth: 0.5,
-    borderColor: 'rgba(200,255,87,0.3)',
-    marginBottom: 12,
+    borderRadius: 16, padding: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.3)', marginBottom: 12,
   },
   planIcon: {
     width: 52, height: 52, borderRadius: 14,
@@ -209,4 +315,41 @@ const styles = StyleSheet.create({
   recentStats: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   recentStat: { color: COLORS.accent, fontSize: 13, fontWeight: '600' },
   recentStatSep: { color: COLORS.muted, fontSize: 13 },
+});
+
+// Settings modal styles
+const settStyles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: {
+    backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40,
+    borderTopWidth: 0.5, borderColor: COLORS.border,
+  },
+  handle: {
+    width: 36, height: 4, backgroundColor: COLORS.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 20,
+  },
+  title: { fontSize: 20, fontWeight: '800', color: COLORS.white, marginBottom: 20 },
+  label: { color: COLORS.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, marginTop: 16 },
+  input: {
+    backgroundColor: COLORS.card, borderRadius: 12,
+    borderWidth: 0.5, borderColor: COLORS.border,
+    color: COLORS.white, fontSize: 15, padding: 12, height: 46,
+  },
+  goalsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  goalBtn: {
+    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: 'transparent',
+  },
+  goalBtnActive: { borderColor: COLORS.accent, backgroundColor: 'rgba(200,255,87,0.1)' },
+  goalText: { color: COLORS.muted, fontSize: 13 },
+  goalTextActive: { color: COLORS.accent, fontWeight: '600' },
+  restRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  restUnit: { color: COLORS.muted, fontSize: 14 },
+  saveBtn: {
+    marginTop: 24, backgroundColor: COLORS.accent,
+    borderRadius: 14, paddingVertical: 15, alignItems: 'center',
+  },
+  saveBtnText: { color: '#0f0f0f', fontWeight: '700', fontSize: 16 },
 });
