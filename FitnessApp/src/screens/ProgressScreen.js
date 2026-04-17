@@ -13,6 +13,7 @@ import {
   getRecentWeightEntries, computeWeightTrend,
   computeWeeklyVolumeHistory, deleteSession,
   getExerciseBestPerSession,
+  computeTrainingHeatmap, computeMaxStreak,
 } from '../services/storage';
 
 const DEFAULT_PR_EXERCISES = ['Bench Press', 'Squat', 'Romanian Deadlift', 'Overhead Press', 'Barbell Row'];
@@ -129,6 +130,101 @@ const volStyles = StyleSheet.create({
   volLabel: { fontSize: 8, color: '#444', marginTop: -2 },
 });
 
+// ── Training Heatmap ──────────────────────────────────
+function TrainingHeatmap({ grid }) {
+  const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  const CELL = 11;
+  const GAP = 3;
+
+  function cellColor(sets) {
+    if (sets < 0) return 'transparent';
+    if (sets === 0) return '#1e1e1e';
+    if (sets < 6)  return 'rgba(200,255,87,0.22)';
+    if (sets < 12) return 'rgba(200,255,87,0.48)';
+    if (sets < 20) return 'rgba(200,255,87,0.72)';
+    return COLORS.accent;
+  }
+
+  return (
+    <View style={heatStyles.container}>
+      <View style={[heatStyles.dayCol, { gap: GAP }]}>
+        {DAY_LABELS.map((d, i) => (
+          <View key={i} style={{ height: CELL, justifyContent: 'center' }}>
+            <Text style={heatStyles.dayLabel}>{i % 2 === 0 ? d : ''}</Text>
+          </View>
+        ))}
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+        <View style={[heatStyles.grid, { gap: GAP }]}>
+          {grid.map((week, wi) => (
+            <View key={wi} style={[heatStyles.weekCol, { gap: GAP }]}>
+              {week.map((sets, di) => (
+                <View
+                  key={di}
+                  style={[heatStyles.cell, { width: CELL, height: CELL, backgroundColor: cellColor(sets) }]}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const heatStyles = StyleSheet.create({
+  container: { flexDirection: 'row', alignItems: 'flex-start', paddingTop: 4 },
+  dayCol: { width: 22, marginRight: 4 },
+  dayLabel: { fontSize: 8, color: COLORS.muted, textAlign: 'right' },
+  grid: { flexDirection: 'row' },
+  weekCol: { flexDirection: 'column' },
+  cell: { borderRadius: 2 },
+});
+
+// ── Achievement Badges ────────────────────────────────
+const ACHIEVEMENTS = [
+  { id: 'first', icon: '🎯', label: 'Bắt đầu',   check: (s) => s.totalSessions >= 1 },
+  { id: 's10',   icon: '💪', label: '10 buổi',   check: (s) => s.totalSessions >= 10 },
+  { id: 's50',   icon: '🏆', label: '50 buổi',   check: (s) => s.totalSessions >= 50 },
+  { id: 's100',  icon: '👑', label: '100 buổi',  check: (s) => s.totalSessions >= 100 },
+  { id: 'str7',  icon: '🔥', label: 'Streak 7',  check: (s) => s.maxStreak >= 7 },
+  { id: 'str30', icon: '⚡', label: 'Streak 30', check: (s) => s.maxStreak >= 30 },
+  { id: 'v10k',  icon: '📦', label: '10K kg',    check: (s) => s.totalVolume >= 10000 },
+  { id: 'v100k', icon: '🌟', label: '100K kg',   check: (s) => s.totalVolume >= 100000 },
+];
+
+function AchievementBadges({ stats, maxStreak }) {
+  const ext = { ...stats, maxStreak };
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+      <View style={achStyles.row}>
+        {ACHIEVEMENTS.map(a => {
+          const earned = a.check(ext);
+          return (
+            <View key={a.id} style={[achStyles.badge, !earned && achStyles.locked]}>
+              <Text style={[achStyles.icon, !earned && { opacity: 0.3 }]}>{a.icon}</Text>
+              <Text style={[achStyles.label, !earned && achStyles.lockedLabel]}>{a.label}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+}
+
+const achStyles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: 8, paddingVertical: 4, paddingHorizontal: 2 },
+  badge: {
+    alignItems: 'center', backgroundColor: 'rgba(200,255,87,0.1)',
+    borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 0.5, borderColor: 'rgba(200,255,87,0.3)', minWidth: 70,
+  },
+  locked: { backgroundColor: COLORS.card, borderColor: COLORS.border },
+  icon: { fontSize: 22, marginBottom: 4 },
+  label: { fontSize: 10, fontWeight: '700', color: COLORS.accent },
+  lockedLabel: { color: '#333' },
+});
+
 export default function ProgressScreen() {
   const [sessions, setSessions] = useState([]);
   const [prs, setPRs] = useState({});
@@ -137,6 +233,8 @@ export default function ProgressScreen() {
   const [weightInput, setWeightInput] = useState('');
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weeklyVolumeData, setWeeklyVolumeData] = useState([]);
+  const [heatmapData, setHeatmapData] = useState([]);
+  const [maxStreak, setMaxStreak] = useState(0);
   const [detailSession, setDetailSession] = useState(null);
   const [exHistoryExercise, setExHistoryExercise] = useState(null); // exercise name
 
@@ -145,6 +243,8 @@ export default function ProgressScreen() {
     setSessions(updated);
     setStats(computeLifetimeStats(updated));
     setWeeklyVolumeData(computeWeeklyVolumeHistory(updated));
+    setHeatmapData(computeTrainingHeatmap(updated));
+    setMaxStreak(computeMaxStreak(updated));
     setDetailSession(null);
   }
 
@@ -161,6 +261,8 @@ export default function ProgressScreen() {
         setStats(computeLifetimeStats(allSessions));
         setWeightLog(wLog);
         setWeeklyVolumeData(computeWeeklyVolumeHistory(allSessions));
+        setHeatmapData(computeTrainingHeatmap(allSessions));
+        setMaxStreak(computeMaxStreak(allSessions));
       }
       load();
       return () => { active = false; };
@@ -214,6 +316,10 @@ export default function ProgressScreen() {
             </View>
           ))}
         </View>
+
+        {/* Achievements */}
+        <SectionHeader title="Thành tích" />
+        <AchievementBadges stats={stats} maxStreak={maxStreak} />
 
         {/* Volume Trend */}
         <SectionHeader title="Xu hướng khối lượng (6 tuần)" />
@@ -305,6 +411,25 @@ export default function ProgressScreen() {
               {i < arr.length - 1 && <Divider />}
             </TouchableOpacity>
           ))}
+        </Card>
+
+        {/* Training Heatmap */}
+        <SectionHeader title="Lịch tập (14 tuần)" />
+        <Card style={{ marginBottom: 24 }}>
+          {heatmapData.length === 0 ? (
+            <Text style={styles.emptyText}>Chưa có dữ liệu. Hãy tập luyện! 🔥</Text>
+          ) : (
+            <>
+              <TrainingHeatmap grid={heatmapData} />
+              <View style={styles.heatLegend}>
+                <Text style={styles.heatLegendLabel}>Ít</Text>
+                {['#1e1e1e', 'rgba(200,255,87,0.22)', 'rgba(200,255,87,0.48)', 'rgba(200,255,87,0.72)', COLORS.accent].map((c, i) => (
+                  <View key={i} style={[styles.heatLegendCell, { backgroundColor: c }]} />
+                ))}
+                <Text style={styles.heatLegendLabel}>Nhiều</Text>
+              </View>
+            </>
+          )}
         </Card>
 
         {/* Workout Log */}
@@ -780,6 +905,10 @@ const styles = StyleSheet.create({
   logTopRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   logIntensity: { fontSize: 16 },
   logNote: { color: COLORS.muted, fontSize: 12, fontStyle: 'italic', marginTop: 4, marginBottom: 2 },
+
+  heatLegend: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
+  heatLegendCell: { width: 11, height: 11, borderRadius: 2 },
+  heatLegendLabel: { fontSize: 9, color: '#444', marginHorizontal: 2 },
 
   emptyText: {
     color: COLORS.muted, fontSize: 14, textAlign: 'center', lineHeight: 22, paddingVertical: 8,

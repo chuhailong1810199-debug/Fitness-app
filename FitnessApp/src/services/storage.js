@@ -336,6 +336,52 @@ export async function saveUserProfile(profile) {
   return profile;
 }
 
+/**
+ * Returns the all-time best consecutive-day streak across all sessions.
+ */
+export function computeMaxStreak(sessions) {
+  if (!sessions.length) return 0;
+  const byDate = groupSessionsByDate(sessions);
+  const dates = Object.keys(byDate).sort();
+  if (!dates.length) return 0;
+  let maxStreak = 1;
+  let cur = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const diff = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000;
+    if (diff === 1) { cur++; maxStreak = Math.max(maxStreak, cur); }
+    else cur = 1;
+  }
+  return maxStreak;
+}
+
+/**
+ * Returns a grid[weekIndex][dayIndex (0=Mon…6=Sun)] = sets count for
+ * the past `numWeeks` calendar weeks. -1 means future (don't render).
+ * weekIndex 0 = oldest week.
+ */
+export function computeTrainingHeatmap(sessions, numWeeks = 14) {
+  const byDate = groupSessionsByDate(sessions);
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - dayOfWeek);
+  thisMonday.setHours(0, 0, 0, 0);
+  const grid = [];
+  for (let w = numWeeks - 1; w >= 0; w--) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(thisMonday);
+      day.setDate(thisMonday.getDate() - w * 7 + d);
+      if (day > now) { week.push(-1); continue; }
+      const key = toDateStr(day);
+      const sets = (byDate[key] || []).reduce((sum, s) => sum + (s.totalSets || 0), 0);
+      week.push(sets);
+    }
+    grid.push(week);
+  }
+  return grid;
+}
+
 // ── Exercise History ──────────────────────────────────
 /**
  * Returns all recorded sets for a given exercise name across all sessions.
