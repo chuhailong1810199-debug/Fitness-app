@@ -1388,6 +1388,203 @@ async function renderProgressPage() {
     </div>`).join('') || '<div class="loading">No workouts logged yet.</div>';
 }
 
+// ── PROGRESS PHOTOS ────────────────────────────────────
+let _ppBeforeAfterMode = false;
+let _ppSelected = []; // [{id, url, date}]
+
+async function renderProgressPhotos() {
+  const wrap = document.getElementById('progress-photos-wrap');
+  if (!wrap || !activeClient) return;
+
+  const snap = await getDocs(
+    query(collection(db, 'clients', activeClient.id, 'progressPhotos'),
+          orderBy('date', 'desc'))
+  );
+  const photos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const isCoach = userRole === 'coach';
+
+  const uploaderHtml = `
+    <div id="pp-upload-progress" class="pp-upload-progress">
+      <div class="pp-uploading-label">Uploading...</div>
+      <div class="upload-bar-wrap"><div class="upload-bar" id="pp-ubar" style="width:0%"></div></div>
+      <div class="upload-pct" id="pp-upct">0%</div>
+    </div>
+    <label class="pp-upload-label" for="pp-file-input">📸 Upload Photo</label>
+    <input class="pp-input" type="file" id="pp-file-input" accept="image/*" onchange="uploadProgressPhoto(this)">`;
+
+  const baBtn = photos.length >= 2 ? `
+    <button class="pp-ba-btn${_ppBeforeAfterMode ? ' active' : ''}" id="pp-ba-btn" onclick="toggleBeforeAfterMode()">
+      Before / After
+    </button>` : '';
+
+  const baHint = _ppBeforeAfterMode
+    ? `<div class="pp-ba-hint">Select 2 photos to compare (${_ppSelected.length}/2 selected)</div>` : '';
+
+  const gridHtml = photos.length === 0
+    ? `<div class="pp-empty">No progress photos yet. Upload your first one!</div>`
+    : `<div class="pp-grid">${photos.map(p => {
+        let dateStr = '';
+        try {
+          const d = p.date?.toDate ? p.date.toDate() : new Date(p.date);
+          dateStr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'2-digit'});
+        } catch(e) { dateStr = p.id; }
+        const isSelected = _ppSelected.some(s => s.id === p.id);
+        const clickFn = _ppBeforeAfterMode
+          ? `selectPhotoForComparison('${p.id}','${encodeURIComponent(p.url)}','${dateStr}')`
+          : `openPhotoFullscreen('${encodeURIComponent(p.url)}')`;
+        return `<div class="pp-card${isSelected ? ' pp-selected' : ''}" onclick="${clickFn}">
+          <img src="${p.url}" loading="lazy" alt="Progress ${dateStr}">
+          <div class="pp-sel-ring"></div>
+          <div class="pp-card-info">
+            <div class="pp-card-date">${dateStr}</div>
+            ${p.note ? `<div class="pp-card-note">${p.note}</div>` : ''}
+          </div>
+          ${isCoach ? `<button class="pp-del-btn" onclick="event.stopPropagation();deleteProgressPhoto('${p.id}')" title="Delete">✕</button>` : ''}
+        </div>`;
+      }).join('')}</div>`;
+
+  wrap.innerHTML = `
+    <div class="pp-header">
+      <div class="pp-actions">
+        ${uploaderHtml}
+        ${baBtn}
+      </div>
+    </div>
+    ${baHint}
+    ${gridHtml}`;
+}
+
+async function uploadProgressPhoto(input) {
+  const file = input.files[0];
+  if (!file || !activeClient) { input.value = ''; return; }
+
+  const compressed = await _ppCompressImage(file, 1024 * 1024);
+  const progressEl = document.getElementById('pp-upload-progress');
+  const bar = document.getElementById('pp-ubar');
+  const pctEl = document.getElementById('pp-upct');
+  if (progressEl) progressEl.classList.add('show');
+
+  const dateKey = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const storagePath = `progressPhotos/${activeClient.id}/${dateKey}.jpg`;
+  const storageRef = ref(storage, storagePath);
+  const task = uploadBytesResumable(storageRef, compressed);
+
+  task.on('state_changed',
+    snap => {
+      const p = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+      if (bar) bar.style.width = p + '%';
+      if (pctEl) pctEl.textContent = p + '%';
+    },
+    err => {
+      alert('Upload failed: ' + err.message);
+      if (progressEl) progressEl.classList.remove('show');
+      input.value = '';
+    },
+    async () => {
+      const url = await getDownloadURL(task.snapshot.ref);
+      await setDoc(doc(db, 'clients', activeClient.id, 'progressPhotos', dateKey), {
+        url,
+        date: serverTimestamp(),
+        uploadedBy: userRole,
+        note: '',
+      });
+      if (progressEl) progressEl.classList.remove('show');
+      input.value = '';
+      renderProgressPhotos();
+    }
+  );
+}
+
+function _ppCompressImage(file, maxBytes) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      const maxDim = 1200;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      function attempt(quality) {
+        canvas.toBlob(blob => {
+          if (!blob) { resolve(file); return; }
+          if (blob.size <= maxBytes || quality <= 0.3) resolve(blob);
+          else attempt(+(quality - 0.1).toFixed(1));
+        }, 'image/jpeg', quality);
+      }
+      attempt(0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
+
+async function deleteProgressPhoto(photoId) {
+  if (!confirm('Delete this progress photo?')) return;
+  try { await deleteObject(ref(storage, `progressPhotos/${activeClient.id}/${photoId}.jpg`)); } catch(e) {}
+  await deleteDoc(doc(db, 'clients', activeClient.id, 'progressPhotos', photoId));
+  renderProgressPhotos();
+}
+
+function toggleBeforeAfterMode() {
+  _ppBeforeAfterMode = !_ppBeforeAfterMode;
+  _ppSelected = [];
+  renderProgressPhotos();
+}
+
+function selectPhotoForComparison(id, encodedUrl, date) {
+  const url = decodeURIComponent(encodedUrl);
+  const idx = _ppSelected.findIndex(s => s.id === id);
+  if (idx >= 0) { _ppSelected.splice(idx, 1); }
+  else {
+    if (_ppSelected.length >= 2) _ppSelected.shift();
+    _ppSelected.push({ id, url, date });
+  }
+  if (_ppSelected.length === 2) {
+    _openBeforeAfterView();
+  } else {
+    renderProgressPhotos();
+  }
+}
+
+function _openBeforeAfterView() {
+  const [a, b] = _ppSelected;
+  const overlay = document.getElementById('pp-ba-overlay');
+  if (!overlay) return;
+  document.getElementById('pp-ba-before-img').src = a.url;
+  document.getElementById('pp-ba-after-img').src = b.url;
+  document.getElementById('pp-ba-before-label').textContent = a.date;
+  document.getElementById('pp-ba-after-label').textContent = b.date;
+  overlay.classList.add('open');
+  _ppBeforeAfterMode = false;
+  _ppSelected = [];
+}
+
+function closeBeforeAfterView() {
+  document.getElementById('pp-ba-overlay')?.classList.remove('open');
+  renderProgressPhotos();
+}
+
+function openPhotoFullscreen(encodedUrl) {
+  const url = decodeURIComponent(encodedUrl);
+  const overlay = document.getElementById('pp-fullscreen-overlay');
+  if (!overlay) return;
+  overlay.querySelector('img').src = url;
+  overlay.classList.add('open');
+}
+
+function closePhotoFullscreen() {
+  const overlay = document.getElementById('pp-fullscreen-overlay');
+  if (overlay) { overlay.classList.remove('open'); overlay.querySelector('img').src = ''; }
+}
+
 // ── NAV ────────────────────────────────────────────────
 function showPage(page) {
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
@@ -1399,6 +1596,7 @@ function showPage(page) {
     renderProgressData();
     renderProgressPage();
     renderCoachDashboard();
+    renderProgressPhotos();
   }
 }
 
@@ -2212,6 +2410,50 @@ h1 span{color:#e05535;}
 .mr-q{background:#44444420;color:#888;}
 .btn-browse{background:#1a1a1a;border:1px solid #333;border-radius:5px;color:#aaa;font-size:11px;font-weight:600;padding:0 10px;cursor:pointer;white-space:nowrap;transition:border-color .15s;}
 .btn-browse:hover{border-color:#e05535;color:#e05535;}
+
+/* ── PROGRESS PHOTOS ─────────────────────────────── */
+.pp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.pp-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pp-upload-label{display:inline-block;padding:8px 16px;border-radius:4px;background:#e05535;color:#0d0d0d;font-family:'Oswald',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.pp-upload-label:hover{background:#ea6848;}
+.pp-ba-btn{padding:7px 14px;border-radius:4px;background:transparent;border:1px solid #2a2a4e;color:#6688ff;font-family:'Oswald',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.pp-ba-btn:hover,.pp-ba-btn.active{background:#1a1a2e;border-color:#6688ff;}
+.pp-ba-hint{font-size:11px;color:#6688ff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.pp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem;}
+.pp-card{position:relative;border-radius:8px;overflow:hidden;background:#161616;border:2px solid #222;cursor:pointer;aspect-ratio:3/4;transition:border-color .15s;}
+.pp-card img{width:100%;height:100%;object-fit:cover;display:block;}
+.pp-card-info{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
+.pp-card-date{font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#ccc;}
+.pp-card-note{font-size:9px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pp-del-btn{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.75);border:1px solid #444;color:#ff4444;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
+.pp-card:hover .pp-del-btn{opacity:1;}
+.pp-sel-ring{position:absolute;inset:0;border:3px solid #6688ff;border-radius:7px;pointer-events:none;display:none;}
+.pp-card.pp-selected{border-color:#6688ff;}
+.pp-card.pp-selected .pp-sel-ring{display:block;}
+.pp-upload-progress{background:#161616;border:1px solid #222;border-radius:8px;padding:12px 14px;margin-bottom:10px;display:none;}
+.pp-upload-progress.show{display:block;}
+.pp-uploading-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px;}
+.pp-empty{text-align:center;padding:2.5rem 1rem;color:#444;font-size:13px;border:1px dashed #222;border-radius:8px;margin-bottom:1rem;}
+.pp-input{display:none;}
+/* Before/After overlay */
+.pp-ba-overlay{position:fixed;inset:0;background:#0d0d0d;z-index:200;display:none;flex-direction:column;}
+.pp-ba-overlay.open{display:flex;}
+.pp-ba-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1e1e1e;flex-shrink:0;}
+.pp-ba-title{font-family:'Oswald',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;color:#fff;}
+.pp-ba-close{padding:7px 14px;border-radius:4px;background:transparent;border:1px solid #333;color:#aaa;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;cursor:pointer;}
+.pp-ba-close:hover{border-color:#e05535;color:#e05535;}
+.pp-ba-images{display:grid;grid-template-columns:1fr 1px 1fr;flex:1;overflow:hidden;min-height:0;}
+.pp-ba-side{display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.pp-ba-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding:8px 12px;text-align:center;border-bottom:1px solid #1e1e1e;flex-shrink:0;}
+.pp-ba-img-wrap{flex:1;overflow:hidden;position:relative;min-height:0;}
+.pp-ba-img-wrap img{width:100%;height:100%;object-fit:contain;display:block;}
+.pp-ba-divider{background:#2a2a2a;}
+/* Fullscreen overlay */
+.pp-fullscreen{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1rem;}
+.pp-fullscreen.open{display:flex;}
+.pp-fullscreen img{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px;}
+.pp-fullscreen-close{margin-top:1rem;padding:10px 24px;border-radius:6px;border:1px solid #444;background:transparent;color:#aaa;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;cursor:pointer;}
+.pp-fullscreen-close:hover{border-color:#e05535;color:#e05535;}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -2537,8 +2779,36 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     </div>
     <div class="section-title">Weekly Log</div>
     <div id="weekly-log"></div>
+
+    <div class="section-title">📸 Progress Photos</div>
+    <div id="progress-photos-wrap"></div>
   </div>
 </div>
+</div>
+
+<!-- PROGRESS PHOTOS — BEFORE/AFTER OVERLAY -->
+<div class="pp-ba-overlay" id="pp-ba-overlay">
+  <div class="pp-ba-header">
+    <div class="pp-ba-title">Before / After</div>
+    <button class="pp-ba-close" onclick="closeBeforeAfterView()">✕ Close</button>
+  </div>
+  <div class="pp-ba-images">
+    <div class="pp-ba-side">
+      <div class="pp-ba-label" id="pp-ba-before-label">Before</div>
+      <div class="pp-ba-img-wrap"><img id="pp-ba-before-img" src="" alt="Before"></div>
+    </div>
+    <div class="pp-ba-divider"></div>
+    <div class="pp-ba-side">
+      <div class="pp-ba-label" id="pp-ba-after-label">After</div>
+      <div class="pp-ba-img-wrap"><img id="pp-ba-after-img" src="" alt="After"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS PHOTOS — FULLSCREEN -->
+<div class="pp-fullscreen" id="pp-fullscreen-overlay" onclick="if(event.target===this)closePhotoFullscreen()">
+  <img src="" alt="Progress photo">
+  <button class="pp-fullscreen-close" onclick="closePhotoFullscreen()">✕ Close</button>
 </div>
 
 <!-- BASELINE SCREEN -->
