@@ -1847,7 +1847,13 @@ function renderPickerResults() {
 
   let list = _exerciseCache;
   if (q)    list = list.filter(e => e.name && e.name.toLowerCase().includes(q));
-  if (mus)  list = list.filter(e => e.muscles && Object.keys(e.muscles).some(m => m.toLowerCase().includes(mus.toLowerCase())));
+  if (mus)  list = list.filter(e => {
+    const musLow = mus.toLowerCase();
+    const catLow = (e.category || '').toLowerCase();
+    const catMatch = catLow && (catLow.includes(musLow) || musLow.includes(catLow));
+    const musMatch = e.muscles && Object.keys(e.muscles).some(m => m.toLowerCase().includes(musLow));
+    return catMatch || musMatch;
+  });
   if (tool) list = list.filter(e => (e.tool || '').toLowerCase() === tool.toLowerCase());
   if (diff) list = list.filter(e => (e.difficulty || '').toLowerCase() === diff.toLowerCase());
 
