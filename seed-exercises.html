@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed Exercise Library</title>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0d0d0d; color: #f0f0f0; padding: 2rem; max-width: 700px; margin: 0 auto; }
+    h1 { color: #e05535; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 2rem; }
+    button { padding: 12px 28px; border-radius: 6px; border: none; background: #e05535; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; margin-right: 12px; margin-bottom: 12px; }
+    button:disabled { background: #444; cursor: not-allowed; }
+    button.secondary { background: transparent; border: 1px solid #444; color: #aaa; }
+    #log { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 12px; font-family: monospace; max-height: 400px; overflow-y: auto; line-height: 1.8; }
+    .ok  { color: #44cc66; }
+    .err { color: #e05535; }
+    .inf { color: #888; }
+    #status { margin-top: 1rem; font-size: 14px; font-weight: 700; }
+    .badge { display: inline-block; background: #2a2a2a; border-radius: 4px; padding: 2px 8px; font-size: 11px; margin: 2px; color: #ccc; }
+    .summary { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .summary h3 { color: #e09535; font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <h1>🏋️ Exercise Library Seeder</h1>
+  <p class="subtitle">Populates Firestore <code>exercises</code> collection with Back &amp; Shoulder exercises. Safe to re-run — uses <code>setDoc</code> so no duplicates.</p>
+
+  <div class="summary">
+    <h3>Will add</h3>
+    <span class="badge">20 Back exercises</span>
+    <span class="badge">20 Shoulder exercises</span>
+    <span class="badge">muscles + tool + difficulty</span>
+  </div>
+
+  <button id="btnSeed" onclick="runSeed()">▶ Seed Now</button>
+  <button class="secondary" onclick="document.getElementById('log').innerHTML=''">Clear Log</button>
+
+  <div id="status"></div>
+  <div id="log"><span class="inf">Click "Seed Now" to start...</span></div>
+
+<script type="module">
+import { initializeApp }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+                                                 from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAiu9jzMzDzr1ltBZJQkwWzK8VWidHq8WU",
+  authDomain: "fitness-app-a22c8.firebaseapp.com",
+  projectId: "fitness-app-a22c8",
+  storageBucket: "fitness-app-a22c8.firebasestorage.app",
+  messagingSenderId: "583223865664",
+  appId: "1:583223865664:web:281cbf803d55d6f0808aa5"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ─── EXERCISE DATA ──────────────────────────────────────────
+const EXERCISES = [
+
+  // ══════════════════ BACK ══════════════════
+  { id: 'barbell-deadlift',        name: 'Barbell Deadlift',           muscles: { 'Erector Spinae': 'P', 'Glutes': 'S', 'Hamstrings': 'S', 'Latissimus Dorsi': 'T', 'Traps': 'T' },                            tool: 'Barbell',    difficulty: 'Advanced'     },
+  { id: 'romanian-deadlift',       name: 'Romanian Deadlift',          muscles: { 'Hamstrings': 'P', 'Glutes': 'P', 'Erector Spinae': 'S' },                                                                    tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'pull-up',                 name: 'Pull-up',                    muscles: { 'Latissimus Dorsi': 'P', 'Biceps': 'S', 'Rear Deltoid': 'T', 'Rhomboids': 'T' },                                              tool: 'Bodyweight', difficulty: 'Intermediate' },
+  { id: 'chin-up',                 name: 'Chin-up',                    muscles: { 'Latissimus Dorsi': 'P', 'Biceps': 'P', 'Rear Deltoid': 'T' },                                                                 tool: 'Bodyweight', difficulty: 'Intermediate' },
+  { id: 'barbell-row',             name: 'Barbell Bent-Over Row',      muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'P', 'Rear Deltoid': 'S', 'Biceps': 'S', 'Erector Spinae': 'T' },                       tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'db-single-arm-row',       name: 'Dumbbell Single-Arm Row',    muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'S', 'Rear Deltoid': 'S', 'Biceps': 'T' },                                              tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'seated-cable-row',        name: 'Seated Cable Row',           muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'P', 'Rear Deltoid': 'S', 'Biceps': 'T' },                                              tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'lat-pulldown',            name: 'Lat Pulldown',               muscles: { 'Latissimus Dorsi': 'P', 'Biceps': 'S', 'Rear Deltoid': 'T', 'Rhomboids': 'T' },                                              tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'tbar-row',                name: 'T-Bar Row',                  muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'P', 'Rear Deltoid': 'S', 'Biceps': 'S' },                                              tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'cable-wide-row',          name: 'Cable Row (Wide Grip)',      muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'P', 'Traps': 'S', 'Latissimus Dorsi': 'S' },                                               tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'face-pull',               name: 'Face Pull',                  muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'S', 'Rotator Cuff': 'S', 'Traps': 'T' },                                                   tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'good-morning',            name: 'Good Morning',               muscles: { 'Erector Spinae': 'P', 'Hamstrings': 'S', 'Glutes': 'T' },                                                                     tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'back-extension',          name: 'Back Extension',             muscles: { 'Erector Spinae': 'P', 'Glutes': 'S', 'Hamstrings': 'T' },                                                                     tool: 'Bodyweight', difficulty: 'Beginner'     },
+  { id: 'rack-pull',               name: 'Rack Pull',                  muscles: { 'Erector Spinae': 'P', 'Traps': 'P', 'Glutes': 'S', 'Latissimus Dorsi': 'T' },                                                tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'pendlay-row',             name: 'Pendlay Row',                muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'P', 'Rear Deltoid': 'S', 'Biceps': 'T' },                                              tool: 'Barbell',    difficulty: 'Advanced'     },
+  { id: 'cable-pullover',          name: 'Cable Straight-Arm Pulldown',muscles: { 'Latissimus Dorsi': 'P', 'Teres Major': 'S', 'Rear Deltoid': 'T' },                                                            tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'inverted-row',            name: 'Inverted Row',               muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'S', 'Rear Deltoid': 'S', 'Biceps': 'T' },                                              tool: 'Bodyweight', difficulty: 'Beginner'     },
+  { id: 'db-pullover',             name: 'Dumbbell Pullover',          muscles: { 'Latissimus Dorsi': 'P', 'Teres Major': 'S', 'Chest': 'T' },                                                                   tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'machine-row',             name: 'Machine Seated Row',         muscles: { 'Latissimus Dorsi': 'P', 'Rhomboids': 'S', 'Rear Deltoid': 'T', 'Biceps': 'T' },                                              tool: 'Machine',    difficulty: 'Beginner'     },
+  { id: 'band-pull-apart',         name: 'Band Pull-Apart',            muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'P', 'Traps': 'S' },                                                                         tool: 'Band',       difficulty: 'Beginner'     },
+
+  // ══════════════════ SHOULDER ══════════════════
+  { id: 'barbell-ohp',             name: 'Barbell Overhead Press',     muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'S', 'Triceps': 'S', 'Traps': 'T' },                                              tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'db-shoulder-press',       name: 'Dumbbell Shoulder Press',    muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'S', 'Triceps': 'S' },                                                             tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'arnold-press',            name: 'Arnold Press',               muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'P', 'Triceps': 'S', 'Rear Deltoid': 'T' },                                       tool: 'Dumbbell',   difficulty: 'Intermediate' },
+  { id: 'lateral-raise',           name: 'Dumbbell Lateral Raise',     muscles: { 'Lateral Deltoid': 'P', 'Anterior Deltoid': 'T', 'Traps': 'T' },                                                              tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'front-raise',             name: 'Dumbbell Front Raise',       muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'T' },                                                                             tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'reverse-fly',             name: 'Reverse Fly',                muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'S', 'Traps': 'T' },                                                                         tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'cable-lateral-raise',     name: 'Cable Lateral Raise',        muscles: { 'Lateral Deltoid': 'P', 'Anterior Deltoid': 'T' },                                                                             tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'upright-row',             name: 'Barbell Upright Row',        muscles: { 'Lateral Deltoid': 'P', 'Traps': 'P', 'Anterior Deltoid': 'S', 'Biceps': 'T' },                                               tool: 'Barbell',    difficulty: 'Intermediate' },
+  { id: 'machine-shoulder-press',  name: 'Machine Shoulder Press',     muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'S', 'Triceps': 'T' },                                                            tool: 'Machine',    difficulty: 'Beginner'     },
+  { id: 'push-press',              name: 'Push Press',                 muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'S', 'Triceps': 'S', 'Glutes': 'T', 'Quads': 'T' },                               tool: 'Barbell',    difficulty: 'Advanced'     },
+  { id: 'cable-front-raise',       name: 'Cable Front Raise',          muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'T' },                                                                             tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'bent-over-rear-delt-fly', name: 'Bent-Over Rear Delt Fly',   muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'S', 'Traps': 'T' },                                                                         tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'handstand-pushup',        name: 'Handstand Push-up',          muscles: { 'Anterior Deltoid': 'P', 'Triceps': 'P', 'Lateral Deltoid': 'S', 'Traps': 'T' },                                              tool: 'Bodyweight', difficulty: 'Advanced'     },
+  { id: 'pike-pushup',             name: 'Pike Push-up',               muscles: { 'Anterior Deltoid': 'P', 'Lateral Deltoid': 'S', 'Triceps': 'S' },                                                             tool: 'Bodyweight', difficulty: 'Beginner'     },
+  { id: 'cable-yraise',            name: 'Cable Y-Raise',              muscles: { 'Lower Traps': 'P', 'Rear Deltoid': 'S', 'Rhomboids': 'T' },                                                                   tool: 'Cable',      difficulty: 'Beginner'     },
+  { id: 'db-lu-raise',             name: 'Lu Raise',                   muscles: { 'Lateral Deltoid': 'P', 'Anterior Deltoid': 'S', 'Rear Deltoid': 'T' },                                                       tool: 'Dumbbell',   difficulty: 'Intermediate' },
+  { id: 'barbell-shrug',           name: 'Barbell Shrug',              muscles: { 'Traps': 'P', 'Lateral Deltoid': 'T' },                                                                                         tool: 'Barbell',    difficulty: 'Beginner'     },
+  { id: 'db-shrug',                name: 'Dumbbell Shrug',             muscles: { 'Traps': 'P', 'Lateral Deltoid': 'T' },                                                                                         tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'seated-lateral-raise',    name: 'Seated Dumbbell Lateral Raise', muscles: { 'Lateral Deltoid': 'P', 'Traps': 'T' },                                                                                    tool: 'Dumbbell',   difficulty: 'Beginner'     },
+  { id: 'cable-rear-delt-fly',     name: 'Cable Rear Delt Fly',        muscles: { 'Rear Deltoid': 'P', 'Rhomboids': 'S', 'Traps': 'T' },                                                                         tool: 'Cable',      difficulty: 'Beginner'     },
+];
+
+// ─── HELPERS ────────────────────────────────────────────────
+function log(msg, cls = 'inf') {
+  const el = document.getElementById('log');
+  el.innerHTML += `<div class="${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStatus(msg, color = '#f0f0f0') {
+  document.getElementById('status').innerHTML = `<span style="color:${color}">${msg}</span>`;
+}
+
+// ─── SEED FUNCTION ──────────────────────────────────────────
+window.runSeed = async function() {
+  const btn = document.getElementById('btnSeed');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  document.getElementById('log').innerHTML = '';
+
+  // Auth check
+  let user = auth.currentUser;
+  if (!user) {
+    log('Not signed in — opening Google login...', 'inf');
+    try {
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      user = result.user;
+      log(`✅ Signed in as ${user.email}`, 'ok');
+    } catch(e) {
+      log(`❌ Auth error: ${e.message}`, 'err');
+      btn.disabled = false; btn.textContent = '▶ Seed Now';
+      return;
+    }
+  } else {
+    log(`✅ Already signed in as ${user.email}`, 'ok');
+  }
+
+  log(`\nSeeding ${EXERCISES.length} exercises to Firestore...`, 'inf');
+
+  let ok = 0, fail = 0;
+  for (const ex of EXERCISES) {
+    try {
+      await setDoc(doc(db, 'exercises', ex.id), {
+        name:       ex.name,
+        muscles:    ex.muscles,
+        tool:       ex.tool,
+        difficulty: ex.difficulty,
+        category:   ex.id.includes('barbell-deadlift') || ex.id.includes('romanian') || ex.id.includes('rack-pull') || ex.id.includes('good-morning') || ex.id.includes('back-ext') ? 'Back' :
+                    ex.id.includes('ohp') || ex.id.includes('shoulder') || ex.id.includes('lateral') || ex.id.includes('front-raise') || ex.id.includes('arnold') || ex.id.includes('delt') || ex.id.includes('shrug') || ex.id.includes('upright') || ex.id.includes('push-press') || ex.id.includes('pike') || ex.id.includes('handstand') || ex.id.includes('yraise') || ex.id.includes('lu-raise') || ex.id.includes('cable-rear') || ex.id.includes('seated-lateral') ? 'Shoulder' : 'Back',
+      });
+      log(`  ✔ ${ex.name}`, 'ok');
+      ok++;
+    } catch(e) {
+      log(`  ✘ ${ex.name}: ${e.message}`, 'err');
+      fail++;
+    }
+  }
+
+  const summary = `\nDone! ${ok} added, ${fail} failed.`;
+  log(summary, ok === EXERCISES.length ? 'ok' : 'err');
+  setStatus(ok === EXERCISES.length ? `✅ All ${ok} exercises seeded!` : `⚠️ ${ok} ok, ${fail} failed`, ok === EXERCISES.length ? '#44cc66' : '#e09535');
+
+  btn.disabled = false;
+  btn.textContent = '▶ Seed Again';
+};
+
+// Auto-sign-in state
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('status').innerHTML = `<span style="color:#44cc66">Signed in as ${user.email} — ready to seed.</span>`;
+  } else {
+    document.getElementById('status').innerHTML = `<span style="color:#888">Not signed in. Will prompt on seed.</span>`;
+  }
+});
+</script>
+</body>
+</html>
