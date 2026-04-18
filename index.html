@@ -362,6 +362,9 @@ async function switchClient(id) {
   subscribeProgram();
   await renderStats();
   renderCoachDashboard();
+  if (document.getElementById('log-page')?.classList.contains('active')) {
+    renderWorkoutLog();
+  }
 }
 
 // ── EDIT CLIENT INFO (coach only) ─────────────────────
@@ -1401,8 +1404,10 @@ async function renderWorkoutLog() {
   }
 
   wrap.innerHTML = hist.map(s => {
-    const d = s.date?.toDate ? s.date.toDate() : new Date(s.date);
-    const dateStr = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+    const d = s.date?.toDate ? s.date.toDate() : (s.date ? new Date(s.date) : null);
+    const dateStr = d && !isNaN(d)
+      ? d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+      : 'Unknown date';
     const done  = s.done ?? 0;
     const total = s.total ?? 0;
     const pct   = total > 0 ? Math.round(done / total * 100) : 0;
