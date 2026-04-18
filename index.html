@@ -2082,6 +2082,287 @@ async function renderCoachDashboard() {
   }
 }
 
+// ── CLIENT PROFILE & ASSESSMENT (FTN-13) ───────────────
+let _cpMeasurements = []; // in-memory list for current session
+let _cpWeightChart = null;
+
+function openClientProfile() {
+  if (!activeClient) return;
+  document.getElementById('cp-client-name').textContent = activeClient.name || 'Profile';
+  document.getElementById('cp-overlay').classList.add('open');
+  switchProfileTab('overview');
+  loadClientProfile();
+}
+
+function closeClientProfile() {
+  document.getElementById('cp-overlay').classList.remove('open');
+}
+
+function switchProfileTab(tab) {
+  ['overview','assessment','measurements','goals'].forEach(t => {
+    document.getElementById('cp-panel-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cp-tab-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'measurements') renderMeasurements();
+}
+
+function toggleCpSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+async function loadClientProfile() {
+  if (!activeClient) return;
+  try {
+    const snap = await getDoc(doc(db, 'clients', activeClient.id, 'profile', 'data'));
+    if (!snap.exists()) return;
+    const p = snap.data();
+    // Client Info
+    const sf = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+    sf('cp-fullname', p.fullName);
+    sf('cp-dob', p.dob);
+    sf('cp-gender', p.gender);
+    sf('cp-phone', p.phone);
+    sf('cp-email', p.email);
+    sf('cp-occupation', p.occupation);
+    sf('cp-health', p.healthConditions);
+    sf('cp-medications', p.medications);
+    sf('cp-emergency-name', p.emergencyName);
+    sf('cp-emergency-phone', p.emergencyPhone);
+    // Lifestyle
+    sf('cp-sleep', p.sleep);
+    sf('cp-stress', p.stress);
+    sf('cp-water', p.water);
+    sf('cp-diet', p.diet);
+    sf('cp-meals', p.meals);
+    sf('cp-alcohol', p.alcohol);
+    sf('cp-smoking', p.smoking);
+    sf('cp-ex-history', p.exerciseHistory);
+    // Sport
+    sf('cp-sport', p.sport);
+    sf('cp-comp-level', p.compLevel);
+    sf('cp-position', p.position);
+    sf('cp-season-start', p.seasonStart);
+    sf('cp-season-end', p.seasonEnd);
+    sf('cp-sport-goals', p.sportGoals);
+    // OHS checkboxes
+    const ohsFields = ['o-soleus','o-hipflex','o-adduct','o-abs','o-pec','o-levscap','o-scm','o-utrap',
+                       'u-antib','u-glmed','u-glmax','u-core','u-serr','u-ltrap','u-dcf',
+                       'c-fto','c-kv','c-lean','c-arms','c-lba'];
+    ohsFields.forEach(f => {
+      const el = document.getElementById('ohs-' + f);
+      if (el) el.checked = !!(p.ohs && p.ohs[f]);
+    });
+    sf('cp-ohs-notes', p.ohsNotes);
+    // VO2 Max
+    sf('cp-vo2', p.vo2max);
+    // Goals
+    sf('cp-primary-goal', p.primaryGoal);
+    sf('cp-target-weight', p.targetWeight);
+    sf('cp-timeline', p.timeline);
+    sf('cp-training-days', p.trainingDays);
+    sf('cp-session-duration', p.sessionDuration);
+    sf('cp-goal-notes', p.goalNotes);
+    updateVO2Rating();
+  } catch(e) { console.error('[loadClientProfile]', e); }
+}
+
+async function saveClientProfile() {
+  if (!activeClient) return;
+  const gv = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const gc = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
+  const ohsFields = ['o-soleus','o-hipflex','o-adduct','o-abs','o-pec','o-levscap','o-scm','o-utrap',
+                     'u-antib','u-glmed','u-glmax','u-core','u-serr','u-ltrap','u-dcf',
+                     'c-fto','c-kv','c-lean','c-arms','c-lba'];
+  const ohsData = {};
+  ohsFields.forEach(f => { ohsData[f] = gc('ohs-' + f); });
+  const profileData = {
+    fullName: gv('cp-fullname'), dob: gv('cp-dob'), gender: gv('cp-gender'),
+    phone: gv('cp-phone'), email: gv('cp-email'), occupation: gv('cp-occupation'),
+    healthConditions: gv('cp-health'), medications: gv('cp-medications'),
+    emergencyName: gv('cp-emergency-name'), emergencyPhone: gv('cp-emergency-phone'),
+    sleep: gv('cp-sleep') ? parseFloat(gv('cp-sleep')) : null,
+    stress: gv('cp-stress') ? parseInt(gv('cp-stress')) : null,
+    water: gv('cp-water') ? parseFloat(gv('cp-water')) : null,
+    diet: gv('cp-diet'), meals: gv('cp-meals') ? parseInt(gv('cp-meals')) : null,
+    alcohol: gv('cp-alcohol') ? parseInt(gv('cp-alcohol')) : null,
+    smoking: gv('cp-smoking'), exerciseHistory: gv('cp-ex-history'),
+    sport: gv('cp-sport'), compLevel: gv('cp-comp-level'), position: gv('cp-position'),
+    seasonStart: gv('cp-season-start'), seasonEnd: gv('cp-season-end'), sportGoals: gv('cp-sport-goals'),
+    ohs: ohsData, ohsNotes: gv('cp-ohs-notes'),
+    vo2max: gv('cp-vo2') ? parseFloat(gv('cp-vo2')) : null,
+    primaryGoal: gv('cp-primary-goal'), targetWeight: gv('cp-target-weight') ? parseFloat(gv('cp-target-weight')) : null,
+    timeline: gv('cp-timeline') ? parseInt(gv('cp-timeline')) : null,
+    trainingDays: gv('cp-training-days') ? parseInt(gv('cp-training-days')) : null,
+    sessionDuration: gv('cp-session-duration') ? parseInt(gv('cp-session-duration')) : null,
+    goalNotes: gv('cp-goal-notes'),
+    updatedAt: serverTimestamp()
+  };
+  try {
+    await setDoc(doc(db, 'clients', activeClient.id, 'profile', 'data'), profileData, { merge: true });
+    const btn = document.getElementById('cp-overlay').querySelector('.cp-save-btn');
+    if (btn) { btn.textContent = 'Saved ✓'; setTimeout(() => { btn.textContent = 'Save'; }, 1500); }
+  } catch(e) { console.error('[saveClientProfile]', e); alert('Save failed: ' + e.message); }
+}
+
+async function loadMeasurements() {
+  if (!activeClient) return [];
+  try {
+    const snap = await getDocs(query(collection(db, 'clients', activeClient.id, 'measurements'), orderBy('date', 'asc')));
+    const entries = [];
+    snap.forEach(d => entries.push({ id: d.id, ...d.data() }));
+    _cpMeasurements = entries;
+    return entries;
+  } catch(e) { console.error('[loadMeasurements]', e); return []; }
+}
+
+async function renderMeasurements() {
+  const wrap = document.getElementById('cp-meas-table-wrap');
+  if (!wrap) return;
+  const entries = await loadMeasurements();
+  if (entries.length === 0) {
+    wrap.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">No measurements yet. Add the first entry below.</div>';
+    renderWeightChart([]);
+    return;
+  }
+  wrap.innerHTML = `<table class="cp-meas-table">
+    <thead><tr><th>Date</th><th>Weight</th><th>BMI</th><th>BF%</th><th>Waist</th><th></th></tr></thead>
+    <tbody>
+      ${entries.map(e => {
+        const d = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+        const dateStr = d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'});
+        return `<tr>
+          <td>${dateStr}</td>
+          <td>${e.weight ? e.weight + ' kg' : '—'}</td>
+          <td>${e.bmi ? e.bmi.toFixed(1) : '—'}</td>
+          <td>${e.bodyFat ? e.bodyFat + '%' : '—'}</td>
+          <td>${e.waist ? e.waist + ' cm' : '—'}</td>
+          <td><button class="cp-meas-delete" onclick="deleteMeasurement('${e.id}')">✕</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+  renderWeightChart(entries);
+}
+
+function renderWeightChart(entries) {
+  const canvas = document.getElementById('cp-weight-chart');
+  if (!canvas) return;
+  if (_cpWeightChart) { _cpWeightChart.destroy(); _cpWeightChart = null; }
+  const hasData = entries.some(e => e.weight);
+  if (!hasData) return;
+  const labels = entries.filter(e => e.weight).map(e => {
+    const d = e.date?.toDate ? e.date.toDate() : new Date(e.date);
+    return d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  });
+  const data = entries.filter(e => e.weight).map(e => e.weight);
+  _cpWeightChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Weight (kg)', data, borderColor: '#e05535', backgroundColor: 'rgba(224,85,53,0.1)',
+        tension: 0.3, pointBackgroundColor: '#e05535', pointRadius: 4, fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1e1e1e' } },
+        y: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1e1e1e' } }
+      }
+    }
+  });
+}
+
+function toggleMeasForm() {
+  const form = document.getElementById('cp-meas-form');
+  if (!form) return;
+  const isOpen = form.classList.toggle('open');
+  if (isOpen) {
+    // Default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('mf-date').value = today;
+  }
+}
+
+function mfCalcBMI() {
+  const w = parseFloat(document.getElementById('mf-weight').value);
+  const h = parseFloat(document.getElementById('mf-height').value);
+  const bmiEl = document.getElementById('mf-bmi');
+  if (w > 0 && h > 0) {
+    const bmi = w / ((h/100) ** 2);
+    bmiEl.value = bmi.toFixed(1);
+  } else {
+    bmiEl.value = '';
+  }
+}
+
+async function saveMeasurementEntry() {
+  if (!activeClient) return;
+  const gv = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const gn = (id) => { const v = parseFloat(gv(id)); return isNaN(v) ? null : v; };
+  const dateStr = gv('mf-date');
+  if (!dateStr) { alert('Please enter a date.'); return; }
+  const bmiRaw = gv('mf-bmi');
+  const entry = {
+    date: new Date(dateStr + 'T00:00:00'),
+    weight: gn('mf-weight'), height: gn('mf-height'),
+    bmi: bmiRaw ? parseFloat(bmiRaw) : null,
+    bodyFat: gn('mf-bf'), chest: gn('mf-chest'), waist: gn('mf-waist'),
+    hips: gn('mf-hips'), leftArm: gn('mf-larm'), rightArm: gn('mf-rarm'),
+    leftThigh: gn('mf-lthigh'), rightThigh: gn('mf-rthigh'),
+    createdAt: serverTimestamp()
+  };
+  try {
+    await addDoc(collection(db, 'clients', activeClient.id, 'measurements'), entry);
+    toggleMeasForm();
+    renderMeasurements();
+  } catch(e) { console.error('[saveMeasurementEntry]', e); alert('Save failed: ' + e.message); }
+}
+
+async function deleteMeasurement(measId) {
+  if (!activeClient || !measId) return;
+  if (!confirm('Delete this measurement entry?')) return;
+  try {
+    await deleteDoc(doc(db, 'clients', activeClient.id, 'measurements', measId));
+    renderMeasurements();
+  } catch(e) { console.error('[deleteMeasurement]', e); }
+}
+
+// VO2 Max rating table: [male thresholds, female thresholds] per age group
+// Format: { ageMin, ageMax, levels: [[vp,poor,fair,good,exc,sup], [female]] }
+const VO2_TABLE = [
+  { ageMin:20, ageMax:29, male:[31.4,35.4,42.5,52.4,60.9,Infinity], female:[23.6,28.9,36.1,44.9,51.9,Infinity] },
+  { ageMin:30, ageMax:39, male:[29.4,33.7,40.9,50.9,60.0,Infinity], female:[22.8,26.9,34.6,43.0,51.5,Infinity] },
+  { ageMin:40, ageMax:49, male:[26.6,30.9,38.4,46.8,56.0,Infinity], female:[21.0,24.4,31.5,38.9,47.4,Infinity] },
+  { ageMin:50, ageMax:59, male:[22.8,26.9,35.1,43.3,53.3,Infinity], female:[19.1,22.7,28.6,35.7,42.6,Infinity] },
+  { ageMin:60, ageMax:69, male:[20.2,24.4,30.9,38.8,48.0,Infinity], female:[17.4,20.0,25.9,31.4,38.0,Infinity] },
+  { ageMin:70, ageMax:200, male:[17.5,20.1,26.0,32.7,40.4,Infinity], female:[15.9,18.0,22.4,27.5,33.8,Infinity] }
+];
+const VO2_LABELS = ['Very Poor','Poor','Fair','Good','Excellent','Superior'];
+const VO2_CLASSES = ['vp','poor','fair','good','excellent','superior'];
+
+function updateVO2Rating() {
+  const vo2 = parseFloat(document.getElementById('cp-vo2')?.value);
+  const gender = document.getElementById('cp-gender')?.value;
+  const dob = document.getElementById('cp-dob')?.value;
+  const display = document.getElementById('cp-vo2-rating-display');
+  if (!display) return;
+  if (!vo2 || vo2 <= 0) { display.innerHTML = '<span style="color:#555">Enter VO₂ Max above</span>'; return; }
+  if (!gender || !dob) { display.innerHTML = `<span style="color:#888">${vo2} ml/kg/min — enter gender & DOB for rating</span>`; return; }
+  const age = Math.floor((new Date() - new Date(dob)) / (365.25 * 24 * 3600 * 1000));
+  const row = VO2_TABLE.find(r => age >= r.ageMin && age <= r.ageMax);
+  if (!row) { display.innerHTML = `<span style="color:#888">${vo2} — age out of range</span>`; return; }
+  const thresholds = gender === 'female' ? row.female : row.male;
+  let level = 0;
+  for (let i = 0; i < thresholds.length - 1; i++) {
+    if (vo2 > thresholds[i]) level = i + 1; else break;
+  }
+  // level 0 = Very Poor, 5 = Superior
+  display.innerHTML = `<span class="cp-vo2-rating ${VO2_CLASSES[level]}">${VO2_LABELS[level]}</span><span style="color:#555;font-size:11px;margin-left:8px">Age ${age} · ${gender}</span>`;
+}
+
 // Signal that module is fully loaded — queued _call() callbacks will fire
 // (queue flush moved to end)
 window._openExercisePicker = openExercisePicker;
@@ -2101,6 +2382,16 @@ window._dismissCheckpoint = dismissCheckpoint;
 window._uploadVideo = uploadVideo;
 window._deleteVideo = deleteVideo;
 window._playVideo = playVideo;
+window._openClientProfile = openClientProfile;
+window._closeClientProfile = closeClientProfile;
+window._switchProfileTab = switchProfileTab;
+window._toggleCpSection = toggleCpSection;
+window._saveClientProfile = saveClientProfile;
+window._toggleMeasForm = toggleMeasForm;
+window._saveMeasurementEntry = saveMeasurementEntry;
+window._deleteMeasurement = deleteMeasurement;
+window._mfCalcBMI = mfCalcBMI;
+window._updateVO2Rating = updateVO2Rating;
 
 
 // ── FLUSH QUEUE — must be LAST thing in module ──────────
@@ -2533,6 +2824,63 @@ h1 span{color:#e05535;}
 .pp-fullscreen img{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px;}
 .pp-fullscreen-close{margin-top:1rem;padding:10px 24px;border-radius:6px;border:1px solid #444;background:transparent;color:#aaa;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;cursor:pointer;}
 .pp-fullscreen-close:hover{border-color:#e05535;color:#e05535;}
+
+/* CLIENT PROFILE OVERLAY */
+.cp-overlay{position:fixed;inset:0;background:#0d0d0d;z-index:200;display:none;flex-direction:column;overflow:hidden;}
+.cp-overlay.open{display:flex;}
+.cp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #222;background:#111;flex-shrink:0;}
+.cp-back-btn{padding:6px 12px;border-radius:4px;border:1px solid #2a2a2a;background:transparent;color:#888;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.cp-back-btn:hover{border-color:#e05535;color:#e05535;}
+.cp-header-title{font-family:'Oswald',sans-serif;font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#fff;flex:1;}
+.cp-header-title span{color:#e05535;}
+.cp-save-btn{padding:8px 16px;border-radius:4px;background:#e05535;color:#0d0d0d;border:none;font-family:'Oswald',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.cp-save-btn:hover{background:#ea6848;}
+.cp-tabs{display:flex;border-bottom:1px solid #222;background:#111;flex-shrink:0;}
+.cp-tab{flex:1;padding:10px 6px;text-align:center;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#555;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.cp-tab.active{color:#e05535;border-bottom-color:#e05535;}
+.cp-body{flex:1;overflow-y:auto;padding:16px;}
+.cp-section{background:#161616;border:1px solid #222;border-radius:10px;margin-bottom:12px;overflow:hidden;}
+.cp-section-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;}
+.cp-section-title{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#e05535;}
+.cp-section-arrow{font-size:12px;color:#555;transition:transform .2s;}
+.cp-section.open .cp-section-arrow{transform:rotate(180deg);}
+.cp-section-content{display:none;padding:0 16px 16px;border-top:1px solid #1e1e1e;}
+.cp-section.open .cp-section-content{display:block;}
+.cp-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.cp-field-grid.one-col{grid-template-columns:1fr;}
+.cp-field{display:flex;flex-direction:column;gap:4px;}
+.cp-field.span2{grid-column:1/-1;}
+.cp-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.cp-input{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:13px;padding:7px 10px;font-family:'Inter',sans-serif;width:100%;box-sizing:border-box;}
+.cp-input:focus{outline:none;border-color:#e05535;}
+.cp-select{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:13px;padding:7px 10px;font-family:'Inter',sans-serif;cursor:pointer;width:100%;}
+.cp-textarea{background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#f0f0f0;font-size:13px;padding:7px 10px;font-family:'Inter',sans-serif;width:100%;min-height:70px;resize:vertical;box-sizing:border-box;}
+.cp-textarea:focus{outline:none;border-color:#e05535;}
+.cp-checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;}
+.cp-checkbox-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0d0d0d;border:1px solid #222;border-radius:4px;cursor:pointer;}
+.cp-checkbox-item input{accent-color:#e05535;width:14px;height:14px;flex-shrink:0;cursor:pointer;}
+.cp-checkbox-item label{font-size:12px;color:#ccc;cursor:pointer;line-height:1.3;}
+.cp-subsection-title{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#888;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #1e1e1e;}
+/* Measurements */
+.cp-meas-add-btn{width:100%;padding:10px;border-radius:6px;background:transparent;border:1px dashed #2a2a2a;color:#555;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;margin-top:12px;transition:all .15s;}
+.cp-meas-add-btn:hover{border-color:#e05535;color:#e05535;}
+.cp-meas-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+.cp-meas-table th{color:#555;text-align:left;padding:5px 4px;border-bottom:1px solid #222;font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:10px;}
+.cp-meas-table td{color:#ccc;padding:6px 4px;border-bottom:1px solid #1a1a1a;}
+.cp-meas-table tr:last-child td{border-bottom:none;}
+.cp-meas-delete{background:transparent;border:none;color:#555;cursor:pointer;font-size:12px;padding:2px 6px;}
+.cp-meas-delete:hover{color:#ff4444;}
+/* VO2 Max Rating */
+.cp-vo2-rating{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:6px;margin-top:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.cp-vo2-rating.vp{background:#2e1a1a;color:#ff4444;border:1px solid #4e2a2a;}
+.cp-vo2-rating.poor{background:#2e2200;color:#ff8800;border:1px solid #4e3800;}
+.cp-vo2-rating.fair{background:#2e2b00;color:#ffcc00;border:1px solid #4e4600;}
+.cp-vo2-rating.good{background:#0d2e0d;color:#44cc66;border:1px solid #2a4e2a;}
+.cp-vo2-rating.excellent{background:#0a1a2e;color:#4488ff;border:1px solid #2a3a4e;}
+.cp-vo2-rating.superior{background:#1a0a2e;color:#cc66ff;border:1px solid #3a2a4e;}
+.cp-chart-wrap{position:relative;height:160px;margin-top:12px;}
+.cp-meas-form{background:#111122;border:1px solid #2a2a4e;border-radius:8px;padding:14px;margin-top:10px;display:none;}
+.cp-meas-form.open{display:block;}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -2794,6 +3142,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <span class="client-badge" id="client-level">—</span>
     <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
     <button class="add-client-btn" onclick="openEditClientModal()" style="background:#1a0c06;border-color:#555;color:#ccc;">Edit</button>
+    <button class="add-client-btn" onclick="openClientProfile()" style="background:#0a1a2e;border-color:#2a3a4e;color:#4488ff;">Profile</button>
   </div>
 
   <div class="nav">
@@ -3081,6 +3430,230 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <button class="modal-close" onclick="closeExercisePicker()" style="margin-top:12px">Đóng</button>
   </div>
 </div>
+
+<!-- CLIENT PROFILE OVERLAY (FTN-13) -->
+<div class="cp-overlay" id="cp-overlay">
+  <div class="cp-header">
+    <button class="cp-back-btn" onclick="closeClientProfile()">← Back</button>
+    <div class="cp-header-title">Client <span id="cp-client-name">Profile</span></div>
+    <button class="cp-save-btn" onclick="saveClientProfile()">Save</button>
+  </div>
+  <div class="cp-tabs">
+    <div class="cp-tab active" id="cp-tab-overview" onclick="switchProfileTab('overview')">Overview</div>
+    <div class="cp-tab" id="cp-tab-assessment" onclick="switchProfileTab('assessment')">Assessment</div>
+    <div class="cp-tab" id="cp-tab-measurements" onclick="switchProfileTab('measurements')">Measurements</div>
+    <div class="cp-tab" id="cp-tab-goals" onclick="switchProfileTab('goals')">Goals</div>
+  </div>
+  <div class="cp-body">
+
+    <!-- OVERVIEW TAB -->
+    <div id="cp-panel-overview">
+      <!-- Client Info -->
+      <div class="cp-section open" id="cps-info">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-info')">
+          <span class="cp-section-title">1. Client Info</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-field-grid">
+            <div class="cp-field"><span class="cp-label">Full Name</span><input class="cp-input" id="cp-fullname" placeholder="Thai Son Nguyen"></div>
+            <div class="cp-field"><span class="cp-label">Date of Birth</span><input class="cp-input" id="cp-dob" type="date"></div>
+            <div class="cp-field"><span class="cp-label">Gender</span>
+              <select class="cp-select" id="cp-gender" onchange="updateVO2Rating()">
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+            <div class="cp-field"><span class="cp-label">Phone</span><input class="cp-input" id="cp-phone" placeholder="+84 xxx xxx xxx" type="tel"></div>
+            <div class="cp-field"><span class="cp-label">Email</span><input class="cp-input" id="cp-email" placeholder="client@email.com" type="email"></div>
+            <div class="cp-field"><span class="cp-label">Occupation</span><input class="cp-input" id="cp-occupation" placeholder="Software Engineer"></div>
+            <div class="cp-field span2"><span class="cp-label">Health Conditions / Injuries</span><textarea class="cp-textarea" id="cp-health" placeholder="Any injuries, chronic conditions, or medical history..."></textarea></div>
+            <div class="cp-field span2"><span class="cp-label">Medications</span><textarea class="cp-textarea" id="cp-medications" placeholder="Current medications or supplements..."></textarea></div>
+            <div class="cp-field"><span class="cp-label">Emergency Contact Name</span><input class="cp-input" id="cp-emergency-name" placeholder="Nguyen Van A"></div>
+            <div class="cp-field"><span class="cp-label">Emergency Contact Phone</span><input class="cp-input" id="cp-emergency-phone" placeholder="+84 xxx xxx xxx" type="tel"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lifestyle & Habits -->
+      <div class="cp-section" id="cps-lifestyle">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-lifestyle')">
+          <span class="cp-section-title">4. Lifestyle &amp; Habits</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-field-grid">
+            <div class="cp-field"><span class="cp-label">Sleep (hrs/night)</span><input class="cp-input" id="cp-sleep" type="number" min="0" max="24" step="0.5" placeholder="7.5"></div>
+            <div class="cp-field"><span class="cp-label">Stress Level (1-10)</span><input class="cp-input" id="cp-stress" type="number" min="1" max="10" placeholder="5"></div>
+            <div class="cp-field"><span class="cp-label">Water Intake (L/day)</span><input class="cp-input" id="cp-water" type="number" min="0" step="0.1" placeholder="2.5"></div>
+            <div class="cp-field"><span class="cp-label">Diet Type</span>
+              <select class="cp-select" id="cp-diet">
+                <option value="">Select</option>
+                <option>Omnivore</option><option>Vegetarian</option><option>Vegan</option><option>Keto</option><option>Other</option>
+              </select>
+            </div>
+            <div class="cp-field"><span class="cp-label">Meal Frequency (per day)</span><input class="cp-input" id="cp-meals" type="number" min="1" max="10" placeholder="3"></div>
+            <div class="cp-field"><span class="cp-label">Alcohol (units/week)</span><input class="cp-input" id="cp-alcohol" type="number" min="0" placeholder="0"></div>
+            <div class="cp-field"><span class="cp-label">Smoking</span>
+              <select class="cp-select" id="cp-smoking">
+                <option value="">Select</option>
+                <option value="no">No</option><option value="yes">Yes</option>
+              </select>
+            </div>
+            <div class="cp-field span2"><span class="cp-label">Exercise History</span><textarea class="cp-textarea" id="cp-ex-history" placeholder="Previous training background, sports, gym experience..."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sport-Specific -->
+      <div class="cp-section" id="cps-sport">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-sport')">
+          <span class="cp-section-title">7. Sport-Specific</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-field-grid">
+            <div class="cp-field"><span class="cp-label">Primary Sport</span><input class="cp-input" id="cp-sport" placeholder="Boxing, Football, Swimming..."></div>
+            <div class="cp-field"><span class="cp-label">Competition Level</span>
+              <select class="cp-select" id="cp-comp-level">
+                <option value="">Select</option>
+                <option>Recreational</option><option>Amateur</option><option>Semi-Pro</option><option>Professional</option>
+              </select>
+            </div>
+            <div class="cp-field"><span class="cp-label">Position / Event</span><input class="cp-input" id="cp-position" placeholder="Forward, 100m Sprint..."></div>
+            <div class="cp-field"><span class="cp-label">Season Start</span><input class="cp-input" id="cp-season-start" type="date"></div>
+            <div class="cp-field"><span class="cp-label">Season End</span><input class="cp-input" id="cp-season-end" type="date"></div>
+            <div class="cp-field span2"><span class="cp-label">Performance Goals</span><textarea class="cp-textarea" id="cp-sport-goals" placeholder="Specific sport performance objectives..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASSESSMENT TAB -->
+    <div id="cp-panel-assessment" style="display:none">
+      <div class="cp-section open" id="cps-ohs">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-ohs')">
+          <span class="cp-section-title">3. OHS Movement Assessment</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-subsection-title">Overactive Muscles</div>
+          <div class="cp-checkbox-grid">
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-soleus"><label for="ohs-o-soleus">Soleus / Gastrocnemius</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-hipflex"><label for="ohs-o-hipflex">Hip Flexors</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-adduct"><label for="ohs-o-adduct">Adductors (Groin)</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-abs"><label for="ohs-o-abs">Abdominals (Rectus)</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-pec"><label for="ohs-o-pec">Pec Major/Minor</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-levscap"><label for="ohs-o-levscap">Levator Scapulae</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-scm"><label for="ohs-o-scm">Sternocleidomastoid</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-o-utrap"><label for="ohs-o-utrap">Upper Trapezius</label></div>
+          </div>
+
+          <div class="cp-subsection-title">Underactive Muscles</div>
+          <div class="cp-checkbox-grid">
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-antib"><label for="ohs-u-antib">Anterior Tibialis</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-glmed"><label for="ohs-u-glmed">Gluteus Medius</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-glmax"><label for="ohs-u-glmax">Gluteus Maximus</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-core"><label for="ohs-u-core">Intrinsic Core (TVA/Multifidus)</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-serr"><label for="ohs-u-serr">Serratus Anterior</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-ltrap"><label for="ohs-u-ltrap">Lower Trapezius</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-u-dcf"><label for="ohs-u-dcf">Deep Cervical Flexors</label></div>
+          </div>
+
+          <div class="cp-subsection-title">Compensations</div>
+          <div class="cp-checkbox-grid">
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-c-fto"><label for="ohs-c-fto">Feet Turn Out</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-c-kv"><label for="ohs-c-kv">Knee Valgus (Cave In)</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-c-lean"><label for="ohs-c-lean">Excessive Forward Lean</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-c-arms"><label for="ohs-c-arms">Arms Fall Forward</label></div>
+            <div class="cp-checkbox-item"><input type="checkbox" id="ohs-c-lba"><label for="ohs-c-lba">Low Back Arch</label></div>
+          </div>
+
+          <div class="cp-field-grid one-col" style="margin-top:12px">
+            <div class="cp-field"><span class="cp-label">OHS Notes</span><textarea class="cp-textarea" id="cp-ohs-notes" placeholder="Observations, cues, corrections..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEASUREMENTS TAB -->
+    <div id="cp-panel-measurements" style="display:none">
+      <!-- VO2 Max -->
+      <div class="cp-section open" id="cps-vo2">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-vo2')">
+          <span class="cp-section-title">6. Cardiovascular — VO₂ Max</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-field-grid">
+            <div class="cp-field"><span class="cp-label">VO₂ Max (ml/kg/min)</span><input class="cp-input" id="cp-vo2" type="number" min="0" step="0.1" placeholder="45.0" oninput="updateVO2Rating()"></div>
+            <div class="cp-field"><span class="cp-label">Rating</span><div id="cp-vo2-rating-display" style="margin-top:4px;font-size:13px;color:#555">Enter VO₂ Max above</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Body Measurements -->
+      <div class="cp-section open" id="cps-meas">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-meas')">
+          <span class="cp-section-title">5. Body Measurements</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-chart-wrap"><canvas id="cp-weight-chart"></canvas></div>
+          <div id="cp-meas-table-wrap"><div class="loading" style="padding:1rem">Loading...</div></div>
+          <button class="cp-meas-add-btn" onclick="toggleMeasForm()">+ Add Measurement Entry</button>
+          <div class="cp-meas-form" id="cp-meas-form">
+            <div class="cp-field-grid">
+              <div class="cp-field"><span class="cp-label">Date</span><input class="cp-input" id="mf-date" type="date"></div>
+              <div class="cp-field"><span class="cp-label">Weight (kg)</span><input class="cp-input" id="mf-weight" type="number" step="0.1" placeholder="70.0" oninput="mfCalcBMI()"></div>
+              <div class="cp-field"><span class="cp-label">Height (cm)</span><input class="cp-input" id="mf-height" type="number" step="0.1" placeholder="170" oninput="mfCalcBMI()"></div>
+              <div class="cp-field"><span class="cp-label">BMI (auto)</span><input class="cp-input" id="mf-bmi" readonly placeholder="—" style="color:#e05535"></div>
+              <div class="cp-field"><span class="cp-label">Body Fat %</span><input class="cp-input" id="mf-bf" type="number" step="0.1" placeholder="18.0"></div>
+              <div class="cp-field"><span class="cp-label">Chest (cm)</span><input class="cp-input" id="mf-chest" type="number" step="0.1" placeholder="98"></div>
+              <div class="cp-field"><span class="cp-label">Waist (cm)</span><input class="cp-input" id="mf-waist" type="number" step="0.1" placeholder="80"></div>
+              <div class="cp-field"><span class="cp-label">Hips (cm)</span><input class="cp-input" id="mf-hips" type="number" step="0.1" placeholder="95"></div>
+              <div class="cp-field"><span class="cp-label">Left Arm (cm)</span><input class="cp-input" id="mf-larm" type="number" step="0.1" placeholder="35"></div>
+              <div class="cp-field"><span class="cp-label">Right Arm (cm)</span><input class="cp-input" id="mf-rarm" type="number" step="0.1" placeholder="35"></div>
+              <div class="cp-field"><span class="cp-label">Left Thigh (cm)</span><input class="cp-input" id="mf-lthigh" type="number" step="0.1" placeholder="56"></div>
+              <div class="cp-field"><span class="cp-label">Right Thigh (cm)</span><input class="cp-input" id="mf-rthigh" type="number" step="0.1" placeholder="56"></div>
+            </div>
+            <div class="form-actions" style="margin-top:10px">
+              <button class="btn-save" onclick="saveMeasurementEntry()">Save Entry</button>
+              <button class="btn-discard" onclick="toggleMeasForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOALS TAB -->
+    <div id="cp-panel-goals" style="display:none">
+      <div class="cp-section open" id="cps-goals">
+        <div class="cp-section-header" onclick="toggleCpSection('cps-goals')">
+          <span class="cp-section-title">2. Goal Setting</span>
+          <span class="cp-section-arrow">▼</span>
+        </div>
+        <div class="cp-section-content">
+          <div class="cp-field-grid">
+            <div class="cp-field span2"><span class="cp-label">Primary Goal</span>
+              <select class="cp-select" id="cp-primary-goal">
+                <option value="">Select Goal</option>
+                <option>Weight Loss</option><option>Muscle Gain</option><option>Endurance</option>
+                <option>Flexibility</option><option>Sport Performance</option><option>General Health</option>
+              </select>
+            </div>
+            <div class="cp-field"><span class="cp-label">Target Weight (kg)</span><input class="cp-input" id="cp-target-weight" type="number" step="0.1" placeholder="65.0"></div>
+            <div class="cp-field"><span class="cp-label">Timeline (weeks)</span><input class="cp-input" id="cp-timeline" type="number" placeholder="12"></div>
+            <div class="cp-field"><span class="cp-label">Training Days / Week</span><input class="cp-input" id="cp-training-days" type="number" min="1" max="7" placeholder="4"></div>
+            <div class="cp-field"><span class="cp-label">Session Duration (min)</span><input class="cp-input" id="cp-session-duration" type="number" placeholder="60"></div>
+            <div class="cp-field span2"><span class="cp-label">Notes</span><textarea class="cp-textarea" id="cp-goal-notes" placeholder="Specific milestones, preferences, constraints..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .cp-body -->
+</div><!-- .cp-overlay -->
 
 <!-- QUOTE TOAST -->
 <div class="quote-toast" id="quote-toast">
