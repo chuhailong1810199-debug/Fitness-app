@@ -1642,9 +1642,16 @@ function closePhotoFullscreen() {
 }
 
 // ── NAV ────────────────────────────────────────────────
+function centerActiveNavTab() {
+  const active = document.querySelector('.nav-tab.active');
+  if (!active || !window.matchMedia('(max-width: 700px)').matches) return;
+  active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
 function showPage(page) {
   document.querySelectorAll('.nav-tab').forEach((t,i) =>
     t.classList.toggle('active', (i===0&&page==='workout')||(i===1&&page==='progress')||(i===2&&page==='log')));
+  centerActiveNavTab();
   document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
   document.getElementById('progress-page').classList.toggle('active', page === 'progress');
   document.getElementById('log-page').classList.toggle('active', page === 'log');
@@ -2943,7 +2950,46 @@ h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub stro
 #intro-slide{background:linear-gradient(160deg,var(--bg-1),var(--bg-2))!important;}
 .loading{color:var(--txt-muted);text-align:center;padding:1rem 0;}
 @media (max-width: 900px){body{padding:0.8rem;}.app{max-width:100%;}}
-@media (max-width: 520px){.stats{grid-template-columns:1fr;}.nav-tab{font-size:12px;letter-spacing:1px;}.stat-num{font-size:34px!important;}.finish-btn{font-size:16px;}}
+@media (max-width: 700px){
+  .nav,.client-bar{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .nav::-webkit-scrollbar,.client-bar::-webkit-scrollbar{display:none;}
+  .nav{
+    flex-wrap:nowrap;
+    scroll-snap-type:x mandatory;
+    gap:8px;
+  }
+  .nav-tab{
+    flex:0 0 auto;
+    min-width:max-content;
+    padding:10px 16px;
+    scroll-snap-align:center;
+    white-space:nowrap;
+  }
+  .client-bar{
+    flex-wrap:nowrap;
+    gap:8px;
+    scroll-snap-type:x proximity;
+    padding:10px;
+  }
+  .client-bar > *{
+    flex:0 0 auto;
+    scroll-snap-align:start;
+  }
+  .client-select{min-width:170px;max-width:58vw;}
+}
+@media (max-width: 520px){
+  .stats{grid-template-columns:1fr;}
+  .nav-tab{font-size:12px;letter-spacing:1px;}
+  .client-label{display:none;}
+  .client-select{min-width:150px;max-width:52vw;}
+  .stat-num{font-size:34px!important;}
+  .finish-btn{font-size:16px;}
+}
 </style>
 <script>
 // Slides work immediately — no module dependency
