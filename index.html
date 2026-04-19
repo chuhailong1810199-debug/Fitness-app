@@ -1408,7 +1408,7 @@ function updateProgress() {
 async function renderStats() {
   if (!activeClient) return;
   const hist = await getHistory();
-  document.getElementById('sessions').textContent   = Math.max(1, hist.length);
+  document.getElementById('sessions').textContent   = hist.length;
   document.getElementById('total-vol').textContent  = '0';
   document.getElementById('streak-num').textContent = calcStreak(hist);
 }
@@ -2579,7 +2579,7 @@ body{font-family:'Inter',sans-serif;background:#0a0e1a;color:#ffffff;padding:1re
 .header{margin-bottom:1rem;}
 h1{font-family:'Nunito',sans-serif;font-size:28px;font-weight:800;text-transform:none;letter-spacing:1px;color:#fff;}
 h1 span{color:#1e90ff;}
-.user-bar h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 120px);}
+.user-bar h1{overflow:visible;text-overflow:clip;white-space:nowrap;max-width:none;flex-shrink:0;}
 .subtitle{font-size:11px;color:rgba(255,255,255,0.60);margin-top:2px;text-transform:uppercase;letter-spacing:3px;font-weight:500;}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
 .stat{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
@@ -3413,6 +3413,10 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="reset-bar">
       <span class="reset-bar-label">Assessment data</span>
       <button class="reset-btn" onclick="resetAssessment()">Reset tất cả số đo</button>
+    </div>
+    <div class="reset-bar">
+      <span class="reset-bar-label">Workout history</span>
+      <button class="reset-btn" onclick="resetSessions()">Reset sessions về 0</button>
     </div>
     <div id="progress-banner-wrap"></div>
     <div id="delta-cards-wrap"></div>
