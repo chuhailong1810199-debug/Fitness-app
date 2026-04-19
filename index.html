@@ -1746,12 +1746,19 @@ function centerActiveNavTab() {
 }
 
 function showPage(page) {
-  document.querySelectorAll('.nav-tab').forEach((t,i) =>
-    t.classList.toggle('active', (i===0&&page==='workout')||(i===1&&page==='progress')||(i===2&&page==='log')));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tabMap = { workout: 0, progress: 1, log: 2 };
+  if (page === 'leads') {
+    document.getElementById('leads-tab')?.classList.add('active');
+  } else if (tabMap[page] !== undefined) {
+    document.querySelectorAll('.nav-tab')[tabMap[page]]?.classList.add('active');
+  }
   centerActiveNavTab();
   document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
   document.getElementById('progress-page').classList.toggle('active', page === 'progress');
   document.getElementById('log-page').classList.toggle('active', page === 'log');
+  const leadsPage = document.getElementById('leads-page');
+  if (leadsPage) leadsPage.style.display = page === 'leads' ? '' : 'none';
   if (page === 'progress') {
     checkCheckpointReminder();
     renderProgressData();
@@ -1761,6 +1768,9 @@ function showPage(page) {
   }
   if (page === 'log') {
     renderWorkoutLog();
+  }
+  if (page === 'leads') {
+    renderLeadsPage();
   }
 }
 
@@ -1815,6 +1825,10 @@ function showNoClientError(debugMsg = '') {
 }
 
 function renderClientBar(isCoach) {
+  // Show/hide Leads tab for coach only
+  const leadsTab = document.getElementById('leads-tab');
+  if (leadsTab) leadsTab.style.display = isCoach ? '' : 'none';
+
   const bar = document.getElementById('client-bar');
   if (!bar) return;
   if (isCoach) {
@@ -1882,6 +1896,8 @@ window._showPage = showPage;
 window._setDay = setDay;
 window._openModal = openModal;
 window._closeModal = closeModal;
+window.updateLeadStatus = updateLeadStatus;
+window.renderLeadsPage = renderLeadsPage;
 
 // ── QUOTES ────────────────────────────────────────────
 const WORKOUT_QUOTES = [
@@ -2184,6 +2200,80 @@ async function renderCoachDashboard() {
       }
     });
   }
+}
+
+// ── LEADS VIEWER (FTN-32) ─────────────────────────────
+const LEAD_STATUSES = ['new', 'contacted', 'booked', 'declined'];
+const LEAD_STATUS_COLORS = {
+  new:       '#1e90ff',
+  contacted: '#f5a623',
+  booked:    '#44cc66',
+  declined:  '#ff5555'
+};
+
+async function renderLeadsPage() {
+  const wrap = document.getElementById('leads-list');
+  if (!wrap) return;
+  if (userRole !== 'coach') { wrap.innerHTML = '<div class="cd-empty">Coach access only.</div>'; return; }
+  wrap.innerHTML = '<div class="loading">Loading leads…</div>';
+  try {
+    const snap = await db.collection('leads').orderBy('createdAt', 'desc').get();
+    if (snap.empty) {
+      wrap.innerHTML = '<div class="cd-empty">No leads yet. Share your landing page to get started!</div>';
+      return;
+    }
+    const rows = snap.docs.map(d => {
+      const ld = d.data();
+      const date = ld.createdAt?.toDate ? ld.createdAt.toDate().toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      const status = ld.status || 'new';
+      const color = LEAD_STATUS_COLORS[status] || '#aaa';
+      const opts = LEAD_STATUSES.map(s =>
+        `<option value="${s}" ${s===status?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`
+      ).join('');
+      return `
+        <div class="lead-card" id="lead-${d.id}">
+          <div class="lead-header">
+            <div>
+              <div class="lead-name">${escHtml(ld.name || '—')}</div>
+              <div class="lead-email">${escHtml(ld.email || '—')}</div>
+            </div>
+            <select class="lead-status-sel" style="border-color:${color};color:${color}"
+              onchange="updateLeadStatus('${d.id}', this)">
+              ${opts}
+            </select>
+          </div>
+          <div class="lead-meta">
+            ${ld.phone ? `<span>📞 ${escHtml(ld.phone)}</span>` : ''}
+            ${ld.goal ? `<span>🎯 ${escHtml(ld.goal)}</span>` : ''}
+            ${ld.service ? `<span>📋 ${escHtml(ld.service)}</span>` : ''}
+            ${ld.frequency ? `<span>🗓 ${escHtml(ld.frequency)}</span>` : ''}
+            <span>📅 ${date}</span>
+          </div>
+          ${ld.note ? `<div class="lead-note">"${escHtml(ld.note)}"</div>` : ''}
+        </div>`;
+    });
+    wrap.innerHTML = rows.join('');
+  } catch (err) {
+    console.error('[renderLeadsPage]', err);
+    wrap.innerHTML = '<div class="cd-empty">Failed to load leads. Check Firestore rules.</div>';
+  }
+}
+
+async function updateLeadStatus(leadId, selectEl) {
+  const newStatus = selectEl.value;
+  const color = LEAD_STATUS_COLORS[newStatus] || '#aaa';
+  selectEl.style.borderColor = color;
+  selectEl.style.color = color;
+  try {
+    await db.collection('leads').doc(leadId).update({ status: newStatus });
+  } catch (err) {
+    console.error('[updateLeadStatus]', err);
+    alert('Failed to update status. Check Firestore rules.');
+  }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── CLIENT PROFILE & ASSESSMENT (FTN-13) ───────────────
@@ -2873,6 +2963,15 @@ h1 span{color:#1e90ff;}
 .cd-hist-table td{color:rgba(255,255,255,0.88);padding:5px 0;border-bottom:1px solid #1a1a1a;}
 .cd-hist-table tr:last-child td{border-bottom:none;}
 
+/* ── LEADS VIEWER (FTN-32) ───────────────────────── */
+.lead-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;margin-bottom:10px;}
+.lead-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.lead-name{font-size:15px;font-weight:700;color:#fff;}
+.lead-email{font-size:12px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.lead-status-sel{background:rgba(0,0,0,0.4);border:1px solid;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;cursor:pointer;outline:none;}
+.lead-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:rgba(255,255,255,0.60);margin-bottom:6px;}
+.lead-note{font-size:12px;color:rgba(255,255,255,0.50);font-style:italic;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);}
+
 /* ── EXERCISE PICKER (Bước 6) ─────────────────────── */
 .picker-modal{max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
 .picker-results{overflow-y:auto;flex:1;max-height:380px;display:flex;flex-direction:column;gap:6px;}
@@ -3362,6 +3461,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="nav-tab active" onclick="showPage('workout')">Workout</div>
     <div class="nav-tab" onclick="showPage('progress')">Progress</div>
     <div class="nav-tab" onclick="showPage('log')">Log</div>
+    <div class="nav-tab nav-tab-leads" id="leads-tab" style="display:none" onclick="showPage('leads')">Leads</div>
   </div>
 
   <!-- WORKOUT PAGE -->
@@ -3394,6 +3494,12 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="log-page" id="log-page">
     <div class="section-title">Workout Log</div>
     <div id="workout-log-list"><div class="loading">Loading sessions...</div></div>
+  </div>
+
+  <!-- LEADS PAGE (coach only) -->
+  <div class="log-page" id="leads-page" style="display:none">
+    <div class="section-title">Incoming Leads</div>
+    <div id="leads-list"><div class="loading">Loading leads...</div></div>
   </div>
 
   <!-- PROGRESS PAGE -->

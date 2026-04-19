@@ -167,6 +167,50 @@
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
     }
+
+    /* ── CONTACT MODAL ── */
+    .contact-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .contact-overlay.open { display: flex; }
+    .contact-modal {
+      background: #0d1b2a; border: 1px solid var(--border); border-radius: 20px;
+      padding: 40px 36px; width: 100%; max-width: 480px; position: relative;
+      box-shadow: 0 24px 80px rgba(0,0,0,.6);
+    }
+    .contact-close {
+      position: absolute; top: 16px; right: 16px; background: none; border: none;
+      color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1;
+    }
+    .contact-title { font-family: 'Nunito', sans-serif; font-size: 26px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
+    .contact-sub { font-size: 13px; color: var(--muted2); margin-bottom: 28px; }
+    .contact-form { display: flex; flex-direction: column; gap: 14px; }
+    .contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .contact-field { display: flex; flex-direction: column; gap: 6px; }
+    .contact-field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+    .contact-field input, .contact-field select, .contact-field textarea {
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; color: var(--fg);
+      font-family: 'Inter', sans-serif; font-size: 13px; outline: none;
+      transition: border-color .2s;
+    }
+    .contact-field input:focus, .contact-field select:focus, .contact-field textarea:focus { border-color: var(--accent); }
+    .contact-field select option { background: #0d1b2a; }
+    .contact-field textarea { resize: vertical; min-height: 70px; }
+    .contact-hp { display: none; }
+    .contact-submit {
+      width: 100%; padding: 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,.2);
+      background: rgba(30,144,255,.25); color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+      cursor: pointer; transition: all .2s; margin-top: 4px;
+    }
+    .contact-submit:hover { background: rgba(30,144,255,.4); transform: translateY(-1px); }
+    .contact-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .contact-msg { text-align: center; font-size: 13px; padding: 8px 0; min-height: 24px; }
+    .contact-msg.ok { color: #44cc66; }
+    .contact-msg.err { color: #ff5555; }
   </style>
 </head>
 <body>
@@ -199,10 +243,10 @@
     <h1 class="hero-title">BUILD YOUR<br/><span>LEGACY</span></h1>
     <p class="hero-sub">Transform your body with personalized coaching. Build muscle, burn fat, and achieve peak performance with expert guidance.</p>
     <div class="hero-btns">
-      <a class="btn-hero primary" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank" rel="noopener noreferrer">
+      <button class="btn-hero primary" onclick="openContactModal()">
         Start Your Journey
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-      </a>
+      </button>
       <a class="btn-hero secondary" href="#results">View Results</a>
     </div>
     <div class="hero-stats">
@@ -369,10 +413,10 @@
         <div class="cta-check"><span class="cta-check-icon">✓</span> Direct access to your coach</div>
       </div>
       <div class="cta-btns">
-        <a class="btn-hero primary" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank" rel="noopener noreferrer">
+        <button class="btn-hero primary" onclick="openContactModal()">
           Start Training
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-        </a>
+        </button>
         <a class="btn-hero secondary" href="/">Access the App</a>
       </div>
       <div class="cta-divider">
@@ -430,5 +474,184 @@
   </div>
 </footer>
 
+<!-- CONTACT MODAL -->
+<div class="contact-overlay" id="contact-overlay" onclick="handleOverlayClick(event)">
+  <div class="contact-modal">
+    <button class="contact-close" onclick="closeContactModal()">✕</button>
+    <div class="contact-title">Get Started</div>
+    <p class="contact-sub">Tell us about your goals — we'll reach out within 24 hours.</p>
+    <form class="contact-form" onsubmit="submitLead(event)">
+      <div class="contact-row">
+        <div class="contact-field">
+          <label>Name *</label>
+          <input type="text" id="cf-name" placeholder="Your name" required maxlength="100">
+        </div>
+        <div class="contact-field">
+          <label>Email *</label>
+          <input type="email" id="cf-email" placeholder="you@email.com" required maxlength="200">
+        </div>
+      </div>
+      <div class="contact-row">
+        <div class="contact-field">
+          <label>Phone</label>
+          <input type="tel" id="cf-phone" placeholder="+1 555 000 0000" maxlength="30">
+        </div>
+        <div class="contact-field">
+          <label>Sessions / week</label>
+          <select id="cf-frequency">
+            <option value="">Select…</option>
+            <option>2x / week</option>
+            <option>3x / week</option>
+            <option>4x / week</option>
+            <option>5x / week</option>
+            <option>6x+ / week</option>
+          </select>
+        </div>
+      </div>
+      <div class="contact-field">
+        <label>Primary Goal</label>
+        <select id="cf-goal">
+          <option value="">Select…</option>
+          <option>Build Muscle</option>
+          <option>Lose Fat</option>
+          <option>Body Recomposition</option>
+          <option>Strength / Performance</option>
+          <option>General Fitness</option>
+        </select>
+      </div>
+      <div class="contact-field">
+        <label>Service Interested In</label>
+        <select id="cf-service">
+          <option value="">Select…</option>
+          <option>Online Coaching (app)</option>
+          <option>In-Person Training</option>
+          <option>Program Only</option>
+          <option>Nutrition Coaching</option>
+        </select>
+      </div>
+      <div class="contact-field">
+        <label>Message (optional)</label>
+        <textarea id="cf-note" placeholder="Anything else you'd like us to know…" maxlength="500"></textarea>
+      </div>
+      <!-- Honeypot — bots fill this, humans don't -->
+      <div class="contact-hp">
+        <input type="text" id="cf-hp" tabindex="-1" autocomplete="off">
+      </div>
+      <p class="contact-msg" id="cf-msg"></p>
+      <button type="submit" class="contact-submit" id="cf-submit">Send Application →</button>
+    </form>
+  </div>
+</div>
+
+<!-- Firebase compat SDK (mirrors index.html config) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+(function () {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAiu9jzMzDzr1ltBZJQkwWzK8VWidHq8WU",
+    authDomain: "fitness-app-a22c8.firebaseapp.com",
+    projectId: "fitness-app-a22c8",
+    storageBucket: "fitness-app-a22c8.firebasestorage.app",
+    messagingSenderId: "583223865664",
+    appId: "1:583223865664:web:281cbf803d55d6f0808aa5"
+  };
+
+  // Avoid re-initialising if somehow loaded twice
+  const app = firebase.apps.length
+    ? firebase.app()
+    : firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore(app);
+
+  // ── Rate-limit state (client-side guard, 3 per hour) ──
+  const RL_KEY = 'lead_submissions';
+  function getSubmissions() {
+    try { return JSON.parse(localStorage.getItem(RL_KEY) || '[]'); } catch { return []; }
+  }
+  function recordSubmission() {
+    const now = Date.now();
+    const filtered = getSubmissions().filter(t => now - t < 3600000); // 1-hour window
+    filtered.push(now);
+    localStorage.setItem(RL_KEY, JSON.stringify(filtered));
+  }
+  function isRateLimited() {
+    const now = Date.now();
+    return getSubmissions().filter(t => now - t < 3600000).length >= 3;
+  }
+
+  // ── submitLead ─────────────────────────────────────────
+  window.submitLead = async function (e) {
+    e.preventDefault();
+    const msg = document.getElementById('cf-msg');
+    const btn = document.getElementById('cf-submit');
+
+    // Honeypot check
+    if (document.getElementById('cf-hp').value) return;
+
+    // Rate limit check
+    if (isRateLimited()) {
+      msg.textContent = 'Too many submissions. Please try again in an hour.';
+      msg.className = 'contact-msg err';
+      return;
+    }
+
+    const name  = document.getElementById('cf-name').value.trim();
+    const email = document.getElementById('cf-email').value.trim();
+    if (!name || !email) {
+      msg.textContent = 'Name and email are required.';
+      msg.className = 'contact-msg err';
+      return;
+    }
+
+    btn.disabled = true;
+    msg.textContent = 'Sending…';
+    msg.className = 'contact-msg';
+
+    const data = {
+      name,
+      email,
+      phone:     document.getElementById('cf-phone').value.trim()     || null,
+      goal:      document.getElementById('cf-goal').value             || null,
+      frequency: document.getElementById('cf-frequency').value        || null,
+      service:   document.getElementById('cf-service').value          || null,
+      note:      document.getElementById('cf-note').value.trim()      || null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      source:    'landing',
+      status:    'new'
+    };
+
+    // Remove null fields to keep doc clean
+    Object.keys(data).forEach(k => data[k] === null && delete data[k]);
+
+    try {
+      await db.collection('leads').add(data);
+      recordSubmission();
+      msg.textContent = '✓ Application received! We\'ll be in touch within 24 hours.';
+      msg.className = 'contact-msg ok';
+      document.querySelector('.contact-form').reset();
+      setTimeout(closeContactModal, 3500);
+    } catch (err) {
+      console.error('[submitLead]', err);
+      msg.textContent = 'Something went wrong. Please try again.';
+      msg.className = 'contact-msg err';
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  // ── Modal helpers ──────────────────────────────────────
+  window.openContactModal = function () {
+    document.getElementById('contact-overlay').classList.add('open');
+    document.getElementById('cf-msg').textContent = '';
+    document.getElementById('cf-msg').className = 'contact-msg';
+  };
+  window.closeContactModal = function () {
+    document.getElementById('contact-overlay').classList.remove('open');
+  };
+  window.handleOverlayClick = function (e) {
+    if (e.target === document.getElementById('contact-overlay')) closeContactModal();
+  };
+})();
+</script>
 </body>
 </html>
