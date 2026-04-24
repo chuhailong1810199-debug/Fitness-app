@@ -7,7 +7,7 @@
   <meta name="description" content="Hybrid coaching for strength, endurance, and body composition with long-term support through Striveo."/>
   <meta property="og:title" content="Long Chu - Hybrid Coach | Striveo"/>
   <meta property="og:description" content="Build race-ready conditioning, practical strength, and sustainable habits with tailored coaching."/>
-  <meta property="og:image" content="/public/images/about-me.jpg"/>
+  <meta property="og:image" content="/images/about-me.jpg"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -191,28 +191,6 @@
     }
     .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
     .btn-hero { padding: 16px 36px; font-size: 14px; letter-spacing: 1.8px; }
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 0;
-      max-width: 480px;
-      margin: 64px auto 0;
-    }
-    .hero-stat { text-align: center; padding: 0 20px; }
-    .hero-stat:not(:last-child) { border-right: 1px solid var(--border); }
-    .hero-stat-num {
-      font-family: 'Nunito', sans-serif;
-      font-size: 36px;
-      font-weight: 800;
-      color: var(--fg);
-    }
-    .hero-stat-lbl {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-top: 4px;
-    }
 
     section { padding: 96px 40px; }
     .container { max-width: 1120px; margin: 0 auto; }
@@ -326,48 +304,6 @@
     .service-list { list-style: none; display: grid; gap: 8px; }
     .service-list li { font-size: 13px; color: var(--muted2); }
     .service-list li::before { content: "✓ "; color: var(--accent); }
-
-    #philosophy {
-      position: relative;
-      overflow: hidden;
-      background: #000;
-    }
-    #philosophy::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(4,9,19,.86), rgba(4,10,18,.55));
-      z-index: 1;
-    }
-    .philosophy-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: .88;
-    }
-    .philosophy-content { position: relative; z-index: 2; }
-    .pillar-grid {
-      margin-top: 28px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-    .pillar {
-      background: rgba(6,11,20,.62);
-      border: 1px solid rgba(255,255,255,.18);
-      border-radius: 14px;
-      padding: 18px;
-    }
-    .pillar h3 {
-      font-family: 'Nunito', sans-serif;
-      font-size: 17px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: .8px;
-    }
-    .pillar p { color: var(--muted2); font-size: 13px; line-height: 1.7; }
 
     #app { background: rgba(255,255,255,.02); }
     .app-panel {
@@ -602,8 +538,7 @@
     @media (max-width: 1024px) {
       .about-grid,
       .app-panel { grid-template-columns: 1fr; }
-      .services-grid,
-      .pillar-grid { grid-template-columns: 1fr 1fr; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 900px) {
@@ -611,14 +546,12 @@
       .nav-links, .nav-cta { display: none; }
       .nav-mobile-btn { display: block; }
       section { padding: 72px 20px; }
-      .hero-stats { grid-template-columns: repeat(3,1fr); }
       .service-radios { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
       .hero-title { font-size: 52px; }
       .form-grid,
       .services-grid,
-      .pillar-grid,
       .cred-grid,
       .footer-grid { grid-template-columns: 1fr; }
       .mosaic { grid-template-columns: repeat(2, 1fr); }
@@ -658,7 +591,6 @@
   <div class="nav-links">
     <a href="#about">About</a>
     <a href="#services">Services</a>
-    <a href="#philosophy">Philosophy</a>
     <a href="#app">App</a>
   </div>
   <div class="nav-cta">
@@ -672,7 +604,6 @@
 <div class="mobile-menu" id="mobileMenu">
   <a href="#about">About</a>
   <a href="#services">Services</a>
-  <a href="#philosophy">Philosophy</a>
   <a href="#app">App</a>
   <a href="#cta">Start</a>
 </div>
@@ -693,20 +624,6 @@
       </a>
       <a class="btn-hero secondary" href="#services">View Results</a>
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-num">50+</div>
-        <div class="hero-stat-lbl">Clients Trained</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-num">5K+</div>
-        <div class="hero-stat-lbl">Workouts Created</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-num">98%</div>
-        <div class="hero-stat-lbl">Success Rate</div>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -726,13 +643,12 @@
         </div>
       </article>
       <div class="mosaic" aria-label="Coach portfolio gallery">
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/about-me.jpg" aria-label="Open about me photo"><img src="/public/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/hyrox-sg-finish.jpg" aria-label="Open Hyrox Singapore finish photo"><img src="/public/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/hyrox-sg-farmers.jpg" aria-label="Open Hyrox farmers carry photo"><img src="/public/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/public/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/public/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/public/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/public/images/deadlift-eleiko.jpg" aria-label="Open deadlift photo"><img src="/public/images/deadlift-eleiko.jpg" alt="Deadlift session with Eleiko setup" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/about-me.jpg" aria-label="Open about me photo"><img src="/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-finish.jpg" aria-label="Open Hyrox Singapore finish photo"><img src="/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-farmers.jpg" aria-label="Open Hyrox farmers carry photo"><img src="/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
+        <button class="mosaic-btn" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
       </div>
     </div>
   </div>
@@ -774,28 +690,6 @@
           <li>Coach chat support via Striveo</li>
         </ul>
         <a class="btn-hero primary" href="#cta">Join Accountability</a>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section id="philosophy">
-  <img class="philosophy-bg" src="/public/images/deadlift-eleiko.jpg" alt="Deadlift training philosophy" loading="lazy"/>
-  <div class="container philosophy-content">
-    <p class="section-eyebrow">Training Philosophy</p>
-    <h2 class="section-title">Strong Engine. Strong Body. Strong Mind.</h2>
-    <div class="pillar-grid">
-      <article class="pillar">
-        <h3>Build Capacity</h3>
-        <p>Every phase improves your output ceiling without losing control of recovery. Volume and intensity progress with intent.</p>
-      </article>
-      <article class="pillar">
-        <h3>Train With Precision</h3>
-        <p>Execution quality beats random intensity. Form cues, pacing targets, and movement standards are tracked each week.</p>
-      </article>
-      <article class="pillar">
-        <h3>Win Consistency</h3>
-        <p>Programs are designed for real life so you can sustain momentum through work, travel, and stress-heavy weeks.</p>
       </article>
     </div>
   </div>
@@ -910,7 +804,6 @@
       <div class="footer-col-title">Coach</div>
       <ul>
         <li><a href="#about">About Long</a></li>
-        <li><a href="#philosophy">Philosophy</a></li>
         <li><a href="#app">Striveo App</a></li>
       </ul>
     </div>
