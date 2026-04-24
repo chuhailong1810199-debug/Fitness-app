@@ -1,0 +1,42 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "FitnessApp/**",
+      "clients.json",
+      "seed-exercises.html",
+      "migrate.html"
+    ],
+    "rewrites": [
+      {
+        "source": "/app",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/landing",
+        "destination": "/landing.html"
+      }
+    ]
+  }
+}
