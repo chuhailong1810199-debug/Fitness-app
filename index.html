@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script>
 // Firebase compat SDK uses firebase.* namespace — adapt function names
 const initializeApp     = (cfg) => firebase.initializeApp(cfg);
@@ -416,21 +417,22 @@ async function saveClientInfo() {
 
 // ── ADD CLIENT (coach only) ────────────────────────────
 async function addClient() {
-  const name  = document.getElementById('new-client-name').value.trim();
-  const email = document.getElementById('new-client-email').value.trim().toLowerCase();
-  const level = document.getElementById('new-client-level').value;
-  const goal  = document.getElementById('new-client-goal').value.trim();
+  const name           = document.getElementById('new-client-name').value.trim();
+  const email          = document.getElementById('new-client-email').value.trim().toLowerCase();
+  const level          = document.getElementById('new-client-level').value;
+  const goal           = document.getElementById('new-client-goal').value.trim();
+  const sessionsPerWeek = parseInt(document.getElementById('new-client-sessions').value) || 3;
+  const notes          = (document.getElementById('new-client-notes').value || '').trim();
   if (!name || !email) return;
 
   const clientId = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
   await setDoc(doc(db, 'clients', clientId), {
-    name, email, level, goal,
-    sessionsPerWeek: 3,
+    name, email, level, goal, sessionsPerWeek,
     coachUid: currentUser.uid,
     program: {},
     createdAt: serverTimestamp()
   });
-  // Also create/update user record if they already exist
+  // Link user record if already exists
   const usersSnap = await getDocs(query(collection(db, 'users')));
   usersSnap.forEach(async d => {
     if (d.data().email === email) {
@@ -442,6 +444,99 @@ async function addClient() {
   await loadAllClients();
   document.getElementById('client-select').value = clientId;
   await switchClient();
+
+  // Trigger AI program generation
+  openAIReviewModal(clientId, { name, level, goal, sessionsPerWeek, notes });
+}
+
+// ── AI PROGRAM GENERATION ──────────────────────────────
+let _pendingAIClientId = null;
+let _pendingAIProgram  = null;
+
+async function openAIReviewModal(clientId, clientData) {
+  _pendingAIClientId = clientId;
+  _pendingAIProgram  = null;
+
+  const modal   = document.getElementById('ai-review-modal');
+  const loading = document.getElementById('ai-review-loading');
+  const preview = document.getElementById('ai-review-preview');
+  const actions = document.getElementById('ai-review-actions');
+
+  loading.style.display = 'flex';
+  preview.style.display = 'none';
+  actions.style.display = 'none';
+  preview.innerHTML = '';
+  modal.classList.add('open');
+
+  try {
+    const fn = firebase.app().functions('asia-southeast1').httpsCallable('generateProgram');
+    const result = await fn(clientData);
+    _pendingAIProgram = result.data.program;
+    renderAIProgramPreview(_pendingAIProgram);
+    actions.style.display = 'flex';
+  } catch (err) {
+    loading.innerHTML = `
+      <div style="text-align:center;padding:24px;">
+        <div style="font-size:28px;margin-bottom:12px;">❌</div>
+        <div style="color:#ff6b6b;font-size:13px;margin-bottom:8px;">Generate thất bại: ${err.message}</div>
+        <div style="color:#666;font-size:11px;">Bạn có thể thêm program thủ công sau trong app.</div>
+      </div>`;
+    actions.style.display = 'flex';
+  }
+}
+
+function renderAIProgramPreview(program) {
+  const loading = document.getElementById('ai-review-loading');
+  const preview = document.getElementById('ai-review-preview');
+  loading.style.display = 'none';
+
+  const phaseColors = { warmup:'#e8a838', strength:'#5588ff', accessories:'#44cc88' };
+  let html = '';
+  for (const day of Object.keys(program)) {
+    const session = program[day];
+    html += `<div style="margin-bottom:18px;">
+      <div style="font-weight:700;font-size:12px;color:#fff;padding:7px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:8px;letter-spacing:.5px;">
+        📅 ${day} — <span style="color:#aaa;font-weight:400;">${session.label || ''}</span>
+      </div>`;
+    for (const phase of (session.phases || [])) {
+      const col = phaseColors[phase.tag] || '#aaa';
+      html += `<div style="margin-bottom:6px;padding-left:8px;border-left:2px solid ${col}30;">
+        <div style="font-size:10px;font-weight:600;color:${col};margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">${phase.name}</div>`;
+      for (const ex of (phase.exercises || [])) {
+        html += `<div style="display:grid;grid-template-columns:1fr 72px;gap:8px;padding:4px 0;border-bottom:1px solid #161616;align-items:start;">
+          <div>
+            <span style="color:#e0e0e0;font-size:11px;">${ex.name}</span>
+            ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;">${ex.cue}</div>` : ''}
+          </div>
+          <div style="color:#888;font-size:10px;text-align:right;white-space:nowrap;">${ex.setsReps}</div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  preview.innerHTML = html;
+  preview.style.display = 'block';
+}
+
+async function approveGeneratedProgram() {
+  if (!_pendingAIClientId || !_pendingAIProgram) {
+    closeModal('ai-review-modal');
+    return;
+  }
+  const btn = document.getElementById('ai-approve-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    await updateDoc(doc(db, 'clients', _pendingAIClientId), { program: _pendingAIProgram });
+    if (activeClient && activeClient.id === _pendingAIClientId) {
+      activeClient.program = _pendingAIProgram;
+      if (typeof renderExercises === 'function') renderExercises();
+    }
+  } finally {
+    closeModal('ai-review-modal');
+    _pendingAIProgram = null;
+    _pendingAIClientId = null;
+  }
 }
 
 // ── PROGRAM (Firestore) ────────────────────────────────
@@ -1873,6 +1968,7 @@ window._loginWithGoogle = loginWithGoogle;
 window._logout = logout;
 window._switchClient = switchClient;
 window._addClient = addClient;
+window._approveGeneratedProgram = approveGeneratedProgram;
 window._openEditClientModal = openEditClientModal;
 window._saveClientInfo = saveClientInfo;
 window._showPage = showPage;
@@ -2641,6 +2737,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 .client-badge{font-family:'Oswald',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;border-radius:3px;background:#2a1208;color:#1e90ff;border:1px solid #4a2215;white-space:nowrap;}
 .add-client-btn{padding:6px 12px;border-radius:4px;border:1px solid #4a2215;background:transparent;color:#1e90ff;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;white-space:nowrap;}
 .add-client-btn:hover{background:#2a1208;}
+.ai-spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,.08);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:ai-spin .75s linear infinite;}
+@keyframes ai-spin{to{transform:rotate(360deg);}}
 .add-day-btn{padding:6px 12px;border-radius:4px;border:1px solid #2a4e2a;background:transparent;color:#44cc66;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;}
 .add-day-btn:hover{background:#0d2e0d;}
 
@@ -3231,6 +3329,7 @@ window.logout            = function() { _q('_logout',[]); };
 window.showPage          = function(p){ _q('_showPage',[p]); };
 window.switchClient           = function(id){ _q('_switchClient',[id]); };
 window.addClient              = function() { _q('_addClient',[]); };
+window.approveGeneratedProgram = function() { _q('_approveGeneratedProgram',[]); };
 window.openEditClientModal    = function() { _q('_openEditClientModal',[]); };
 window.saveClientInfo         = function() { _q('_saveClientInfo',[]); };
 window.setDay            = function(d){ _q('_setDay',[d]); };
@@ -3695,7 +3794,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="modal-overlay" id="add-client-modal" onclick="if(event.target===this)closeModal('add-client-modal')">
   <div class="modal">
     <div class="modal-title">Add New Client</div>
-    <div class="modal-sub">Client sẽ dùng Gmail để login và tự động được link vào profile này.</div>
+    <div class="modal-sub">Client sẽ dùng Gmail để login. AI sẽ tự động generate program sau khi tạo.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="new-client-name" placeholder="Thai Son"></div>
       <div class="form-group"><label class="form-label">Gmail</label><input class="form-input" id="new-client-email" type="email" placeholder="client@gmail.com"></div>
@@ -3704,11 +3803,42 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
           <option>Beginner</option><option>Intermediate</option><option selected>Advanced</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="new-client-goal" placeholder="Strength + Boxing"></div>
+      <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="new-client-goal" placeholder="Giảm cân / Tăng cơ / Sức bền"></div>
+      <div class="form-group"><label class="form-label">Sessions/Week</label>
+        <select class="form-select" id="new-client-sessions">
+          <option value="3" selected>3 ngày (Mon / Wed / Fri)</option>
+          <option value="4">4 ngày (Mon / Tue / Thu / Fri)</option>
+          <option value="5">5 ngày (Mon–Fri)</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Notes / Chấn thương</label><input class="form-input" id="new-client-notes" placeholder="Đau lưng thấp, không squat nặng..."></div>
     </div>
     <div class="form-actions">
-      <button class="btn-save" onclick="addClient()">Add Client</button>
+      <button class="btn-save" onclick="addClient()">🤖 Add & Generate Program</button>
       <button class="btn-discard" onclick="closeModal('add-client-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI REVIEW MODAL -->
+<div class="modal-overlay" id="ai-review-modal">
+  <div class="modal" style="max-width:580px;max-height:82vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div class="modal-title" style="margin:0;">🤖 AI Generated Program</div>
+    </div>
+    <div class="modal-sub" style="margin-bottom:12px;">Review chương trình AI tạo. Approve để lưu vào Firestore, hoặc Skip để thêm thủ công sau.</div>
+    <!-- Loading state -->
+    <div id="ai-review-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;gap:14px;">
+      <div class="ai-spinner"></div>
+      <div style="color:#aaa;font-size:13px;">Claude đang tạo program…</div>
+      <div style="color:#555;font-size:11px;">Khoảng 15–25 giây</div>
+    </div>
+    <!-- Program preview -->
+    <div id="ai-review-preview" style="display:none;overflow-y:auto;flex:1;padding-right:4px;"></div>
+    <!-- Actions -->
+    <div id="ai-review-actions" class="form-actions" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e;">
+      <button id="ai-approve-btn" class="btn-save" onclick="approveGeneratedProgram()">✅ Approve & Save</button>
+      <button class="btn-discard" onclick="closeModal('ai-review-modal')">⏭ Skip</button>
     </div>
   </div>
 </div>
