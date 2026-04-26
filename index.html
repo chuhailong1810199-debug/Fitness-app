@@ -652,10 +652,17 @@ async function saveExerciseNote(phaseIndex, exerciseIndex, noteText) {
   const pi = parseInt(phaseIndex), ei = parseInt(exerciseIndex);
   const day = activeClient.program?.[activeDay];
   if (!day?.phases?.[pi]?.exercises?.[ei]) return;
-  day.phases[pi].exercises[ei].note = noteText;
+  const prevNote = String(day.phases[pi].exercises[ei].note || '');
+  const normalizedNote = String(noteText ?? '').trim().slice(0, 1000);
+  if (prevNote === normalizedNote) return;
+  day.phases[pi].exercises[ei].note = normalizedNote;
   try {
     await updateDoc(doc(db, 'clients', activeClient.id), { program: activeClient.program });
-  } catch(e) { console.error('saveExerciseNote error', e); }
+  } catch(e) {
+    day.phases[pi].exercises[ei].note = prevNote;
+    console.error('saveExerciseNote error', e);
+    alert('Could not save note. Please try again.');
+  }
 }
 
 function getVideoUrlKey(vKey, slot) {
@@ -951,9 +958,9 @@ function renderCharts(bl, cps) {
   if (smmArr && !hasCP) smmArr.push(null);
 
   const latestW   = weights.filter(v => v != null).slice(-1)[0];
-  const wColor    = !hasCP ? 'rgba(255,255,255,0.60)' : latestW < bl.weight ? '#44cc66' : '#ff4444';
+  const wColor    = !hasCP ? 'rgba(255,255,255,0.60)' : latestW < bl.weight ? '#ffffff' : '#ff4444';
   const latestSMM = smmArr ? smmArr.filter(v => v != null).slice(-1)[0] : null;
-  const smmColor  = !hasCP ? 'rgba(255,255,255,0.60)' : latestSMM > bl.smm ? '#1e90ff' : '#ff4444';
+  const smmColor  = !hasCP ? 'rgba(255,255,255,0.60)' : latestSMM > bl.smm ? '#ffffff' : '#ff4444';
 
   const waiting = `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:8px;font-style:italic">
     Đang chờ checkpoint T4 — biểu đồ sẽ cập nhật sau khi bạn nhập số đo mới.</div>`;
@@ -980,7 +987,7 @@ function renderCharts(bl, cps) {
   wrap.innerHTML = html;
 
   const ptW = weights.map((v,i) => v == null ? 0 : i === 0 ? 7 : 5);
-  const pcW = weights.map((v,i) => i === 0 ? '#1e90ff' : wColor);
+  const pcW = weights.map((v,i) => i === 0 ? '#ffffff' : wColor);
   const wDS = [{
     label:'Cân nặng', data:weights, borderColor:wColor,
     backgroundColor: hasCP ? wColor+'18' : 'transparent',
@@ -992,7 +999,7 @@ function renderCharts(bl, cps) {
       label:'Body fat %', data:bfArr, borderColor:bfColor, backgroundColor:'transparent',
       yAxisID:'y2', tension:0.35,
       pointRadius: bfArr.map((v,i) => v==null?0:i===0?7:5),
-      pointBackgroundColor: bfArr.map((v,i) => i===0?'#1e90ff':bfColor),
+      pointBackgroundColor: bfArr.map((v,i) => i===0?'#ffffff':bfColor),
       fill:false, borderWidth:2, borderDash:[5,4], spanGaps:true,
     });
   }
@@ -1015,7 +1022,7 @@ function renderCharts(bl, cps) {
       scales:scalesW}
   });
   if (smmArr) {
-    const pcS = smmArr.map((v,i) => i===0?'#1e90ff':smmColor);
+    const pcS = smmArr.map((v,i) => i===0?'#ffffff':smmColor);
     _sChart = new Chart(document.getElementById('sc'), {
       type:'line',
       data:{labels, datasets:[{
@@ -1139,6 +1146,7 @@ function renderExercises() {
     html += `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span>
       ${phase.note ? `<span class="phase-note">${phase.note}</span>` : ''}</div>`;
     phase.exercises.forEach((ex, ei) => {
+      const safeExerciseNote = escHtml(ex.note || '');
       const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
       const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
       // Hide completed exercises unless user toggled to show them
@@ -1176,9 +1184,9 @@ function renderExercises() {
         </div>` : ''}
         ${userRole === 'coach'
           ? `<div class="exercise-note-row">
-               <textarea class="exercise-note-input" id="note_${vKey}" placeholder="Coach note..." onblur="saveExerciseNote('${pi}','${ei}',this.value)">${ex.note||''}</textarea>
+               <textarea class="exercise-note-input" id="note_${vKey}" placeholder="Coach note..." onblur="saveExerciseNote('${pi}','${ei}',this.value)">${safeExerciseNote}</textarea>
              </div>`
-          : (ex.note ? `<div class="exercise-note-display">${ex.note}</div>` : '')
+          : (ex.note ? `<div class="exercise-note-display">${safeExerciseNote}</div>` : '')
         }
       </div>`;
     });
@@ -1921,7 +1929,7 @@ window._closeCelebration = function() {
 };
 
 function spawnConfetti() {
-  const colors = ['#1e90ff','#44cc66','#6688ff','#ff9933','#ff4444','#fff'];
+  const colors = ['#ffffff','#d9d9d9','#bfbfbf','#a8a8a8','#ff4444','#fff'];
   for(let i=0; i<40; i++) {
     const el = document.createElement('div');
     el.style.cssText = [
@@ -2016,7 +2024,7 @@ function renderPickerResults() {
   if (!_exerciseCacheLoaded) { wrap.innerHTML = '<div class="picker-loading">Đang tải thư viện...</div>'; return; }
   if (list.length === 0)     { wrap.innerHTML = '<div class="picker-loading">Không tìm thấy bài tập nào.</div>'; return; }
 
-  const diffColor = { beginner:'#44cc66', intermediate:'#e09535', advanced:'#1e90ff' };
+  const diffColor = { beginner:'#d9d9d9', intermediate:'#e09535', advanced:'#ffffff' };
   const muscleRole = (ms) => {
     if (!ms) return '';
     return Object.entries(ms).map(([m, r]) => {
@@ -2096,7 +2104,7 @@ async function renderCoachDashboard() {
   const wowLabel = wowChange === null
     ? '—'
     : (wowChange >= 0 ? `+${wowChange}%` : `${wowChange}%`);
-  const wowColor = wowChange === null ? 'rgba(255,255,255,0.72)' : wowChange >= 0 ? '#44cc66' : '#1e90ff';
+  const wowColor = wowChange === null ? 'rgba(255,255,255,0.72)' : wowChange >= 0 ? '#ffffff' : '#ff6666';
 
   // Top 5 muscles
   const top5 = Object.entries(muscleVolMap)
@@ -2161,7 +2169,7 @@ async function renderCoachDashboard() {
         datasets: [{
           label: 'Buổi tập',
           data: weeks.map(w => w.sessions),
-          backgroundColor: weeks.map((w, i) => i === weeks.length-1 ? '#1e90ff' : '#1e90ff66'),
+          backgroundColor: weeks.map((w, i) => i === weeks.length-1 ? '#ffffff' : 'rgba(255,255,255,0.40)'),
           borderRadius: 4,
         }]
       },
@@ -2180,9 +2188,9 @@ async function renderCoachDashboard() {
 // ── LEADS VIEWER (FTN-32) ─────────────────────────────
 const LEAD_STATUSES = ['new', 'contacted', 'booked', 'declined'];
 const LEAD_STATUS_COLORS = {
-  new:       '#1e90ff',
+  new:       '#ffffff',
   contacted: '#f5a623',
-  booked:    '#44cc66',
+  booked:    '#e0e0e0',
   declined:  '#ff5555'
 };
 
@@ -2429,8 +2437,8 @@ function renderWeightChart(entries) {
     data: {
       labels,
       datasets: [{
-        label: 'Weight (kg)', data, borderColor: '#1e90ff', backgroundColor: 'rgba(224,85,53,0.1)',
-        tension: 0.3, pointBackgroundColor: '#1e90ff', pointRadius: 4, fill: true
+        label: 'Weight (kg)', data, borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.12)',
+        tension: 0.3, pointBackgroundColor: '#ffffff', pointRadius: 4, fill: true
       }]
     },
     options: {
@@ -2663,7 +2671,7 @@ h1 span{color:#1e90ff;}
 .phase-warmup{background:#1a2e1a;color:#44cc66;border:1px solid #2a4e2a;}
 .phase-core{background:#1a1a2e;color:#6688ff;border:1px solid #2a2a4e;}
 .phase-strength{background:#2e1a00;color:#ff9933;border:1px solid #4e3000;}
-.phase-accessories{background:#2e1a2e;color:#cc66ff;border:1px solid #4e2a4e;}
+.phase-accessories{background:#222222;color:#bbbbbb;border:1px solid #3a3a3a;}
 .phase-note{font-size:11px;color:rgba(255,255,255,0.35);flex:1;}
 .exercise-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-left:3px solid rgba(255,255,255,0.16);border-radius:8px;padding:12px 14px;margin-bottom:6px;transition:border-left-color .2s;}
 .exercise-card.done-card{border-left-color:#1e90ff;}
@@ -3113,7 +3121,9 @@ h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub stro
 .phase-warmup{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
 .phase-core{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
 .phase-strength{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
-.phase-accessories{background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.4);color:#b6b8ff;}
+.phase-accessories{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
+.login-card{border-top:1px solid rgba(255,255,255,0.2)!important;}
+.loading-spinner{border-top-color:#ffffff!important;}
 .wl-day,.picker-item:hover,.pp-card.pp-selected{border-color:rgba(30,144,255,0.65)!important;box-shadow:0 0 18px rgba(30,144,255,0.28);}
 .user-avatar{border-color:rgba(30,144,255,0.6)!important;box-shadow:0 0 14px rgba(30,144,255,0.35);background:rgba(30,144,255,0.2)!important;color:#fff!important;}
 .user-role-badge{border-color:rgba(30,144,255,0.45)!important;background:rgba(30,144,255,0.18)!important;color:#d6ebff!important;}
@@ -3165,6 +3175,21 @@ h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub stro
   .client-select{min-width:150px;max-width:52vw;}
   .stat-num{font-size:34px!important;}
   .finish-btn{font-size:16px;}
+  .user-bar{gap:6px;}
+  .user-bar svg{width:30px;height:20px;}
+  .user-bar h1{
+    font-size:16px!important;
+    letter-spacing:1px!important;
+    flex-shrink:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .user-role-badge{font-size:10px;padding:3px 6px;}
+  .user-logout{font-size:10px;white-space:nowrap;}
+}
+@media (max-width: 390px){
+  .user-logout{display:none;}
 }
 /* EXERCISE NOTE */
 .exercise-note-row{padding:8px 12px 12px;}
