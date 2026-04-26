@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Striveo</title>
+<title>Pulse</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <!-- Firebase SDKs - using compat CDN (no ES module needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -646,6 +646,18 @@ function getVideoRefPath(vKey, slot) {
   return `videos/${activeClient.id}/${vKey}/${slot}`;
 }
 
+// ── EXERCISE NOTE ─────────────────────────────────────
+async function saveExerciseNote(phaseIndex, exerciseIndex, noteText) {
+  if (!activeClient) return;
+  const pi = parseInt(phaseIndex), ei = parseInt(exerciseIndex);
+  const day = activeClient.program?.[activeDay];
+  if (!day?.phases?.[pi]?.exercises?.[ei]) return;
+  day.phases[pi].exercises[ei].note = noteText;
+  try {
+    await updateDoc(doc(db, 'clients', activeClient.id), { program: activeClient.program });
+  } catch(e) { console.error('saveExerciseNote error', e); }
+}
+
 function getVideoUrlKey(vKey, slot) {
   return `vidurl_${activeClient.id}_${vKey}_${slot}`;
 }
@@ -1162,53 +1174,12 @@ function renderExercises() {
           </select>
           <button class="move-confirm" onclick="confirmMove('${key}',${pi},${ei})">Move</button>
         </div>` : ''}
-        <div class="video-row">
-          <div class="video-slot" id="vs_coach_${vKey}">
-            <div class="video-slot-header">Coach demo
-              ${coachUrl ? `<button class="video-del" onclick="deleteVideo('${vKey}','coach')">✕</button>` : ''}
-            </div>
-            ${coachUrl
-              ? `<div class="video-preview" onclick="playVideo('${coachUrl}')">
-                   <video src="${coachUrl}" preload="metadata"></video>
-                   <div class="video-play-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg></div>
-                 </div>`
-              : `<label for="vi_coach_${vKey}">
-                   <div class="video-add-btn">
-                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="10" rx="2"/><polygon points="17,10 23,7 23,17 17,14"/></svg>
-                     + Coach video
-                   </div>
-                 </label>
-                 <input class="video-input" type="file" id="vi_coach_${vKey}" accept="video/*" onchange="uploadVideo('${vKey}','coach',this)">`
-            }
-          </div>
-          <div class="video-slot" id="vs_client_${vKey}">
-            <div class="video-slot-header">Client form
-              ${clientUrl ? `<button class="video-del" onclick="deleteVideo('${vKey}','client')">✕</button>` : ''}
-            </div>
-            ${clientUrl
-              ? `<div class="video-preview" onclick="playVideo('${clientUrl}')">
-                   <video src="${clientUrl}" preload="metadata"></video>
-                   <div class="video-play-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20"/></svg></div>
-                 </div>`
-              : `<div style="display:flex;flex-direction:column;gap:4px;padding:6px 8px;">
-                   <label for="vi_client_cam_${vKey}">
-                     <div class="video-add-btn">
-                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
-                       Quay ngay
-                     </div>
-                   </label>
-                   <input class="video-input" type="file" id="vi_client_cam_${vKey}" accept="video/*" capture="camcorder" onchange="uploadVideo('${vKey}','client',this)">
-                   <label for="vi_client_lib_${vKey}">
-                     <div class="video-add-btn">
-                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="15" height="10" rx="2"/><polygon points="17,10 23,7 23,17 17,14"/></svg>
-                       Thư viện
-                     </div>
-                   </label>
-                   <input class="video-input" type="file" id="vi_client_lib_${vKey}" accept="video/*" onchange="uploadVideo('${vKey}','client',this)">
-                 </div>`
-            }
-          </div>
-        </div>
+        ${userRole === 'coach'
+          ? `<div class="exercise-note-row">
+               <textarea class="exercise-note-input" id="note_${vKey}" placeholder="Coach note..." onblur="saveExerciseNote('${pi}','${ei}',this.value)">${ex.note||''}</textarea>
+             </div>`
+          : (ex.note ? `<div class="exercise-note-display">${ex.note}</div>` : '')
+        }
       </div>`;
     });
     if (editMode) {
@@ -2602,9 +2573,8 @@ window._queue = [];
 document.dispatchEvent(new Event('app-ready'));
 </script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:#0a0e1a;color:#ffffff;padding:1rem;min-height:100vh;}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;background:#0d0d0d;color:#ffffff;padding:1rem;min-height:100vh;}
 .hidden{display:none!important;}
 .app{max-width:500px;margin:0 auto;}
 
@@ -3095,55 +3065,54 @@ h1 span{color:#1e90ff;}
 .cp-meas-form{background:#111122;border:1px solid #2a2a4e;border-radius:8px;padding:14px;margin-top:10px;display:none;}
 .cp-meas-form.open{display:block;}
 :root{
-  --bg-1:#0a0e1a;
-  --bg-2:#0d1b2a;
+  --bg-1:#0d0d0d;
+  --bg-2:#111111;
   --txt:#ffffff;
-  --txt-muted:rgba(255,255,255,0.6);
-  --surface:rgba(255,255,255,0.07);
+  --txt-muted:rgba(255,255,255,0.55);
+  --surface:rgba(255,255,255,0.06);
   --line:rgba(255,255,255,0.12);
-  --blue:#1e90ff;
-  --cyan:#00d4ff;
+  --blue:#ffffff;
+  --cyan:rgba(255,255,255,0.75);
 }
 body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;
   color:var(--txt);
-  background:radial-gradient(1100px 700px at -10% -10%,rgba(30,144,255,0.20),transparent 55%),
-             radial-gradient(900px 600px at 110% 0%,rgba(0,212,255,0.14),transparent 60%),
-             linear-gradient(160deg,var(--bg-1),var(--bg-2));
+  background:var(--bg-1);
   min-height:100vh;
 }
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,0.08) 0.9px, transparent 0.9px);background-size:3px 3px;opacity:.08;z-index:-1;}
+body::before{display:none;}
 .app{max-width:1080px;}
-.login-screen,.slides-screen,.baseline-screen,.celebration-screen,.cp-overlay,.pp-ba-overlay{background:linear-gradient(160deg,var(--bg-1),var(--bg-2));}
-.header,.nav,.client-bar,.stats .stat,.wl-card,.month-summary,.streak-badge,.modal,.baseline-card,.cp-section,.cd-stat,.cd-card,.pp-upload-progress,.pp-empty,.login-card,.slide-visual,.signup-perk,.signup-icon,.done-strip,.quote-toast,.video-slot,.picker-item,.pp-card,.cp-meas-form,.add-form,.add-phase-form,.edit-mode-bar{background:var(--surface)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line)!important;box-shadow:0 8px 32px rgba(0,0,0,0.35);}
+.login-screen,.slides-screen,.baseline-screen,.celebration-screen,.cp-overlay,.pp-ba-overlay{background:var(--bg-1);}
+.header,.nav,.client-bar,.stats .stat,.wl-card,.month-summary,.streak-badge,.modal,.baseline-card,.cp-section,.cd-stat,.cd-card,.pp-upload-progress,.pp-empty,.login-card,.slide-visual,.signup-perk,.signup-icon,.done-strip,.quote-toast,.video-slot,.picker-item,.pp-card,.cp-meas-form,.add-form,.add-phase-form,.edit-mode-bar{background:var(--surface)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line)!important;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .header,.nav,.client-bar,.edit-mode-bar,.streak-badge,.month-summary,.cp-header,.cp-tabs{border-radius:18px;}
-.nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(10,14,26,0.55)!important;}
+.nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(13,13,13,0.75)!important;}
 .nav-tab{border-radius:999px;border:1px solid transparent;color:var(--txt-muted);letter-spacing:1.4px;}
-.nav-tab.active{color:#fff;border-color:rgba(30,144,255,0.5);background:linear-gradient(135deg,rgba(30,144,255,0.25),rgba(0,212,255,0.18));box-shadow:0 0 20px rgba(30,144,255,0.35) inset,0 0 20px rgba(30,144,255,0.18);}
+.nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
 .stat{border-radius:20px;padding:18px 12px;}
-.stat::before{background:linear-gradient(135deg,var(--blue),var(--cyan));height:3px;}
-.stat-num{font-size:clamp(32px,5vw,42px)!important;color:#fff;text-shadow:0 0 18px rgba(30,144,255,0.45);}
+.stat::before{background:#fff;height:2px;opacity:0.3;}
+.stat-num{font-size:clamp(32px,5vw,42px)!important;color:#fff;text-shadow:none;}
 .stat-label,.subtitle,.form-label,.cp-label,.baseline-label,.progress-label,.wl-stat-lbl,.month-title,.cd-stat-lbl,.cd-card-title,.cp-subsection-title,.slide-desc,.login-sub{color:var(--txt-muted)!important;}
-h1,.login-logo,.slide-badge,.signup-logo,.intro-brand{font-family:"Nunito",sans-serif;color:#fff;}
-.slide-title,.celebration-title,.baseline-title,.modal-title,.cp-header-title,.section-title,.cd-section-title{font-family:"Oswald",sans-serif;color:#fff;}
-h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.modal-phase,.wl-day,.cd-section-title,.streak-num,.done-strip-count{color:var(--blue)!important;}
-.google-btn,.finish-btn,.btn-save,.baseline-save-btn,.celebration-btn,.intro-enter,.slide-next,.cp-save-btn,.pp-upload-label{background:linear-gradient(135deg,var(--blue),var(--cyan))!important;color:#fff!important;border:none!important;border-radius:999px!important;box-shadow:0 0 20px rgba(30,144,255,0.4);font-weight:800;letter-spacing:1px;}
-.google-btn:hover,.finish-btn:hover,.btn-save:hover,.baseline-save-btn:hover,.celebration-btn:hover,.intro-enter:hover,.slide-next:hover,.cp-save-btn:hover,.pp-upload-label:hover{transform:translateY(-1px);filter:saturate(1.15);}
-.btn-discard,.modal-close,.add-client-btn,.add-day-btn,.cp-back-btn,.pp-ba-btn,.pp-ba-close,.pp-fullscreen-close,.no-baseline-btn,.add-exercise-btn,.add-phase-btn,.cp-meas-add-btn{border-radius:999px!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.2)!important;color:#fff!important;}
+h1,.login-logo,.slide-badge,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
+.slide-title,.celebration-title,.baseline-title,.modal-title,.cp-header-title,.section-title,.cd-section-title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:700;}
+h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.modal-phase,.wl-day,.cd-section-title,.streak-num,.done-strip-count{color:#fff!important;}
+.google-btn,.finish-btn,.btn-save,.baseline-save-btn,.celebration-btn,.intro-enter,.slide-next,.cp-save-btn,.pp-upload-label{background:#ffffff!important;color:#0d0d0d!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:700;letter-spacing:0.5px;}
+.google-btn:hover,.finish-btn:hover,.btn-save:hover,.baseline-save-btn:hover,.celebration-btn:hover,.intro-enter:hover,.slide-next:hover,.cp-save-btn:hover,.pp-upload-label:hover{transform:translateY(-1px);background:rgba(255,255,255,0.88)!important;}
+.btn-discard,.modal-close,.add-client-btn,.add-day-btn,.cp-back-btn,.pp-ba-btn,.pp-ba-close,.pp-fullscreen-close,.no-baseline-btn,.add-exercise-btn,.add-phase-btn,.cp-meas-add-btn{border-radius:999px!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.18)!important;color:#fff!important;}
 .day-tab,.baseline-chip,.picker-badge,.muscle-role-tag,.badge{border-radius:999px!important;}
-.day-tab.active,.baseline-chip.sel,.toggle-track.on,.pp-ba-btn.active{background:linear-gradient(135deg,var(--blue),var(--cyan))!important;color:#fff!important;border-color:transparent!important;box-shadow:0 0 20px rgba(30,144,255,0.4);}
+.day-tab.active,.baseline-chip.sel,.toggle-track.on,.pp-ba-btn.active{background:#ffffff!important;color:#0d0d0d!important;border-color:transparent!important;box-shadow:none;}
 .checkbox{border-radius:8px;border-color:rgba(255,255,255,0.35);}
-.checkbox.done{background:linear-gradient(135deg,var(--blue),var(--cyan));border-color:transparent;color:#fff;}
+.checkbox.done{background:#ffffff;border-color:transparent;color:#0d0d0d;}
 .exercise-card,.wl-card,.cp-section,.cd-card{border-left:1px solid var(--line)!important;border-radius:20px;}
-.exercise-card.done-card{box-shadow:0 0 0 1px rgba(30,144,255,0.35),0 8px 24px rgba(0,0,0,0.3);}
+.exercise-card.done-card{box-shadow:0 0 0 1px rgba(255,255,255,0.25),0 4px 16px rgba(0,0,0,0.3);}
 .exercise-name{color:#fff;}
-.exercise-name:hover,.info-btn:hover,.add-exercise-btn:hover,.add-phase-btn:hover,.cp-meas-add-btn:hover{color:var(--cyan)!important;border-color:var(--cyan)!important;}
-.client-select,.form-input,.form-select,.cp-input,.cp-select,.cp-textarea,.move-select,.baseline-input,.weight-input{background:rgba(5,10,18,0.62)!important;color:#fff!important;border:1px solid rgba(255,255,255,0.2)!important;border-radius:14px!important;}
-.client-select:focus,.form-input:focus,.cp-input:focus,.baseline-input:focus,.form-select:focus,.cp-select:focus,.cp-textarea:focus,.weight-input:focus{outline:none;box-shadow:0 0 0 2px rgba(30,144,255,0.35);border-color:rgba(30,144,255,0.7)!important;}
-.progress-bar,.upload-bar-wrap{background:rgba(255,255,255,0.15)!important;}
-.progress-fill,.upload-bar{background:linear-gradient(135deg,var(--blue),var(--cyan))!important;box-shadow:0 0 12px rgba(30,144,255,0.4);}
-.phase-warmup{background:rgba(68,204,102,0.2);border-color:rgba(68,204,102,0.45);color:#8ff0ae;}
-.phase-core{background:rgba(30,144,255,0.2);border-color:rgba(30,144,255,0.4);color:#9fc4ff;}
-.phase-strength{background:rgba(0,212,255,0.16);border-color:rgba(0,212,255,0.4);color:#86ecff;}
+.exercise-name:hover,.info-btn:hover,.add-exercise-btn:hover,.add-phase-btn:hover,.cp-meas-add-btn:hover{color:rgba(255,255,255,0.7)!important;border-color:rgba(255,255,255,0.4)!important;}
+.client-select,.form-input,.form-select,.cp-input,.cp-select,.cp-textarea,.move-select,.baseline-input,.weight-input{background:rgba(255,255,255,0.05)!important;color:#fff!important;border:1px solid rgba(255,255,255,0.18)!important;border-radius:14px!important;}
+.client-select:focus,.form-input:focus,.cp-input:focus,.baseline-input:focus,.form-select:focus,.cp-select:focus,.cp-textarea:focus,.weight-input:focus{outline:none;box-shadow:0 0 0 2px rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.4)!important;}
+.progress-bar,.upload-bar-wrap{background:rgba(255,255,255,0.12)!important;}
+.progress-fill,.upload-bar{background:#ffffff!important;box-shadow:none;}
+.phase-warmup{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
+.phase-core{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
+.phase-strength{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
 .phase-accessories{background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.4);color:#b6b8ff;}
 .wl-day,.picker-item:hover,.pp-card.pp-selected{border-color:rgba(30,144,255,0.65)!important;box-shadow:0 0 18px rgba(30,144,255,0.28);}
 .user-avatar{border-color:rgba(30,144,255,0.6)!important;box-shadow:0 0 14px rgba(30,144,255,0.35);background:rgba(30,144,255,0.2)!important;color:#fff!important;}
@@ -3197,6 +3166,12 @@ h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub stro
   .stat-num{font-size:34px!important;}
   .finish-btn{font-size:16px;}
 }
+/* EXERCISE NOTE */
+.exercise-note-row{padding:8px 12px 12px;}
+.exercise-note-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.85);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;font-size:13px;padding:8px 12px;resize:vertical;min-height:60px;outline:none;transition:border-color .2s;}
+.exercise-note-input:focus{border-color:rgba(255,255,255,0.35);}
+.exercise-note-input::placeholder{color:rgba(255,255,255,0.3);}
+.exercise-note-display{margin:4px 12px 12px;padding:8px 12px;background:rgba(255,255,255,0.04);border-left:2px solid rgba(255,255,255,0.25);border-radius:0 8px 8px 0;font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5;}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -3290,7 +3265,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <line x1="100" y1="70" x2="130" y2="60" stroke="#0a0e1a" stroke-width="2"/>
       </svg>
     </div>
-    <div class="slide-badge">Striveo</div>
+    <div class="slide-badge">Pulse</div>
     <div class="slide-title">Your Personal <span>Coach</span> in Your Pocket</div>
     <div class="slide-desc">Chương trình tập luyện được cá nhân hóa, theo dõi tiến độ theo thời gian thực.</div>
     <div class="slide-dots">
@@ -3327,8 +3302,13 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen" class="login-screen">
-  <div class="login-logo">Stri<span>veo</span></div>
-  <div class="login-tagline">Powered by your Coach 💪</div>
+  <div class="login-logo" style="display:flex;align-items:center;gap:12px;font-size:40px;letter-spacing:2px;">
+    <svg width="52" height="36" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="0,22 22,22 32,4 42,38 52,4 62,22 100,22" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    PULSE
+  </div>
+  <div class="login-tagline">Train with precision</div>
   <div class="login-card">
     <div class="login-title">Đăng nhập</div>
     <div class="login-sub">Sử dụng Gmail của bạn để truy cập chương trình tập luyện cá nhân.</div>
@@ -3365,7 +3345,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     #no-client-debug{font-size:10px;color:#ff6b6b;word-break:break-all;max-width:300px;margin-top:.5rem;min-height:0;}
   </style>
   <div class="signup-slide">
-    <div class="signup-logo">Striveo</div>
+    <div class="signup-logo">Pulse</div>
 
     <div class="signup-body">
       <div class="signup-icon">
@@ -3422,7 +3402,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="intro-bg"></div>
   <div class="intro-overlay"></div>
   <div class="intro-content">
-    <div class="intro-brand">Striveo</div>
+    <div class="intro-brand">Pulse</div>
     <div class="intro-slogan">
       <div class="intro-slogan-line" id="isl1">Train.</div>
       <div class="intro-slogan-line" id="isl2">Track.</div>
@@ -3441,11 +3421,14 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="app">
   <div class="header">
     <div class="user-bar">
-      <div class="user-avatar" id="user-avatar">?</div>
-      <div style="flex:1">
-        <h1 style="font-size:24px;margin:0">Striveo</h1>
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <svg width="38" height="26" viewBox="0 0 100 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="0,22 22,22 32,4 42,38 52,4 62,22 100,22" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <h1 style="font-size:20px;margin:0;font-weight:800;letter-spacing:2px;">PULSE</h1>
       </div>
       <span class="user-role-badge" id="role-badge"></span>
+      <div class="user-avatar" id="user-avatar" title="Profile">?</div>
       <button class="user-logout" onclick="logout()">Sign out</button>
     </div>
     <p class="subtitle" id="date-display"></p>
