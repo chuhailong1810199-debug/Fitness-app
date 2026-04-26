@@ -226,17 +226,52 @@
       padding: 24px;
       backdrop-filter: blur(20px);
     }
+    .cert-slider {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin-top: 20px;
+      padding-bottom: 4px;
+    }
+    .cert-slider::-webkit-scrollbar { display: none; }
+    .cert-card {
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .cert-card img {
+      height: 200px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 12px;
+      padding: 8px;
+    }
     .cred-grid {
       margin-top: 18px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      display: flex;
       gap: 14px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 4px;
     }
+    .cred-grid::-webkit-scrollbar { display: none; }
     .cred-item {
       background: rgba(255,255,255,.05);
       border: 1px solid rgba(255,255,255,.1);
       border-radius: 12px;
       padding: 14px;
+      min-width: 160px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
     }
     .cred-item strong {
       display: block;
@@ -598,7 +633,6 @@
       .form-grid,
       .services-grid,
       .pillar-grid,
-      .cred-grid,
       .footer-grid { grid-template-columns: 1fr; }
       .mosaic { grid-template-columns: repeat(2, 1fr); }
       .mosaic-btn,
@@ -683,6 +717,10 @@
       <article class="credentials">
         <h3 class="service-title">Credentials & Track Record</h3>
         <p class="about-copy">I coach hybrid athletes who need to get strong without losing endurance. Programs blend race conditioning, structured lifting, and week-to-week accountability in Striveo.</p>
+        <div class="cert-slider">
+          <div class="cert-card"><img src="/images/nasm-cert.jpg" alt="NASM International Certified Personal Trainer"/></div>
+          <div class="cert-card"><img src="/images/eleiko-cert.png" alt="Eleiko Weightlifting Level 1"/></div>
+        </div>
         <div class="cred-grid">
           <div class="cred-item"><strong>HYROX</strong><span>Singapore & Bangkok finisher</span></div>
           <div class="cred-item"><strong>8+ YRS</strong><span>Strength and body recomposition coaching</span></div>
