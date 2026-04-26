@@ -226,6 +226,7 @@
       border-radius: 18px;
       padding: 24px;
       backdrop-filter: blur(20px);
+      min-width: 0;
     }
     .cert-slider {
       display: flex;
@@ -245,8 +246,8 @@
       display: block;
       object-fit: contain;
       background: #fff;
-      border-radius: 12px;
-      padding: 8px;
+      border-radius: 8px;
+      padding: 4px;
     }
     .cred-grid {
       margin-top: 18px;
@@ -627,7 +628,17 @@
       .services-grid,
       .pillar-grid,
       .footer-grid { grid-template-columns: 1fr; }
-      .mosaic { grid-template-columns: repeat(2, 1fr); }
+      .mosaic {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 10px;
+        padding-bottom: 8px;
+        min-width: 0;
+      }
+      .mosaic::-webkit-scrollbar { display: none; }
       .mosaic-btn,
       .mosaic-btn:nth-child(1),
       .mosaic-btn:nth-child(2),
@@ -636,9 +647,13 @@
       .mosaic-btn:nth-child(5),
       .mosaic-btn:nth-child(6),
       .mosaic-btn:nth-child(7) {
-        grid-column: span 1;
-        grid-row: span 1;
-        min-height: 150px;
+        grid-column: unset;
+        grid-row: unset;
+        flex-shrink: 0;
+        width: 260px;
+        min-height: 200px;
+        scroll-snap-align: start;
+        border-radius: 12px;
       }
       .footer-bottom { flex-direction: column; text-align: center; }
       .form-actions { flex-direction: column; align-items: stretch; }
