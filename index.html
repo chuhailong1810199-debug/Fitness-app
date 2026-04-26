@@ -158,7 +158,11 @@ onAuthStateChanged(auth, async user => {
 });
 
 async function loginWithGoogle() {
-  try {
+  const ua = navigator.userAgent || '';
+  if (ua.includes('Instagram') || ua.includes('FBAN') || ua.includes('FBAV')) {
+    alert('Vui lòng mở bằng Safari hoặc Chrome để đăng nhập.\n\nTrên iPhone: Nhấn "..." góc trên phải → "Open in Safari"');
+    return;
+  }  try {
     setLoginLoading(true);
     const provider = new GoogleAuthProvider();
     // Always use popup — redirect fails on Safari/iOS due to ITP cookie blocking
