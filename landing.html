@@ -228,26 +228,19 @@
     }
     .cert-slider {
       display: flex;
-      gap: 14px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      flex-direction: column;
+      gap: 12px;
       margin-top: 20px;
-      padding-bottom: 4px;
     }
-    .cert-slider::-webkit-scrollbar { display: none; }
     .cert-card {
-      flex-shrink: 0;
-      scroll-snap-align: start;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.12);
-      width: 240px;
+      width: 100%;
     }
     .cert-card img {
       width: 100%;
-      height: 150px;
+      height: 160px;
       display: block;
       object-fit: contain;
       background: #fff;
@@ -257,23 +250,31 @@
     .cred-grid {
       margin-top: 18px;
       display: flex;
-      gap: 14px;
+      gap: 10px;
       overflow-x: auto;
-      scroll-snap-type: x proximity;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      padding-bottom: 4px;
-      padding-right: 16px;
+      padding-bottom: 6px;
+      /* bleed out of the credentials padding so scroll area is wider */
+      margin-left: -24px;
+      margin-right: -24px;
+      padding-left: 24px;
+      padding-right: 24px;
     }
     .cred-grid::-webkit-scrollbar { display: none; }
+    .cred-grid::after {
+      content: '';
+      display: block;
+      min-width: 24px;
+      flex-shrink: 0;
+    }
     .cred-item {
       background: rgba(255,255,255,.05);
       border: 1px solid rgba(255,255,255,.1);
       border-radius: 12px;
-      padding: 14px;
-      min-width: 150px;
+      padding: 12px 14px;
+      min-width: 130px;
       flex-shrink: 0;
-      scroll-snap-align: start;
     }
     .cred-item strong {
       display: block;
@@ -737,7 +738,6 @@
         <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
         <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
         <button class="mosaic-btn" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/deadlift-eleiko.jpg" aria-label="Open deadlift photo"><img src="/images/deadlift-eleiko.jpg" alt="Deadlift session with Eleiko setup" loading="lazy"/></button>
       </div>
     </div>
   </div>
