@@ -3250,15 +3250,20 @@ h1 span{color:#1e90ff;}
 .pp-ba-btn:hover,.pp-ba-btn.active{background:#1a1a2e;border-color:#6688ff;}
 .pp-ba-hint{font-size:11px;color:#6688ff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
 .pp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem;}
-.pp-card{position:relative;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.07);border:2px solid rgba(255,255,255,0.12);cursor:pointer;aspect-ratio:3/4;transition:border-color .15s;}
+.pp-card{position:relative;border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.05);border:1.5px solid oklch(68% .16 295 / 0.35);cursor:pointer;aspect-ratio:3/4;transition:border-color .2s,box-shadow .2s;box-shadow:0 0 12px oklch(51% .23 295 / 0.12),inset 0 1px 0 oklch(80% .10 295 / 0.12);}
+.pp-card:hover{border-color:oklch(68% .16 295 / 0.70);box-shadow:0 0 22px oklch(51% .23 295 / 0.25),inset 0 1px 0 oklch(80% .10 295 / 0.18);}
 .pp-card img{width:100%;height:100%;object-fit:cover;display:block;}
-.pp-card-info{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));}
-.pp-card-date{font-family:'Figtree',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,0.88);}
-.pp-card-note{font-size:9px;color:rgba(255,255,255,0.72);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* glass overlay on top of image */
+.pp-card::before{content:'';position:absolute;inset:0;background:linear-gradient(160deg,oklch(68% .16 295 / 0.07) 0%,transparent 45%);pointer-events:none;z-index:1;}
+/* top-left violet corner accent */
+.pp-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,oklch(68% .16 295 / 0.80),transparent 60%);pointer-events:none;z-index:2;}
+.pp-card-info{position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.80) 60%);z-index:3;}
+.pp-card-date{font-family:'Figtree',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,0.90);}
+.pp-card-note{font-size:9px;color:rgba(255,255,255,0.65);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pp-del-btn{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,0.35);color:#ff4444;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
 .pp-card:hover .pp-del-btn{opacity:1;}
 .pp-sel-ring{position:absolute;inset:0;border:3px solid #6688ff;border-radius:7px;pointer-events:none;display:none;}
-.pp-card.pp-selected{border-color:#6688ff;}
+.pp-card.pp-selected{border-color:oklch(68% .16 295);box-shadow:0 0 24px oklch(51% .23 295 / 0.40);}
 .pp-card.pp-selected .pp-sel-ring{display:block;}
 .pp-upload-progress{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:none;}
 .pp-upload-progress.show{display:block;}
@@ -3415,7 +3420,8 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .phase-accessories{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);}
 .login-card{border-top:1px solid rgba(255,255,255,0.2)!important;}
 .loading-spinner{border-top-color:#ffffff!important;}
-.wl-day,.picker-item:hover,.pp-card.pp-selected{border-color:rgba(30,144,255,0.65)!important;box-shadow:0 0 18px rgba(30,144,255,0.28);}
+.wl-day,.picker-item:hover{border-color:rgba(30,144,255,0.65)!important;box-shadow:0 0 18px rgba(30,144,255,0.28);}
+.pp-card.pp-selected{border-color:oklch(68% .16 295)!important;box-shadow:0 0 24px oklch(51% .23 295 / 0.40)!important;}
 .user-avatar{border-color:rgba(30,144,255,0.6)!important;box-shadow:0 0 14px rgba(30,144,255,0.35);background:rgba(30,144,255,0.2)!important;color:#fff!important;}
 .user-role-badge{border-color:rgba(30,144,255,0.45)!important;background:rgba(30,144,255,0.18)!important;color:#d6ebff!important;}
 .empty-title,.quote-toast-text,.modal-name,.wl-date,.cp-tab.active,.cp-section-title,.baseline-calc-val,.cp-vo2-rating,.cel-stat-num{color:#fff!important;}
