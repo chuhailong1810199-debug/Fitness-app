@@ -272,6 +272,8 @@
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
       padding: 28px;
+      min-width: 0;
+      overflow: hidden;
     }
     .cert-slider {
       display: flex;
@@ -279,12 +281,14 @@
       align-items: center;
       gap: 12px;
       margin-top: 20px;
+      width: 100%;
     }
     .cert-card {
       border-radius: var(--r-md);
       overflow: hidden;
       border: 1px solid var(--border);
-      max-width: 260px;
+      width: 100%;
+      max-width: 280px;
       transition: border-color 0.2s var(--ease);
     }
     .cert-card:hover { border-color: var(--border-md); }
