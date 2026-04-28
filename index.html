@@ -2718,10 +2718,12 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .slide{display:none;position:absolute;inset:0;flex-direction:column;justify-content:flex-end;padding:0 0 56px;}
 .slide.active{display:flex;}
 /* bg decoration per slide */
-.slide-bg{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.slide-video-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(to bottom,rgba(8,10,18,0.45) 0%,rgba(8,10,18,0.30) 40%,rgba(8,10,18,0.82) 100%);}
+.slide-bg{position:absolute;inset:0;pointer-events:none;z-index:2;}
 .slide-bg-glow{position:absolute;border-radius:50%;filter:blur(80px);}
 /* content layer */
-.slide-body{position:relative;z-index:2;padding:0 28px;}
+.slide-body{position:relative;z-index:3;padding:0 28px;}
 .slide-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:11px;color:oklch(68% .16 277);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:18px;background:oklch(51% .23 277/0.12);border:1px solid oklch(51% .23 277/0.25);border-radius:999px;padding:5px 12px;}
 .slide-title{font-family:'Figtree',sans-serif;font-size:clamp(44px,11vw,64px);font-weight:900;text-transform:uppercase;color:#fff;line-height:1.0;letter-spacing:-0.5px;margin-bottom:16px;}
 .slide-title span{color:oklch(68% .16 277);}
@@ -3478,15 +3480,18 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- Slide 1 -->
   <div class="slide active" id="slide-1">
-    <!-- Background: violet radial glow top-right + bezier flow lines -->
+    <!-- Video background -->
+    <video class="slide-video" autoplay muted loop playsinline>
+      <source src="hero-video.mp4" type="video/mp4">
+    </video>
+    <div class="slide-video-overlay"></div>
+    <!-- Bezier decoration on top -->
     <div class="slide-bg">
-      <div class="slide-bg-glow" style="width:340px;height:340px;top:-80px;right:-60px;background:oklch(51% .23 277/0.22);"></div>
-      <div class="slide-bg-glow" style="width:200px;height:200px;bottom:30%;left:-40px;background:oklch(51% .23 277/0.10);"></div>
-      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.6;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
-        <path d="M 100 0 C 110 200, 220 320, 200 800" stroke="oklch(68% .16 277 / 0.20)" stroke-width="1" stroke-linecap="round"/>
-        <path d="M 300 0 C 290 200, 180 320, 200 800" stroke="oklch(68% .16 277 / 0.20)" stroke-width="1" stroke-linecap="round"/>
-        <path d="M 200 0 L 200 800" stroke="oklch(68% .16 277 / 0.10)" stroke-width="0.8"/>
-        <circle cx="200" cy="400" r="3" fill="oklch(72% .18 277 / 0.6)"/>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
+        <path d="M 100 0 C 110 200, 220 320, 200 800" stroke="oklch(68% .16 295 / 0.25)" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M 300 0 C 290 200, 180 320, 200 800" stroke="oklch(68% .16 295 / 0.25)" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M 200 0 L 200 800" stroke="oklch(68% .16 295 / 0.12)" stroke-width="0.8"/>
+        <circle cx="200" cy="400" r="3" fill="oklch(72% .18 295 / 0.7)"/>
       </svg>
     </div>
     <!-- Content -->
