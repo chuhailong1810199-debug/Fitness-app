@@ -344,15 +344,40 @@
     /* ── Mosaic ──────────────────────────────────────── */
     .mosaic { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
     .mosaic-btn {
-      border: 1px solid var(--border);
+      position: relative;
+      border: 1.5px solid oklch(68% .16 295 / 0.30);
       border-radius: var(--r-md);
       overflow: hidden;
       background: var(--surface);
       cursor: pointer;
       min-height: 110px;
-      transition: border-color 0.22s var(--ease), transform 0.22s var(--ease);
+      transition: border-color 0.22s var(--ease), box-shadow 0.22s var(--ease), transform 0.22s var(--ease);
+      box-shadow: 0 0 14px oklch(51% .23 295 / 0.10), inset 0 1px 0 oklch(80% .10 295 / 0.10);
     }
-    .mosaic-btn:hover { border-color: var(--border-md); transform: translateY(-2px); }
+    .mosaic-btn:hover {
+      border-color: oklch(68% .16 295 / 0.65);
+      box-shadow: 0 0 24px oklch(51% .23 295 / 0.22), inset 0 1px 0 oklch(80% .10 295 / 0.16);
+      transform: translateY(-2px);
+    }
+    /* violet glass overlay */
+    .mosaic-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, oklch(68% .16 295 / 0.08) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* top accent line */
+    .mosaic-btn::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1.5px;
+      background: linear-gradient(90deg, oklch(68% .16 295 / 0.75), transparent 65%);
+      pointer-events: none;
+      z-index: 2;
+    }
     .mosaic-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .mosaic-btn:nth-child(1) { grid-column: span 3; grid-row: span 2; min-height: 240px; }
     .mosaic-btn:nth-child(2) { grid-column: span 3; }
