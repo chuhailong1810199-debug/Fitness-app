@@ -13,6 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    a { color: inherit; text-decoration: none; }
 
     /* ── Design tokens — OKLCH ──────────────────────── */
     :root {
@@ -25,9 +26,9 @@
       --fg:           oklch(97% 0 0);
       --muted:        oklch(55% 0 0);
       --muted2:       oklch(70% 0 0);
-      --accent:       oklch(51% .23 277);
-      --accent-lg:    oklch(68% .16 277);
-      --accent-glow:  oklch(51% .23 277 / 0.20);
+      --accent:       oklch(51% .23 295);
+      --accent-lg:    oklch(68% .16 295);
+      --accent-glow:  oklch(51% .23 295 / 0.20);
       --ok:           oklch(75% .14 145);
       --err:          oklch(65% .18 27);
       --ease:         cubic-bezier(0.4, 0, 0.2, 1);
@@ -221,9 +222,9 @@
       font-weight: 600;
       margin-bottom: 28px;
       padding: 6px 18px;
-      border: 1px solid oklch(51% .23 277 / 0.35);
+      border: 1px solid oklch(51% .23 295 / 0.35);
       border-radius: 50px;
-      background: oklch(51% .23 277 / 0.10);
+      background: oklch(51% .23 295 / 0.10);
     }
     .hero-title {
       font-size: clamp(54px, 10vw, 96px);
@@ -324,6 +325,21 @@
     .cred-item strong { display: block; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
     .cred-item span { font-size: 11px; color: var(--muted2); line-height: 1.5; }
     .about-copy { margin-top: 16px; color: var(--muted2); font-size: 14px; line-height: 1.85; }
+    .credentials .service-title {
+      font-family: "Figtree", sans-serif;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--fg);
+    }
+    .cred-item strong {
+      font-family: "Figtree", sans-serif;
+      font-weight: 900;
+      color: var(--fg);
+    }
+    .cred-divider { margin: 20px 0; width: 100%; }
+    .cred-divider svg { display: block; width: 100%; height: 28px; }
 
     /* ── Mosaic ──────────────────────────────────────── */
     .mosaic { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
@@ -414,7 +430,7 @@
     #philosophy::after {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse 70% 50% at 50% 50%, oklch(51% .23 277 / 0.10), transparent 70%);
+      background: radial-gradient(ellipse 70% 50% at 50% 50%, oklch(51% .23 295 / 0.10), transparent 70%);
       z-index: 1;
     }
     .philosophy-content { position: relative; z-index: 2; }
@@ -597,7 +613,7 @@
       outline: none;
     }
     input:focus, select:focus, textarea:focus {
-      border-color: oklch(51% .23 277 / 0.55);
+      border-color: oklch(51% .23 295 / 0.55);
       background: var(--surface-md);
     }
     select option { background: oklch(12% 0 0); }
@@ -625,9 +641,9 @@
     .form-status.success { color: var(--ok); }
     .form-status.error { color: var(--err); }
     .thanks-state {
-      border: 1px solid oklch(51% .23 277 / 0.35);
+      border: 1px solid oklch(51% .23 295 / 0.35);
       border-radius: var(--r-md);
-      background: oklch(51% .23 277 / 0.08);
+      background: oklch(51% .23 295 / 0.08);
       padding: 20px; font-size: 14px; color: var(--accent-lg); line-height: 1.75;
     }
 
@@ -795,18 +811,18 @@
       </filter>
     </defs>
     <!-- Outer left faint -->
-    <path d="M 40 0 C 80 220, 280 340, 400 700" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1" stroke-linecap="round"/>
+    <path d="M 40 0 C 80 220, 280 340, 400 700" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1" stroke-linecap="round"/>
     <!-- Outer right faint -->
-    <path d="M 760 0 C 720 220, 520 340, 400 700" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1" stroke-linecap="round"/>
+    <path d="M 760 0 C 720 220, 520 340, 400 700" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1" stroke-linecap="round"/>
     <!-- Inner left — glowing -->
-    <path d="M 200 0 C 210 170, 370 270, 400 700" stroke="oklch(68% .16 277 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
+    <path d="M 200 0 C 210 170, 370 270, 400 700" stroke="oklch(68% .16 295 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
     <!-- Inner right — glowing -->
-    <path d="M 600 0 C 590 170, 430 270, 400 700" stroke="oklch(68% .16 277 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
+    <path d="M 600 0 C 590 170, 430 270, 400 700" stroke="oklch(68% .16 295 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
     <!-- Center spine — brightest -->
-    <path d="M 400 0 L 400 700" stroke="oklch(72% .18 277 / 0.22)" stroke-width="1" stroke-linecap="round" filter="url(#glow-lg)"/>
+    <path d="M 400 0 L 400 700" stroke="oklch(72% .18 295 / 0.22)" stroke-width="1" stroke-linecap="round" filter="url(#glow-lg)"/>
     <!-- Convergence dot at center -->
-    <circle cx="400" cy="340" r="3" fill="oklch(72% .18 277 / 0.5)" filter="url(#glow-lg)"/>
-    <circle cx="400" cy="340" r="1.2" fill="oklch(88% .10 277 / 0.9)"/>
+    <circle cx="400" cy="340" r="3" fill="oklch(72% .18 295 / 0.5)" filter="url(#glow-lg)"/>
+    <circle cx="400" cy="340" r="1.2" fill="oklch(88% .10 295 / 0.9)"/>
   </svg>
 
   <div class="hero-content">
@@ -837,6 +853,25 @@
           <div class="cert-card"><img src="/images/nasm-cert.jpg" alt="NASM International Certified Personal Trainer"/></div>
           <div class="cert-card"><img src="/images/eleiko-cert.png" alt="Eleiko Weightlifting Level 1"/></div>
         </div>
+        <!-- Diamond + scatter dots separator -->
+        <div class="cred-divider" aria-hidden="true">
+          <svg viewBox="0 0 400 28" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <defs><filter id="cdg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <line x1="0" y1="14" x2="400" y2="14" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
+            <line x1="130" y1="14" x2="270" y2="14" stroke="oklch(72% .18 295 / 0.45)" stroke-width="1.2" filter="url(#cdg)"/>
+            <polygon points="200,7 207,14 200,21 193,14" fill="none" stroke="oklch(72% .18 295 / 0.70)" stroke-width="1.1" filter="url(#cdg)"/>
+            <polygon points="200,11 204,14 200,17 196,14" fill="oklch(72% .18 295 / 0.50)"/>
+            <circle cx="96"  cy="14" r="1.8" fill="oklch(68% .16 295 / 0.35)"/>
+            <circle cx="74"  cy="14" r="1.2" fill="oklch(68% .16 295 / 0.22)"/>
+            <circle cx="56"  cy="14" r="0.9" fill="oklch(68% .16 295 / 0.14)"/>
+            <circle cx="40"  cy="14" r="0.7" fill="oklch(68% .16 295 / 0.08)"/>
+            <circle cx="304" cy="14" r="1.8" fill="oklch(68% .16 295 / 0.35)"/>
+            <circle cx="326" cy="14" r="1.2" fill="oklch(68% .16 295 / 0.22)"/>
+            <circle cx="344" cy="14" r="0.9" fill="oklch(68% .16 295 / 0.14)"/>
+            <circle cx="360" cy="14" r="0.7" fill="oklch(68% .16 295 / 0.08)"/>
+          </svg>
+        </div>
+
         <div class="cred-grid">
           <div class="cred-item"><strong>HYROX</strong><span>Singapore & Bangkok finisher</span></div>
           <div class="cred-item"><strong>8+ YRS</strong><span>Strength and body recomposition coaching</span></div>
@@ -863,25 +898,25 @@
       <filter id="dg1"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <!-- Main rail -->
-    <line class="div-path div-path-d1" x1="0" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 277 / 0.14)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="0" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.14)" stroke-width="1"/>
     <!-- Bright center segment -->
-    <line class="div-path div-path-d2" x1="480" y1="45" x2="720" y2="45" stroke="oklch(72% .18 277 / 0.55)" stroke-width="1.5" filter="url(#dg1)"/>
+    <line class="div-path div-path-d2" x1="480" y1="45" x2="720" y2="45" stroke="oklch(72% .18 295 / 0.55)" stroke-width="1.5" filter="url(#dg1)"/>
     <!-- Diamond -->
-    <polygon class="div-shape div-glow-pulse" points="600,36 609,45 600,54 591,45" fill="none" stroke="oklch(72% .18 277 / 0.75)" stroke-width="1.3" filter="url(#dg1)"/>
-    <polygon class="div-shape" points="600,41 605,45 600,49 595,45" fill="oklch(72% .18 277 / 0.55)"/>
+    <polygon class="div-shape div-glow-pulse" points="600,36 609,45 600,54 591,45" fill="none" stroke="oklch(72% .18 295 / 0.75)" stroke-width="1.3" filter="url(#dg1)"/>
+    <polygon class="div-shape" points="600,41 605,45 600,49 595,45" fill="oklch(72% .18 295 / 0.55)"/>
     <!-- Left dots -->
-    <circle class="div-dot" cx="360" cy="45" r="2.2" fill="oklch(68% .16 277 / 0.38)"/>
-    <circle class="div-dot" cx="298" cy="45" r="1.6" fill="oklch(68% .16 277 / 0.24)"/>
-    <circle class="div-dot" cx="248" cy="45" r="1.1" fill="oklch(68% .16 277 / 0.16)"/>
-    <circle class="div-dot" cx="206" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.10)"/>
+    <circle class="div-dot" cx="360" cy="45" r="2.2" fill="oklch(68% .16 295 / 0.38)"/>
+    <circle class="div-dot" cx="298" cy="45" r="1.6" fill="oklch(68% .16 295 / 0.24)"/>
+    <circle class="div-dot" cx="248" cy="45" r="1.1" fill="oklch(68% .16 295 / 0.16)"/>
+    <circle class="div-dot" cx="206" cy="45" r="0.8" fill="oklch(68% .16 295 / 0.10)"/>
     <!-- Right dots -->
-    <circle class="div-dot" cx="840" cy="45" r="2.2" fill="oklch(68% .16 277 / 0.38)"/>
-    <circle class="div-dot" cx="902" cy="45" r="1.6" fill="oklch(68% .16 277 / 0.24)"/>
-    <circle class="div-dot" cx="952" cy="45" r="1.1" fill="oklch(68% .16 277 / 0.16)"/>
-    <circle class="div-dot" cx="994" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.10)"/>
+    <circle class="div-dot" cx="840" cy="45" r="2.2" fill="oklch(68% .16 295 / 0.38)"/>
+    <circle class="div-dot" cx="902" cy="45" r="1.6" fill="oklch(68% .16 295 / 0.24)"/>
+    <circle class="div-dot" cx="952" cy="45" r="1.1" fill="oklch(68% .16 295 / 0.16)"/>
+    <circle class="div-dot" cx="994" cy="45" r="0.8" fill="oklch(68% .16 295 / 0.10)"/>
     <!-- Ticks -->
-    <line class="div-path div-path-d3" x1="430" y1="38" x2="430" y2="52" stroke="oklch(68% .16 277 / 0.28)" stroke-width="1"/>
-    <line class="div-path div-path-d3" x1="770" y1="38" x2="770" y2="52" stroke="oklch(68% .16 277 / 0.28)" stroke-width="1"/>
+    <line class="div-path div-path-d3" x1="430" y1="38" x2="430" y2="52" stroke="oklch(68% .16 295 / 0.28)" stroke-width="1"/>
+    <line class="div-path div-path-d3" x1="770" y1="38" x2="770" y2="52" stroke="oklch(68% .16 295 / 0.28)" stroke-width="1"/>
   </svg>
 </div>
 
@@ -936,20 +971,20 @@
       <filter id="dg2"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <!-- Base rail left & right -->
-    <line class="div-path div-path-d1" x1="0" y1="45" x2="440" y2="45" stroke="oklch(68% .16 277 / 0.13)" stroke-width="1"/>
-    <line class="div-path div-path-d1" x1="760" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 277 / 0.13)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="0" y1="45" x2="440" y2="45" stroke="oklch(68% .16 295 / 0.13)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="760" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.13)" stroke-width="1"/>
     <!-- EKG spike — glowing -->
     <polyline class="div-path div-path-d2 div-glow-pulse"
       points="440,45 490,45 520,18 545,72 570,45 620,45 640,45 660,45 680,45 700,30 720,58 740,45 760,45"
-      stroke="oklch(72% .18 277 / 0.70)" stroke-width="1.6" stroke-linejoin="round" filter="url(#dg2)"/>
+      stroke="oklch(72% .18 295 / 0.70)" stroke-width="1.6" stroke-linejoin="round" filter="url(#dg2)"/>
     <!-- Scatter left -->
-    <circle class="div-dot" cx="340" cy="45" r="1.8" fill="oklch(68% .16 277 / 0.30)"/>
-    <circle class="div-dot" cx="280" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.18)"/>
-    <circle class="div-dot" cx="230" cy="45" r="0.9" fill="oklch(68% .16 277 / 0.12)"/>
+    <circle class="div-dot" cx="340" cy="45" r="1.8" fill="oklch(68% .16 295 / 0.30)"/>
+    <circle class="div-dot" cx="280" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.18)"/>
+    <circle class="div-dot" cx="230" cy="45" r="0.9" fill="oklch(68% .16 295 / 0.12)"/>
     <!-- Scatter right -->
-    <circle class="div-dot" cx="860" cy="45" r="1.8" fill="oklch(68% .16 277 / 0.30)"/>
-    <circle class="div-dot" cx="920" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.18)"/>
-    <circle class="div-dot" cx="970" cy="45" r="0.9" fill="oklch(68% .16 277 / 0.12)"/>
+    <circle class="div-dot" cx="860" cy="45" r="1.8" fill="oklch(68% .16 295 / 0.30)"/>
+    <circle class="div-dot" cx="920" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.18)"/>
+    <circle class="div-dot" cx="970" cy="45" r="0.9" fill="oklch(68% .16 295 / 0.12)"/>
   </svg>
 </div>
 
@@ -984,28 +1019,28 @@
       <filter id="dg3"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <!-- Rail segments -->
-    <line class="div-path div-path-d1" x1="0"   y1="45" x2="340"  y2="45" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1"/>
-    <line class="div-path div-path-d2" x1="378" y1="45" x2="575"  y2="45" stroke="oklch(68% .16 277 / 0.28)" stroke-width="1"/>
-    <line class="div-path div-path-d2" x1="625" y1="45" x2="822"  y2="45" stroke="oklch(68% .16 277 / 0.28)" stroke-width="1"/>
-    <line class="div-path div-path-d1" x1="860" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="0"   y1="45" x2="340"  y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
+    <line class="div-path div-path-d2" x1="378" y1="45" x2="575"  y2="45" stroke="oklch(68% .16 295 / 0.28)" stroke-width="1"/>
+    <line class="div-path div-path-d2" x1="625" y1="45" x2="822"  y2="45" stroke="oklch(68% .16 295 / 0.28)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="860" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
     <!-- Left node -->
-    <circle class="div-dot div-glow-pulse" cx="360" cy="45" r="13" stroke="oklch(68% .16 277 / 0.22)" stroke-width="1" fill="none"/>
-    <circle class="div-dot" cx="360" cy="45" r="4"  fill="oklch(68% .16 277 / 0.18)"/>
-    <circle class="div-dot" cx="360" cy="45" r="2"  fill="oklch(72% .18 277 / 0.6)"/>
+    <circle class="div-dot div-glow-pulse" cx="360" cy="45" r="13" stroke="oklch(68% .16 295 / 0.22)" stroke-width="1" fill="none"/>
+    <circle class="div-dot" cx="360" cy="45" r="4"  fill="oklch(68% .16 295 / 0.18)"/>
+    <circle class="div-dot" cx="360" cy="45" r="2"  fill="oklch(72% .18 295 / 0.6)"/>
     <!-- Center node — largest, brightest -->
-    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="18" stroke="oklch(72% .18 277 / 0.30)" stroke-width="1.2" fill="none" filter="url(#dg3)"/>
-    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="10" stroke="oklch(72% .18 277 / 0.18)" stroke-width="1" fill="none"/>
-    <circle class="div-dot" cx="600" cy="45" r="5"  fill="oklch(68% .16 277 / 0.25)"/>
-    <circle class="div-dot" cx="600" cy="45" r="2.5" fill="oklch(76% .20 277 / 0.85)" filter="url(#dg3)"/>
+    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="18" stroke="oklch(72% .18 295 / 0.30)" stroke-width="1.2" fill="none" filter="url(#dg3)"/>
+    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="10" stroke="oklch(72% .18 295 / 0.18)" stroke-width="1" fill="none"/>
+    <circle class="div-dot" cx="600" cy="45" r="5"  fill="oklch(68% .16 295 / 0.25)"/>
+    <circle class="div-dot" cx="600" cy="45" r="2.5" fill="oklch(76% .20 295 / 0.85)" filter="url(#dg3)"/>
     <!-- Right node -->
-    <circle class="div-dot div-glow-pulse" cx="840" cy="45" r="13" stroke="oklch(68% .16 277 / 0.22)" stroke-width="1" fill="none"/>
-    <circle class="div-dot" cx="840" cy="45" r="4"  fill="oklch(68% .16 277 / 0.18)"/>
-    <circle class="div-dot" cx="840" cy="45" r="2"  fill="oklch(72% .18 277 / 0.6)"/>
+    <circle class="div-dot div-glow-pulse" cx="840" cy="45" r="13" stroke="oklch(68% .16 295 / 0.22)" stroke-width="1" fill="none"/>
+    <circle class="div-dot" cx="840" cy="45" r="4"  fill="oklch(68% .16 295 / 0.18)"/>
+    <circle class="div-dot" cx="840" cy="45" r="2"  fill="oklch(72% .18 295 / 0.6)"/>
     <!-- Far scatter dots -->
-    <circle class="div-dot" cx="200" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.14)"/>
-    <circle class="div-dot" cx="150" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.08)"/>
-    <circle class="div-dot" cx="1000" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.14)"/>
-    <circle class="div-dot" cx="1050" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.08)"/>
+    <circle class="div-dot" cx="200" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.14)"/>
+    <circle class="div-dot" cx="150" cy="45" r="0.8" fill="oklch(68% .16 295 / 0.08)"/>
+    <circle class="div-dot" cx="1000" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.14)"/>
+    <circle class="div-dot" cx="1050" cy="45" r="0.8" fill="oklch(68% .16 295 / 0.08)"/>
   </svg>
 </div>
 
@@ -1038,26 +1073,26 @@
       <filter id="dg4"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <!-- Rail left & right -->
-    <line class="div-path div-path-d1" x1="0"   y1="45" x2="490" y2="45" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1"/>
-    <line class="div-path div-path-d1" x1="710" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="0"   y1="45" x2="490" y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="710" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
     <!-- Expanding arcs (left side, opening rightward) -->
-    <path class="div-path div-path-d2 div-glow-pulse" d="M 510 20 Q 555 45 510 70" stroke="oklch(72% .18 277 / 0.55)" stroke-width="1.4" filter="url(#dg4)"/>
-    <path class="div-path div-path-d2" d="M 538 28 Q 568 45 538 62" stroke="oklch(68% .16 277 / 0.30)" stroke-width="1"/>
-    <path class="div-path div-path-d2" d="M 558 34 Q 578 45 558 56" stroke="oklch(68% .16 277 / 0.18)" stroke-width="0.8"/>
+    <path class="div-path div-path-d2 div-glow-pulse" d="M 510 20 Q 555 45 510 70" stroke="oklch(72% .18 295 / 0.55)" stroke-width="1.4" filter="url(#dg4)"/>
+    <path class="div-path div-path-d2" d="M 538 28 Q 568 45 538 62" stroke="oklch(68% .16 295 / 0.30)" stroke-width="1"/>
+    <path class="div-path div-path-d2" d="M 558 34 Q 578 45 558 56" stroke="oklch(68% .16 295 / 0.18)" stroke-width="0.8"/>
     <!-- Expanding arcs (right side, opening leftward) -->
-    <path class="div-path div-path-d2 div-glow-pulse" d="M 690 20 Q 645 45 690 70" stroke="oklch(72% .18 277 / 0.55)" stroke-width="1.4" filter="url(#dg4)"/>
-    <path class="div-path div-path-d2" d="M 662 28 Q 632 45 662 62" stroke="oklch(68% .16 277 / 0.30)" stroke-width="1"/>
-    <path class="div-path div-path-d2" d="M 642 34 Q 622 45 642 56" stroke="oklch(68% .16 277 / 0.18)" stroke-width="0.8"/>
+    <path class="div-path div-path-d2 div-glow-pulse" d="M 690 20 Q 645 45 690 70" stroke="oklch(72% .18 295 / 0.55)" stroke-width="1.4" filter="url(#dg4)"/>
+    <path class="div-path div-path-d2" d="M 662 28 Q 632 45 662 62" stroke="oklch(68% .16 295 / 0.30)" stroke-width="1"/>
+    <path class="div-path div-path-d2" d="M 642 34 Q 622 45 642 56" stroke="oklch(68% .16 295 / 0.18)" stroke-width="0.8"/>
     <!-- Center dot -->
-    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="4" fill="oklch(68% .16 277 / 0.25)"/>
-    <circle class="div-dot" cx="600" cy="45" r="2" fill="oklch(76% .20 277 / 0.85)" filter="url(#dg4)"/>
+    <circle class="div-dot div-glow-pulse" cx="600" cy="45" r="4" fill="oklch(68% .16 295 / 0.25)"/>
+    <circle class="div-dot" cx="600" cy="45" r="2" fill="oklch(76% .20 295 / 0.85)" filter="url(#dg4)"/>
     <!-- Scatter dots -->
-    <circle class="div-dot" cx="380" cy="45" r="1.8" fill="oklch(68% .16 277 / 0.25)"/>
-    <circle class="div-dot" cx="310" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.16)"/>
-    <circle class="div-dot" cx="256" cy="45" r="0.9" fill="oklch(68% .16 277 / 0.10)"/>
-    <circle class="div-dot" cx="820" cy="45" r="1.8" fill="oklch(68% .16 277 / 0.25)"/>
-    <circle class="div-dot" cx="890" cy="45" r="1.2" fill="oklch(68% .16 277 / 0.16)"/>
-    <circle class="div-dot" cx="944" cy="45" r="0.9" fill="oklch(68% .16 277 / 0.10)"/>
+    <circle class="div-dot" cx="380" cy="45" r="1.8" fill="oklch(68% .16 295 / 0.25)"/>
+    <circle class="div-dot" cx="310" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.16)"/>
+    <circle class="div-dot" cx="256" cy="45" r="0.9" fill="oklch(68% .16 295 / 0.10)"/>
+    <circle class="div-dot" cx="820" cy="45" r="1.8" fill="oklch(68% .16 295 / 0.25)"/>
+    <circle class="div-dot" cx="890" cy="45" r="1.2" fill="oklch(68% .16 295 / 0.16)"/>
+    <circle class="div-dot" cx="944" cy="45" r="0.9" fill="oklch(68% .16 295 / 0.10)"/>
   </svg>
 </div>
 
