@@ -3284,8 +3284,22 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 /* Slide buttons — slide 1 solid white, slide 2 glass */
 #slide-1 .slide-next{background:#fff!important;color:#080a12!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:800;letter-spacing:1.5px;}
 #slide-1 .slide-next:hover{background:rgba(255,255,255,0.88)!important;transform:translateY(-1px);}
-#slide-2 .slide-next{background:rgba(255,255,255,0.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,0.28)!important;border-radius:999px!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15)!important;font-weight:800;letter-spacing:1.5px;}
-#slide-2 .slide-next:hover{background:rgba(255,255,255,0.18)!important;border-color:rgba(255,255,255,0.40)!important;transform:translateY(-1px);}
+#slide-2 .slide-next{
+  background:oklch(51% .23 295 / 0.18)!important;
+  color:#fff!important;
+  border:1px solid oklch(68% .16 295 / 0.45)!important;
+  border-radius:999px!important;
+  backdrop-filter:blur(20px)!important;
+  -webkit-backdrop-filter:blur(20px)!important;
+  box-shadow:inset 0 1px 0 oklch(80% .10 295 / 0.20), 0 0 24px oklch(51% .23 295 / 0.15)!important;
+  font-weight:800;letter-spacing:1.5px;
+}
+#slide-2 .slide-next:hover{
+  background:oklch(51% .23 295 / 0.30)!important;
+  border-color:oklch(68% .16 295 / 0.65)!important;
+  box-shadow:inset 0 1px 0 oklch(80% .10 295 / 0.25), 0 0 32px oklch(51% .23 295 / 0.25)!important;
+  transform:translateY(-2px);
+}
 .google-btn,.finish-btn,.btn-save,.baseline-save-btn,.celebration-btn,.intro-enter,.cp-save-btn,.pp-upload-label{background:#ffffff!important;color:#0d0d0d!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:700;letter-spacing:0.5px;}
 .google-btn:hover,.finish-btn:hover,.btn-save:hover,.baseline-save-btn:hover,.celebration-btn:hover,.intro-enter:hover,.cp-save-btn:hover,.pp-upload-label:hover{transform:translateY(-1px);background:rgba(255,255,255,0.88)!important;}
 .btn-discard,.modal-close,.add-client-btn,.add-day-btn,.cp-back-btn,.pp-ba-btn,.pp-ba-close,.pp-fullscreen-close,.no-baseline-btn,.add-exercise-btn,.add-phase-btn,.cp-meas-add-btn{border-radius:999px!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.18)!important;color:#fff!important;}
@@ -3520,7 +3534,8 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="slide" id="slide-2">
     <!-- Background: circuit/node decoration -->
     <div class="slide-bg">
-      <div class="slide-bg-glow" style="width:280px;height:280px;top:15%;left:50%;transform:translateX(-50%);background:oklch(51% .23 295/0.15);"></div>
+      <div class="slide-bg-glow" style="width:400px;height:400px;top:10%;left:50%;transform:translateX(-50%);background:oklch(51% .23 295/0.20);"></div>
+      <div class="slide-bg-glow" style="width:220px;height:220px;bottom:15%;left:50%;transform:translateX(-50%);background:oklch(51% .23 295/0.12);"></div>
       <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
         <!-- Vertical rails -->
         <line x1="80"  y1="0" x2="80"  y2="800" stroke="oklch(68% .16 295/0.12)" stroke-width="1"/>
