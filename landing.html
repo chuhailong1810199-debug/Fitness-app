@@ -438,6 +438,18 @@
       .pillar { flex: 0 0 calc((100% - 32px) / 3); }
     }
 
+    /* ── Section divider ──────────────────────────────── */
+    .section-divider {
+      width: 100%; overflow: hidden;
+      line-height: 0;
+      padding: 0;
+      background: var(--bg2);
+    }
+    .divider-svg {
+      display: block;
+      width: 100%; height: 90px;
+    }
+
     /* ── App section ──────────────────────────────────── */
     #app { background: var(--bg); }
     .app-panel {
@@ -695,16 +707,29 @@
 
   <!-- Decorative bezier flow lines -->
   <svg class="hero-flow-svg" viewBox="0 0 800 700" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <!-- Left curve -->
-    <path d="M 180 0 C 180 180, 360 260, 400 700" stroke="oklch(68% .16 277 / 0.18)" stroke-width="1.2" stroke-linecap="round"/>
-    <!-- Right curve -->
-    <path d="M 620 0 C 620 180, 440 260, 400 700" stroke="oklch(68% .16 277 / 0.18)" stroke-width="1.2" stroke-linecap="round"/>
-    <!-- Center line -->
-    <path d="M 400 0 C 400 120, 400 300, 400 700" stroke="oklch(68% .16 277 / 0.10)" stroke-width="0.8" stroke-linecap="round"/>
-    <!-- Outer left -->
-    <path d="M 60 0 C 80 200, 300 320, 400 700" stroke="oklch(68% .16 277 / 0.07)" stroke-width="1" stroke-linecap="round"/>
-    <!-- Outer right -->
-    <path d="M 740 0 C 720 200, 500 320, 400 700" stroke="oklch(68% .16 277 / 0.07)" stroke-width="1" stroke-linecap="round"/>
+    <defs>
+      <filter id="glow-sm">
+        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-lg">
+        <feGaussianBlur stdDeviation="5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Outer left faint -->
+    <path d="M 40 0 C 80 220, 280 340, 400 700" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1" stroke-linecap="round"/>
+    <!-- Outer right faint -->
+    <path d="M 760 0 C 720 220, 520 340, 400 700" stroke="oklch(68% .16 277 / 0.12)" stroke-width="1" stroke-linecap="round"/>
+    <!-- Inner left — glowing -->
+    <path d="M 200 0 C 210 170, 370 270, 400 700" stroke="oklch(68% .16 277 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
+    <!-- Inner right — glowing -->
+    <path d="M 600 0 C 590 170, 430 270, 400 700" stroke="oklch(68% .16 277 / 0.35)" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-sm)"/>
+    <!-- Center spine — brightest -->
+    <path d="M 400 0 L 400 700" stroke="oklch(72% .18 277 / 0.22)" stroke-width="1" stroke-linecap="round" filter="url(#glow-lg)"/>
+    <!-- Convergence dot at center -->
+    <circle cx="400" cy="340" r="3" fill="oklch(72% .18 277 / 0.5)" filter="url(#glow-lg)"/>
+    <circle cx="400" cy="340" r="1.2" fill="oklch(88% .10 277 / 0.9)"/>
   </svg>
 
   <div class="hero-content">
@@ -753,6 +778,38 @@
     </div>
   </div>
 </section>
+
+<!-- ── Section divider: About → Services ── -->
+<div class="section-divider" aria-hidden="true">
+  <svg class="divider-svg" viewBox="0 0 1200 90" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <defs>
+      <filter id="div-glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Main horizontal line -->
+    <line x1="0" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 277 / 0.15)" stroke-width="1"/>
+    <!-- Bright center segment -->
+    <line x1="480" y1="45" x2="720" y2="45" stroke="oklch(72% .18 277 / 0.55)" stroke-width="1.5" filter="url(#div-glow)"/>
+    <!-- Center diamond -->
+    <polygon points="600,36 608,45 600,54 592,45" fill="none" stroke="oklch(72% .18 277 / 0.7)" stroke-width="1.2" filter="url(#div-glow)"/>
+    <polygon points="600,40 604,45 600,50 596,45" fill="oklch(72% .18 277 / 0.5)"/>
+    <!-- Left scatter dots -->
+    <circle cx="360" cy="45" r="2" fill="oklch(68% .16 277 / 0.35)"/>
+    <circle cx="300" cy="45" r="1.5" fill="oklch(68% .16 277 / 0.22)"/>
+    <circle cx="250" cy="45" r="1" fill="oklch(68% .16 277 / 0.15)"/>
+    <circle cx="210" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.10)"/>
+    <!-- Right scatter dots -->
+    <circle cx="840" cy="45" r="2" fill="oklch(68% .16 277 / 0.35)"/>
+    <circle cx="900" cy="45" r="1.5" fill="oklch(68% .16 277 / 0.22)"/>
+    <circle cx="950" cy="45" r="1" fill="oklch(68% .16 277 / 0.15)"/>
+    <circle cx="990" cy="45" r="0.8" fill="oklch(68% .16 277 / 0.10)"/>
+    <!-- Small tick marks -->
+    <line x1="430" y1="39" x2="430" y2="51" stroke="oklch(68% .16 277 / 0.30)" stroke-width="1"/>
+    <line x1="770" y1="39" x2="770" y2="51" stroke="oklch(68% .16 277 / 0.30)" stroke-width="1"/>
+  </svg>
+</div>
 
 <section id="services">
   <div class="container">
