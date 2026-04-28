@@ -360,11 +360,19 @@ function subscribeProgram() {
 // ── CLIENT SWITCH (coach only) ─────────────────────────
 async function switchClient(id) {
   if (!id) id = document.getElementById('client-select').value;
-  activeClient = clientsData.find(c => c.id === id) || null;
-  if (!activeClient) return;
+  const next = clientsData.find(c => c.id === id) || null;
+  if (!next) return;
+
+  // ── Fade out ──
+  const pages = document.querySelectorAll('.workout-page, .progress-page, .log-page');
+  pages.forEach(p => p.classList.add('switching'));
+  await new Promise(r => setTimeout(r, 180));
+
+  // ── Switch data ──
+  activeClient = next;
+  _sessionLogged = false; updateFinishBtn();
   document.getElementById('client-level').textContent = activeClient.level || '—';
   if (_programUnsub) _programUnsub();
-  // subscribeProgram will trigger renderDayTabs + renderExercises on first snapshot
   subscribeProgram();
   await hydrateExerciseLoadsForActiveDay();
   renderExercises();
@@ -373,6 +381,9 @@ async function switchClient(id) {
   if (document.getElementById('log-page')?.classList.contains('active')) {
     renderWorkoutLog();
   }
+
+  // ── Fade in ──
+  pages.forEach(p => p.classList.remove('switching'));
 }
 
 // ── EDIT CLIENT INFO (coach only) ─────────────────────
@@ -1282,11 +1293,19 @@ async function loadStrengthHistory() {
     const dayDocs = histSnap.docs
       .filter(d => d.data().day === activeDay)
       .slice(0, 8);
-    for (const sessionDoc of dayDocs) {
-      const date = sessionDoc.data().date?.toDate?.() || new Date();
-      const exSnap = await getDocs(
-        collection(db, 'clients', activeClient.id, 'workoutHistory', sessionDoc.id, 'exercises')
-      );
+
+    // ── Parallel reads (was sequential — up to 8x faster) ──
+    const results = await Promise.all(
+      dayDocs.map(async sessionDoc => {
+        const date = sessionDoc.data().date?.toDate?.() || new Date();
+        const exSnap = await getDocs(
+          collection(db, 'clients', activeClient.id, 'workoutHistory', sessionDoc.id, 'exercises')
+        );
+        return { date, exSnap };
+      })
+    );
+
+    results.forEach(({ date, exSnap }) => {
       exSnap.forEach(d => {
         const { exerciseKey, loadKg } = d.data();
         const kg = parseFloat(loadKg);
@@ -1294,7 +1313,8 @@ async function loadStrengthHistory() {
         if (!strengthHistory[exerciseKey]) strengthHistory[exerciseKey] = [];
         strengthHistory[exerciseKey].push({ date, kg });
       });
-    }
+    });
+
     // Sort each array newest → oldest
     Object.keys(strengthHistory).forEach(k => {
       strengthHistory[k].sort((a, b) => b.date - a.date);
@@ -3021,6 +3041,10 @@ h1 span{color:#1e90ff;}
 .progress-page{display:none;}.progress-page.active{display:block;}
 .log-page{display:none;}.log-page.active{display:block;}
 .workout-page.hidden{display:none;}
+
+/* CLIENT SWITCH TRANSITION */
+.app-content{transition:opacity 0.18s ease,transform 0.18s ease;}
+.app-content.switching{opacity:0;transform:translateY(6px);pointer-events:none;}
 /* WORKOUT LOG */
 .wl-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:1rem 1.25rem;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
 .wl-card-header{display:flex;justify-content:space-between;align-items:center;}
