@@ -678,9 +678,30 @@ async function finishWorkout() {
       });
     }
 
+    // Calculate total volume (tonnage = sets × reps × kg per exercise)
+    function parseSetsReps(str) {
+      if (!str) return { sets: 1, reps: 1 };
+      const m = str.match(/(\d+)\s*[x×]\s*(\d+)/i);
+      if (m) return { sets: parseInt(m[1]), reps: parseInt(m[2]) };
+      const single = str.match(/(\d+)/);
+      return { sets: parseInt(single?.[1] || 1), reps: 1 };
+    }
+    let totalVolume = 0;
+    if (day) {
+      day.phases.forEach((phase, pi) => {
+        phase.exercises.forEach((ex, ei) => {
+          const exerciseKey = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
+          const loadKg = parseFloat(exerciseLoads[exerciseKey]);
+          if (!Number.isFinite(loadKg) || loadKg <= 0) return;
+          const { sets, reps } = parseSetsReps(ex.setsReps);
+          totalVolume += sets * reps * loadKg;
+        });
+      });
+    }
+
     const sessionRef = await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), {
       date: serverTimestamp(), day: activeDay, done: doneN, total,
-      volume: 0, volumeByMuscle, totalVolume: 0
+      volumeByMuscle, totalVolume: Math.round(totalVolume)
     });
 
     if (day) {
@@ -691,8 +712,9 @@ async function finishWorkout() {
           const exerciseKey = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
           const loadKg = parseFloat(exerciseLoads[exerciseKey]);
           if (!Number.isFinite(loadKg) || loadKg <= 0) return;
+          const { sets, reps } = parseSetsReps(ex.setsReps);
           const exerciseRef = doc(db, 'clients', activeClient.id, 'workoutHistory', sessionRef.id, 'exercises', exerciseKey);
-          batch.set(exerciseRef, { exerciseKey, loadKg, exerciseName: ex.name || '', day: activeDay });
+          batch.set(exerciseRef, { exerciseKey, loadKg, exerciseName: ex.name || '', day: activeDay, sets, reps, tonnage: Math.round(sets * reps * loadKg) });
           writeCount++;
         });
       });
@@ -1612,8 +1634,17 @@ async function renderStats() {
   if (!activeClient) return;
   const hist = await getHistory();
   document.getElementById('sessions').textContent   = hist.length;
-  document.getElementById('total-vol').textContent  = '0';
   document.getElementById('streak-num').textContent = calcStreak(hist);
+  // Sum totalVolume across all sessions
+  const totalVol = hist.reduce((sum, s) => sum + (s.totalVolume || s.volume || 0), 0);
+  const volEl = document.getElementById('total-vol');
+  if (volEl) {
+    if (totalVol >= 1000) {
+      volEl.textContent = (totalVol / 1000).toFixed(1) + 't';
+    } else {
+      volEl.textContent = totalVol > 0 ? totalVol.toLocaleString() : '0';
+    }
+  }
 }
 
 async function resetSessions() {
