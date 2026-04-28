@@ -3626,30 +3626,26 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- Slide 2 -->
   <div class="slide" id="slide-2">
-    <!-- Background: circuit/node decoration -->
-    <div class="slide-bg">
-      <div class="slide-bg-glow" style="width:400px;height:400px;top:10%;left:50%;transform:translateX(-50%);background:oklch(51% .23 295/0.20);"></div>
-      <div class="slide-bg-glow" style="width:220px;height:220px;bottom:15%;left:50%;transform:translateX(-50%);background:oklch(51% .23 295/0.12);"></div>
-      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
-        <!-- Vertical rails -->
-        <line x1="80"  y1="0" x2="80"  y2="800" stroke="oklch(68% .16 295/0.12)" stroke-width="1"/>
-        <line x1="320" y1="0" x2="320" y2="800" stroke="oklch(68% .16 295/0.12)" stroke-width="1"/>
-        <!-- Horizontal connector -->
-        <line x1="80" y1="300" x2="320" y2="300" stroke="oklch(68% .16 295/0.18)" stroke-width="1"/>
-        <line x1="80" y1="500" x2="320" y2="500" stroke="oklch(68% .16 295/0.18)" stroke-width="1"/>
-        <!-- Nodes -->
-        <circle cx="80"  cy="300" r="5" fill="none" stroke="oklch(68% .16 295/0.45)" stroke-width="1.2"/>
-        <circle cx="80"  cy="300" r="2" fill="oklch(72% .18 295/0.7)"/>
-        <circle cx="320" cy="300" r="5" fill="none" stroke="oklch(68% .16 295/0.45)" stroke-width="1.2"/>
-        <circle cx="320" cy="300" r="2" fill="oklch(72% .18 295/0.7)"/>
-        <circle cx="80"  cy="500" r="5" fill="none" stroke="oklch(68% .16 295/0.45)" stroke-width="1.2"/>
-        <circle cx="80"  cy="500" r="2" fill="oklch(72% .18 295/0.7)"/>
-        <circle cx="320" cy="500" r="5" fill="none" stroke="oklch(68% .16 295/0.45)" stroke-width="1.2"/>
-        <circle cx="320" cy="500" r="2" fill="oklch(72% .18 295/0.7)"/>
-        <!-- Center large node -->
-        <circle cx="200" cy="400" r="16" fill="none" stroke="oklch(68% .16 295/0.30)" stroke-width="1.2"/>
-        <circle cx="200" cy="400" r="8"  fill="none" stroke="oklch(68% .16 295/0.20)" stroke-width="1"/>
-        <circle cx="200" cy="400" r="3"  fill="oklch(72% .18 295/0.8)"/>
+    <!-- Photo background -->
+    <img class="slide-video" src="/images/z7771642425935_3e0da1fbd1c44b46e46fb67b0cb4605b.jpg" style="object-position:center 30%;" alt="">
+    <!-- Multi-layer mask: dark base + violet tint + bottom fade for text -->
+    <div style="position:absolute;inset:0;z-index:1;background:
+      linear-gradient(to bottom,
+        rgba(8,6,18,0.55) 0%,
+        rgba(8,6,18,0.30) 35%,
+        rgba(8,6,18,0.70) 70%,
+        rgba(8,6,18,0.95) 100%),
+      linear-gradient(160deg, oklch(30% .18 295/0.25) 0%, transparent 55%);
+    "></div>
+    <!-- Subtle circuit overlay on top -->
+    <div class="slide-bg" style="z-index:2;">
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.25;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
+        <line x1="80"  y1="0" x2="80"  y2="800" stroke="oklch(68% .16 295/0.30)" stroke-width="1"/>
+        <line x1="320" y1="0" x2="320" y2="800" stroke="oklch(68% .16 295/0.30)" stroke-width="1"/>
+        <circle cx="80"  cy="300" r="4" fill="none" stroke="oklch(68% .16 295/0.60)" stroke-width="1.2"/>
+        <circle cx="80"  cy="300" r="1.5" fill="oklch(72% .18 295/0.8)"/>
+        <circle cx="320" cy="300" r="4" fill="none" stroke="oklch(68% .16 295/0.60)" stroke-width="1.2"/>
+        <circle cx="320" cy="300" r="1.5" fill="oklch(72% .18 295/0.8)"/>
       </svg>
     </div>
     <!-- Content -->
