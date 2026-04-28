@@ -650,9 +650,10 @@ function dismissCheckpoint() {
 
 // ── WORKOUT HISTORY (Firestore) ────────────────────────
 let _workoutLogging = false;
+let _sessionLogged = false; // prevent re-logging same session
 
 async function finishWorkout() {
-  if (!activeClient || _workoutLogging) return; // prevent double-logging
+  if (!activeClient || _workoutLogging || _sessionLogged) return;
   _workoutLogging = true;
   try {
     const prog  = getProgram();
@@ -722,11 +723,29 @@ async function finishWorkout() {
     }
 
     exerciseState[activeClient.id] = {};
+    _sessionLogged = true;
+    updateFinishBtn();
     renderExercises();
     await renderStats(); // updates sessions + streak
     alert('Workout logged! 💪');
   } finally {
     _workoutLogging = false;
+  }
+}
+
+function updateFinishBtn() {
+  const btn = document.querySelector('.finish-btn');
+  if (!btn) return;
+  if (_sessionLogged) {
+    btn.textContent = 'Đã ghi buổi tập ✓';
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'default';
+  } else {
+    btn.textContent = 'Complete Workout ✓';
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
   }
 }
 
@@ -1321,10 +1340,12 @@ function getStrengthSparkline(exerciseKey) {
 
 async function setDay(d) {
   activeDay = d;
+  _sessionLogged = false; // reset when switching day
   renderDayTabs();
   await hydrateExerciseLoadsForActiveDay();
   await loadStrengthHistory();
   renderExercises();
+  updateFinishBtn();
 }
 
 function renderExercises() {
