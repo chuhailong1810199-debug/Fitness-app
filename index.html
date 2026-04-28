@@ -587,6 +587,15 @@ async function getBL() {
   } catch(e) { return null; }
 }
 
+function toggleResetOptions() {
+  const opts = document.getElementById('reset-options');
+  if (!opts) return;
+  const isOpen = opts.classList.contains('open');
+  opts.classList.toggle('open', !isOpen);
+  const btn = document.querySelector('#reset-collapsed .reset-btn');
+  if (btn) btn.textContent = isOpen ? 'Reset ↓' : 'Đóng ✕';
+}
+
 async function resetAssessment() {
   if (!activeClient) return;
   if (!confirm('Reset toàn bộ số đo (baseline + tất cả checkpoint)?\nHành động này không thể hoàn tác.')) return;
@@ -3117,10 +3126,19 @@ h1 span{color:#1e90ff;}
 .baseline-skip:hover{color:rgba(255,255,255,0.60);}
 
 /* RESET */
-.reset-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:8px 12px;margin-bottom:1rem;}
+.reset-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-bottom:6px;cursor:pointer;transition:background .15s;}
+.reset-bar:hover{background:rgba(255,255,255,0.07);}
 .reset-bar-label{font-size:11px;color:rgba(255,255,255,0.22);text-transform:uppercase;letter-spacing:.5px;}
-.reset-btn{padding:5px 12px;border-radius:4px;border:1px solid #4e1a1a;background:transparent;color:#ff4444;font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
-.reset-btn:hover{background:#2e1a1a;}
+.reset-btn{padding:5px 12px;border-radius:4px;border:1px solid rgba(255,68,68,0.25);background:transparent;color:rgba(255,68,68,0.6);font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
+.reset-bar:hover .reset-btn{border-color:#4e1a1a;color:#ff4444;}
+.reset-options{display:none;flex-direction:column;gap:6px;margin-bottom:1rem;overflow:hidden;}
+.reset-options.open{display:flex;animation:slideDown .2s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.reset-option-btn{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,68,68,0.15);border-radius:8px;cursor:pointer;text-align:left;transition:all .15s;}
+.reset-option-btn:hover{background:rgba(255,68,68,0.08);border-color:rgba(255,68,68,0.35);}
+.reset-option-icon{font-size:20px;flex-shrink:0;}
+.reset-option-title{font-size:13px;font-weight:700;color:#ff6666;font-family:'Figtree',sans-serif;}
+.reset-option-sub{font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;}
 
 /* NO BASELINE */
 .no-baseline-prompt{background:rgba(255,255,255,0.07);border:1px dashed rgba(255,255,255,0.16);border-radius:10px;padding:1.5rem;text-align:center;margin-bottom:1.5rem;}
@@ -3800,13 +3818,19 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <button class="cp-dismiss" onclick="dismissCheckpoint()">Nhắc sau</button>
       </div>
     </div>
-    <div class="reset-bar">
-      <span class="reset-bar-label">Assessment data</span>
-      <button class="reset-btn" onclick="resetAssessment()">Reset tất cả số đo</button>
+    <div class="reset-bar" id="reset-collapsed" onclick="toggleResetOptions()">
+      <span class="reset-bar-label">Reset data</span>
+      <button class="reset-btn" onclick="event.stopPropagation();toggleResetOptions()">Reset ↓</button>
     </div>
-    <div class="reset-bar">
-      <span class="reset-bar-label">Workout history</span>
-      <button class="reset-btn" onclick="resetSessions()">Reset sessions về 0</button>
+    <div class="reset-options" id="reset-options">
+      <button class="reset-option-btn" onclick="resetAssessment()">
+        <span class="reset-option-icon">📊</span>
+        <div><div class="reset-option-title">Assessment data</div><div class="reset-option-sub">Xóa toàn bộ baseline & số đo</div></div>
+      </button>
+      <button class="reset-option-btn" onclick="resetSessions()">
+        <span class="reset-option-icon">🏋️</span>
+        <div><div class="reset-option-title">Workout history</div><div class="reset-option-sub">Reset sessions về 0</div></div>
+      </button>
     </div>
     <div id="progress-banner-wrap"></div>
     <div id="delta-cards-wrap"></div>
