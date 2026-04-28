@@ -529,11 +529,13 @@
       border: 1px solid oklch(68% .16 295 / 0.18);
       border-radius: 16px; padding: 24px;
       box-shadow: 0 0 40px oklch(51% .23 295 / 0.08), 0 8px 32px rgba(0,0,0,0.40);
-      position: relative; overflow: hidden;
+      position: relative; overflow: visible;
     }
     .mock-card::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      border-radius: 16px 16px 0 0;
       background: linear-gradient(90deg, transparent, oklch(72% .18 295 / 0.30), transparent);
+      z-index: 1;
     }
     .mock-label {
       font-size: 9px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
@@ -721,12 +723,26 @@
       .feat-panel { gap: 36px; }
       .feat-panel.active { grid-template-columns: 1fr; }
       .feat-panels { margin-top: 36px; }
-      .feat-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; justify-content: center; }
+      .feat-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; }
       .feat-tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
       .feat-info { text-align: center; }
       .feat-num { text-align: center; }
       .feat-desc { max-width: 300px; margin: 0 auto; font-size: 14px; }
       .feat-mock { max-width: 420px; margin: 0 auto; width: 100%; }
+    }
+    @media (max-width: 480px) {
+      /* Smaller nodes so all 3 fit on one screen */
+      .mock-node { min-width: 82px; padding: 10px 10px; border-radius: 10px; }
+      .mock-node-name { font-size: 10px; }
+      .mock-node-sets { font-size: 9px; }
+      .mock-node-kg, .mock-node-kg-input { font-size: 10px; }
+      .mock-arrow { font-size: 11px; padding-top: 14px; }
+      .mock-flow { gap: 6px; }
+      .mock-card { padding: 18px 16px; border-radius: 14px; }
+      /* Tabs fill width evenly */
+      .feat-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+      .feat-tab { justify-content: center; padding: 10px 8px; }
+      .feat-tab-num { display: none; }
     }
 
     /* ── Hero SVG flow animation ───────────────────────── */
