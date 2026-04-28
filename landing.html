@@ -340,21 +340,48 @@
 
     /* ── Services ──────────────────────────────────────── */
     #services { background: var(--bg2); }
-    .services-header { margin-bottom: 52px; }
-    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .services-header { margin-bottom: 40px; }
+    /* slider shell */
+    .card-slider-wrap { position: relative; }
+    .card-slider {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      cursor: grab;
+      user-select: none;
+    }
+    .card-slider:active { cursor: grabbing; }
+    .card-slider::-webkit-scrollbar { display: none; }
+    /* dots */
+    .slider-dots {
+      display: flex; gap: 7px; justify-content: center; margin-top: 24px;
+    }
+    .slider-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border-md);
+      transition: background 0.2s, width 0.25s;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .slider-dot.active { background: var(--accent-lg); width: 18px; border-radius: 3px; }
+    /* service cards */
     .service-card {
+      flex: 0 0 min(320px, 80vw);
+      scroll-snap-align: start;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
-      padding: 32px 28px;
+      padding: 28px 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       text-align: left;
       transition: border-color 0.22s var(--ease), transform 0.22s var(--ease);
     }
-    .service-card:hover { border-color: var(--border-md); transform: translateY(-3px); }
-    .service-title { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
+    .service-card:hover { border-color: var(--border-md); transform: translateY(-2px); }
+    .service-title { font-size: 17px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
     .service-desc { color: var(--muted2); font-size: 14px; line-height: 1.8; flex: 1; }
     .service-list { list-style: none; display: grid; gap: 10px; }
     .service-list li {
@@ -362,6 +389,10 @@
       display: flex; gap: 8px; align-items: flex-start;
     }
     .service-list li::before { content: "✓"; color: var(--accent-lg); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    /* on desktop: show 3 at once */
+    @media (min-width: 960px) {
+      .service-card { flex: 0 0 calc((100% - 32px) / 3); }
+    }
 
     /* ── Philosophy ──────────────────────────────────── */
     #philosophy { position: relative; overflow: hidden; background: oklch(7% 0 0); }
@@ -379,8 +410,10 @@
       z-index: 1;
     }
     .philosophy-content { position: relative; z-index: 2; }
-    .pillar-grid { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .pillar-slider-wrap { margin-top: 40px; }
     .pillar {
+      flex: 0 0 min(280px, 78vw);
+      scroll-snap-align: start;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
@@ -393,6 +426,9 @@
       text-transform: uppercase; letter-spacing: 0.8px; text-align: center;
     }
     .pillar p { color: var(--muted2); font-size: 14px; line-height: 1.8; text-align: center; }
+    @media (min-width: 960px) {
+      .pillar { flex: 0 0 calc((100% - 32px) / 3); }
+    }
 
     /* ── App section ──────────────────────────────────── */
     #app { background: var(--bg); }
@@ -701,37 +737,40 @@
       <p class="section-eyebrow">Coaching Services</p>
       <h2 class="section-title">Choose Your Path</h2>
     </div>
-    <div class="services-grid">
-      <article class="service-card reveal">
-        <h3 class="service-title">Hybrid Performance</h3>
-        <p class="service-desc">Built for athletes balancing strength with race conditioning. Weekly progression is tuned around your recovery and schedule.</p>
-        <ul class="service-list">
-          <li>Periodized lifting + conditioning blocks</li>
-          <li>HYROX / running prep templates</li>
-          <li>Pacing, movement, and strategy feedback</li>
-        </ul>
-        <a class="btn-hero primary" href="#cta" data-service-select="hybrid-performance">Apply for Coaching</a>
-      </article>
-      <article class="service-card reveal reveal-delay-1">
-        <h3 class="service-title">Body Recomposition</h3>
-        <p class="service-desc">For busy professionals who want visible physique change while preserving performance and energy.</p>
-        <ul class="service-list">
-          <li>Training split based on available days</li>
-          <li>Simple nutrition targets and adjustments</li>
-          <li>Weekly progress review with action items</li>
-        </ul>
-        <a class="btn-hero primary" href="#cta" data-service-select="body-recomp">Start Recomp Plan</a>
-      </article>
-      <article class="service-card reveal reveal-delay-2">
-        <h3 class="service-title">Lifestyle Accountability</h3>
-        <p class="service-desc">A coaching layer for consistency: habits, routines, and adherence support that turns plans into results.</p>
-        <ul class="service-list">
-          <li>Daily habit scoring and reminders</li>
-          <li>Travel or work-week plan adjustments</li>
-          <li>Coach chat support via Pulse</li>
-        </ul>
-        <a class="btn-hero primary" href="#cta" data-service-select="accountability">Join Accountability</a>
-      </article>
+    <div class="card-slider-wrap">
+      <div class="card-slider" id="services-slider">
+        <article class="service-card">
+          <h3 class="service-title">Hybrid Performance</h3>
+          <p class="service-desc">Built for athletes balancing strength with race conditioning. Weekly progression is tuned around your recovery and schedule.</p>
+          <ul class="service-list">
+            <li>Periodized lifting + conditioning blocks</li>
+            <li>HYROX / running prep templates</li>
+            <li>Pacing, movement, and strategy feedback</li>
+          </ul>
+          <a class="btn-hero primary" href="#cta" data-service-select="hybrid-performance">Apply for Coaching</a>
+        </article>
+        <article class="service-card">
+          <h3 class="service-title">Body Recomposition</h3>
+          <p class="service-desc">For busy professionals who want visible physique change while preserving performance and energy.</p>
+          <ul class="service-list">
+            <li>Training split based on available days</li>
+            <li>Simple nutrition targets and adjustments</li>
+            <li>Weekly progress review with action items</li>
+          </ul>
+          <a class="btn-hero primary" href="#cta" data-service-select="body-recomp">Start Recomp Plan</a>
+        </article>
+        <article class="service-card">
+          <h3 class="service-title">Lifestyle Accountability</h3>
+          <p class="service-desc">A coaching layer for consistency: habits, routines, and adherence support that turns plans into results.</p>
+          <ul class="service-list">
+            <li>Daily habit scoring and reminders</li>
+            <li>Travel or work-week plan adjustments</li>
+            <li>Coach chat support via Pulse</li>
+          </ul>
+          <a class="btn-hero primary" href="#cta" data-service-select="accountability">Join Accountability</a>
+        </article>
+      </div>
+      <div class="slider-dots" id="services-dots"></div>
     </div>
   </div>
 </section>
@@ -740,19 +779,22 @@
   <div class="container philosophy-content">
     <p class="section-eyebrow">Training Philosophy</p>
     <h2 class="section-title">Strong Engine. Strong Body. Strong Mind.</h2>
-    <div class="pillar-grid">
-      <article class="pillar reveal">
-        <h3>Build Capacity</h3>
-        <p>Every phase improves your output ceiling without losing control of recovery. Volume and intensity progress with intent.</p>
-      </article>
-      <article class="pillar reveal reveal-delay-1">
-        <h3>Train With Precision</h3>
-        <p>Execution quality beats random intensity. Form cues, pacing targets, and movement standards are tracked each week.</p>
-      </article>
-      <article class="pillar reveal reveal-delay-2">
-        <h3>Win Consistency</h3>
-        <p>Programs are designed for real life so you can sustain momentum through work, travel, and stress-heavy weeks.</p>
-      </article>
+    <div class="pillar-slider-wrap">
+      <div class="card-slider" id="pillar-slider">
+        <article class="pillar">
+          <h3>Build Capacity</h3>
+          <p>Every phase improves your output ceiling without losing control of recovery. Volume and intensity progress with intent.</p>
+        </article>
+        <article class="pillar">
+          <h3>Train With Precision</h3>
+          <p>Execution quality beats random intensity. Form cues, pacing targets, and movement standards are tracked each week.</p>
+        </article>
+        <article class="pillar">
+          <h3>Win Consistency</h3>
+          <p>Programs are designed for real life so you can sustain momentum through work, travel, and stress-heavy weeks.</p>
+        </article>
+      </div>
+      <div class="slider-dots" id="pillar-dots"></div>
     </div>
   </div>
 </section>
@@ -1073,6 +1115,71 @@
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     els.forEach(function (el) { io.observe(el); });
+  })();
+
+  // ── Drag-scroll sliders with dot indicators ─────────
+  (function () {
+    function initSlider(sliderId, dotsId) {
+      const slider = document.getElementById(sliderId);
+      const dotsEl = document.getElementById(dotsId);
+      if (!slider || !dotsEl) return;
+
+      const items = slider.children;
+      const count = items.length;
+
+      // Build dots
+      dotsEl.innerHTML = '';
+      const dots = Array.from({ length: count }, function (_, i) {
+        const d = document.createElement('button');
+        d.className = 'slider-dot' + (i === 0 ? ' active' : '');
+        d.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+        d.addEventListener('click', function () {
+          items[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        });
+        dotsEl.appendChild(d);
+        return d;
+      });
+
+      // Update active dot on scroll
+      let ticking = false;
+      slider.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          const sliderLeft = slider.getBoundingClientRect().left;
+          let closest = 0, minDist = Infinity;
+          Array.from(items).forEach(function (item, i) {
+            const dist = Math.abs(item.getBoundingClientRect().left - sliderLeft);
+            if (dist < minDist) { minDist = dist; closest = i; }
+          });
+          dots.forEach(function (d, i) { d.classList.toggle('active', i === closest); });
+          ticking = false;
+        });
+      }, { passive: true });
+
+      // Drag to scroll (mouse)
+      let isDown = false, startX, scrollLeft;
+      slider.addEventListener('mousedown', function (e) {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+        slider.style.scrollSnapType = 'none';
+      });
+      document.addEventListener('mouseup', function () {
+        if (!isDown) return;
+        isDown = false;
+        slider.style.scrollSnapType = 'x mandatory';
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        slider.scrollLeft = scrollLeft - (x - startX);
+      });
+    }
+
+    initSlider('services-slider', 'services-dots');
+    initSlider('pillar-slider', 'pillar-dots');
   })();
 </script>
 
