@@ -622,12 +622,16 @@
     }
 
     /* Responsive */
-    @media (max-width: 768px) {
+    @media (max-width: 860px) {
+      .feat-panel { gap: 36px; }
       .feat-panel.active { grid-template-columns: 1fr; }
       .feat-panels { margin-top: 36px; }
-      .feat-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; }
-      .feat-tab { padding: 10px 16px; font-size: 12px; white-space: nowrap; }
-      .feat-desc { max-width: 100%; }
+      .feat-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; justify-content: center; }
+      .feat-tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+      .feat-info { text-align: center; }
+      .feat-num { text-align: center; }
+      .feat-desc { max-width: 100%; margin: 0 auto; }
+      .feat-mock { max-width: 480px; margin: 0 auto; width: 100%; }
     }
 
     /* ── Hero SVG flow animation ───────────────────────── */
@@ -1139,7 +1143,6 @@
 <section id="philosophy">
   <div class="container philosophy-content">
     <p class="section-eyebrow">Tính năng nổi bật</p>
-    <h2 class="section-title">Mọi thứ bạn cần để tập đúng.</h2>
 
     <!-- Tab switcher -->
     <div class="feat-tabs">
