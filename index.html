@@ -81,6 +81,7 @@ let _pickerPhaseIndex = null;
 let _lastPickedExercise = null;
 let _dashVolumeChart = null;
 let exerciseLoads = {};
+let strengthHistory = {}; // exerciseKey → [{date, kg}] sorted newest first
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MUSCLE_WEIGHTS = {P:1.0, S:0.5, T:0.333, Q:0.25};
@@ -299,6 +300,7 @@ async function loadApp() {
   updateDateDisplay();
   renderDayTabs();
   await hydrateExerciseLoadsForActiveDay();
+  await loadStrengthHistory();
   renderExercises();
   await renderStats();
   subscribeProgram();
@@ -1216,10 +1218,90 @@ async function hydrateExerciseLoadsForActiveDay() {
   } catch (_e) {}
 }
 
+// ── STRENGTH PROGRESSION ───────────────────────────────
+async function loadStrengthHistory() {
+  if (!activeClient) return;
+  strengthHistory = {};
+  try {
+    const histSnap = await getDocs(query(
+      collection(db, 'clients', activeClient.id, 'workoutHistory'),
+      orderBy('date', 'desc'),
+      limit(40)
+    ));
+    // Find sessions for this day (up to 8 most recent)
+    const dayDocs = histSnap.docs
+      .filter(d => d.data().day === activeDay)
+      .slice(0, 8);
+    for (const sessionDoc of dayDocs) {
+      const date = sessionDoc.data().date?.toDate?.() || new Date();
+      const exSnap = await getDocs(
+        collection(db, 'clients', activeClient.id, 'workoutHistory', sessionDoc.id, 'exercises')
+      );
+      exSnap.forEach(d => {
+        const { exerciseKey, loadKg } = d.data();
+        const kg = parseFloat(loadKg);
+        if (!exerciseKey || !Number.isFinite(kg) || kg <= 0) return;
+        if (!strengthHistory[exerciseKey]) strengthHistory[exerciseKey] = [];
+        strengthHistory[exerciseKey].push({ date, kg });
+      });
+    }
+    // Sort each array newest → oldest
+    Object.keys(strengthHistory).forEach(k => {
+      strengthHistory[k].sort((a, b) => b.date - a.date);
+    });
+  } catch (e) { console.warn('loadStrengthHistory:', e); }
+}
+
+function getStrengthBadge(exerciseKey) {
+  const hist = strengthHistory[exerciseKey];
+  if (!hist || hist.length === 0) return '';
+  const latest = hist[0].kg;
+  const prev   = hist.length > 1 ? hist[1].kg : null;
+  if (prev === null) {
+    return `<div class="str-badge str-new">📌 ${latest}kg</div>`;
+  }
+  const delta = +(latest - prev).toFixed(1);
+  if (delta > 0) return `<div class="str-badge str-up">↑ +${delta}kg</div>`;
+  if (delta < 0) return `<div class="str-badge str-down">↓ ${delta}kg</div>`;
+  return `<div class="str-badge str-same">→ ${latest}kg</div>`;
+}
+
+function getStrengthSparkline(exerciseKey) {
+  const hist = strengthHistory[exerciseKey];
+  if (!hist || hist.length < 2) return '';
+  const vals = [...hist].reverse().map(h => h.kg); // oldest → newest
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const W = 120, H = 36, pad = 4;
+  const pts = vals.map((v, i) => {
+    const x = pad + (i / (vals.length - 1)) * (W - pad * 2);
+    const y = H - pad - ((v - min) / range) * (H - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const latest = vals[vals.length - 1];
+  const prev   = vals[vals.length - 2];
+  const delta  = +(latest - prev).toFixed(1);
+  const col    = delta > 0 ? 'oklch(72% .20 145)' : delta < 0 ? 'oklch(65% .22 25)' : 'oklch(72% .16 295)';
+  return `<div class="str-sparkline-wrap">
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
+      <polyline points="${pts}" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      ${vals.map((v,i) => {
+        const x = pad + (i / (vals.length-1)) * (W - pad*2);
+        const y = H - pad - ((v - min) / range) * (H - pad*2);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i===vals.length-1?3:2}" fill="${i===vals.length-1?col:'rgba(255,255,255,0.3)'}"/>`;
+      }).join('')}
+    </svg>
+    <div class="str-spark-labels">
+      <span>${vals[0]}kg</span><span style="color:${col};font-weight:800;">${latest}kg ${delta>0?'↑ +'+delta:delta<0?'↓ '+delta:'→'}kg</span>
+    </div>
+  </div>`;
+}
+
 async function setDay(d) {
   activeDay = d;
   renderDayTabs();
   await hydrateExerciseLoadsForActiveDay();
+  await loadStrengthHistory();
   renderExercises();
 }
 
@@ -1251,6 +1333,7 @@ function renderExercises() {
           </div>
           <div class="node-name${done?' done':''}" onclick="openModal(${pi},${ei})">${ex.name}</div>
           <div class="node-sets">${ex.setsReps}${ex.tempo?' · '+ex.tempo:''}</div>
+          ${getStrengthBadge(key)}
           <div class="node-weight">
             <input class="node-weight-input" id="weight_${key}" type="number" min="0" step="0.5" placeholder="—" value="${getExerciseLoadValue(key)}" oninput="setExerciseLoad('${key}', this.value)">
             <span class="node-weight-unit">kg</span>
@@ -1452,11 +1535,33 @@ async function addDay() {
 function openModal(pi, ei) {
   const day = getProgram()[activeDay]; if (!day) return;
   const phase = day.phases[pi], ex = phase.exercises[ei];
+  const key = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
   document.getElementById('modal-name').textContent      = ex.name;
   document.getElementById('modal-phase').textContent     = phase.name;
   document.getElementById('modal-setsreps').textContent  = ex.setsReps;
   document.getElementById('modal-tempo').textContent     = ex.tempo || '—';
   document.getElementById('modal-cue').textContent       = ex.cue   || '—';
+  const sparkWrap = document.getElementById('modal-strength-history');
+  if (sparkWrap) {
+    const hist = strengthHistory[key];
+    if (hist && hist.length > 0) {
+      const spark = getStrengthSparkline(key);
+      const histRows = hist.slice(0,6).map(h => {
+        const d = h.date instanceof Date ? h.date : new Date(h.date);
+        const label = d.toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit'});
+        return `<div class="str-hist-row"><span class="str-hist-date">${label}</span><span class="str-hist-kg">${h.kg}kg</span></div>`;
+      }).join('');
+      sparkWrap.innerHTML = `<div class="str-modal-section">
+        <div class="str-modal-title">STRENGTH PROGRESSION</div>
+        ${spark}
+        <div class="str-hist-list">${histRows}</div>
+      </div>`;
+      sparkWrap.style.display = 'block';
+    } else {
+      sparkWrap.innerHTML = '';
+      sparkWrap.style.display = 'none';
+    }
+  }
   document.getElementById('modal').classList.add('open');
 }
 function closeModal(id) {
@@ -2843,6 +2948,22 @@ h1 span{color:#1e90ff;}
 .node-name:hover{color:oklch(68% .16 295);}
 .node-name.done{color:rgba(255,255,255,0.30);text-decoration:line-through;}
 .node-sets{font-size:11px;color:rgba(255,255,255,0.55);font-weight:600;line-height:1.3;}
+/* Strength progression badge */
+.str-badge{display:inline-flex;align-items:center;font-size:9.5px;font-weight:800;letter-spacing:.4px;padding:2px 6px;border-radius:4px;margin:3px 0 2px;width:fit-content;}
+.str-badge.str-up{background:oklch(72% .20 145 / 0.15);color:oklch(72% .20 145);border:1px solid oklch(72% .20 145 / 0.30);}
+.str-badge.str-down{background:oklch(65% .22 25 / 0.12);color:oklch(65% .22 25);border:1px solid oklch(65% .22 25 / 0.25);}
+.str-badge.str-same{background:oklch(72% .16 295 / 0.12);color:oklch(72% .16 295);border:1px solid oklch(72% .16 295 / 0.25);}
+.str-badge.str-new{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.12);}
+/* Strength modal section */
+.str-modal-section{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:12px 14px;}
+.str-modal-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.40);margin-bottom:10px;}
+.str-sparkline-wrap{margin-bottom:10px;}
+.str-spark-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.45);margin-top:4px;}
+.str-hist-list{display:flex;flex-direction:column;gap:4px;}
+.str-hist-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.str-hist-row:last-child{border-bottom:none;}
+.str-hist-date{font-size:12px;color:rgba(255,255,255,0.45);}
+.str-hist-kg{font-size:12px;font-weight:700;color:#fff;}
 .node-weight{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:4px;}
 .node-weight-input{width:48px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:#fff;font-size:11px;padding:3px 5px;font-family:'Figtree',sans-serif;text-align:center;}
 .node-weight-input:focus{outline:none;border-color:#1e90ff;}
@@ -3835,6 +3956,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <div><div class="modal-label">Tempo</div><div class="modal-value" id="modal-tempo"></div></div>
     </div>
     <div><div class="modal-label">Coaching Cue</div><div class="modal-value" id="modal-cue"></div></div>
+    <div id="modal-strength-history" style="display:none;margin-top:1rem;"></div>
     <button class="modal-close" onclick="closeModal('modal')">Close</button>
   </div>
 </div>
