@@ -621,6 +621,102 @@
       font-size: 10px; color: var(--muted); margin-top: 6px;
     }
 
+    /* ── Panel animations ────────────────────────────── */
+    /* Panel 01 — nodes slide in from right, staggered */
+    @keyframes nodeSlideIn {
+      from { opacity: 0; transform: translateX(22px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes arrowFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes progressGrow {
+      from { width: 0 !important; }
+      to   { /* let inline style win */ }
+    }
+    .feat-panel.anim#feat-0 .mock-node { opacity: 0; animation: nodeSlideIn 0.38s var(--ease) forwards; }
+    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(1) { animation-delay: 0.05s; }
+    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(3) { animation-delay: 0.20s; }
+    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(5) { animation-delay: 0.35s; }
+    .feat-panel.anim#feat-0 .mock-arrow { opacity: 0; animation: arrowFadeIn 0.3s ease forwards; }
+    .feat-panel.anim#feat-0 .mock-flow .mock-arrow:nth-child(2) { animation-delay: 0.12s; }
+    .feat-panel.anim#feat-0 .mock-flow .mock-arrow:nth-child(4) { animation-delay: 0.27s; }
+    .feat-panel.anim#feat-0 .mock-progress-fill {
+      animation: progressGrow 0.7s var(--ease-out) 0.5s both;
+    }
+
+    /* Panel 02 — chart line draws, stats slide up */
+    @keyframes drawLine {
+      from { stroke-dashoffset: 350; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes dotPop {
+      from { opacity: 0; transform: scale(0); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes statSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feat-panel.anim#feat-1 .mock-chart-wrap polyline {
+      stroke-dasharray: 350;
+      stroke-dashoffset: 350;
+      animation: drawLine 0.9s var(--ease-out) 0.1s forwards;
+    }
+    .feat-panel.anim#feat-1 .mock-chart-wrap path {
+      opacity: 0;
+      animation: arrowFadeIn 0.5s ease 0.7s forwards;
+    }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle {
+      opacity: 0;
+      transform-box: fill-box; transform-origin: center;
+      animation: dotPop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(1) { animation-delay: 0.15s; }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(2) { animation-delay: 0.32s; }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(3) { animation-delay: 0.49s; }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(4) { animation-delay: 0.66s; }
+    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(5) { animation-delay: 0.83s; }
+    .feat-panel.anim#feat-1 .mock-stat-item {
+      opacity: 0;
+      animation: statSlideUp 0.4s var(--ease) forwards;
+    }
+    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(1) { animation-delay: 0.85s; }
+    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(2) { animation-delay: 0.95s; }
+    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(3) { animation-delay: 1.05s; }
+
+    /* Panel 03 — rows slide up, sparkline draws */
+    @keyframes rowUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feat-panel.anim#feat-2 .mock-ex-row {
+      opacity: 0;
+      animation: rowUp 0.35s var(--ease) forwards;
+    }
+    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(1) { animation-delay: 0.05s; }
+    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(2) { animation-delay: 0.15s; }
+    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(3) { animation-delay: 0.25s; }
+    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(4) { animation-delay: 0.35s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap polyline {
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: drawLine 0.8s var(--ease-out) 0.5s forwards;
+    }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle {
+      opacity: 0;
+      transform-box: fill-box; transform-origin: center;
+      animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(1) { animation-delay: 0.55s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(2) { animation-delay: 0.64s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(3) { animation-delay: 0.73s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(4) { animation-delay: 0.82s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(5) { animation-delay: 0.91s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(6) { animation-delay: 1.00s; }
+    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(7) { animation-delay: 1.09s; }
+
     /* Responsive */
     @media (max-width: 860px) {
       .feat-panel { gap: 36px; }
@@ -630,8 +726,8 @@
       .feat-tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
       .feat-info { text-align: center; }
       .feat-num { text-align: center; }
-      .feat-desc { max-width: 100%; margin: 0 auto; }
-      .feat-mock { max-width: 480px; margin: 0 auto; width: 100%; }
+      .feat-desc { max-width: 300px; margin: 0 auto; font-size: 14px; }
+      .feat-mock { max-width: 420px; margin: 0 auto; width: 100%; }
     }
 
     /* ── Hero SVG flow animation ───────────────────────── */
@@ -1142,18 +1238,18 @@
 
 <section id="philosophy">
   <div class="container philosophy-content">
-    <p class="section-eyebrow">Tính năng nổi bật</p>
+    <p class="section-eyebrow">Key Features</p>
 
     <!-- Tab switcher -->
     <div class="feat-tabs">
       <button class="feat-tab active" onclick="switchFeat(0)">
-        <span class="feat-tab-num">01</span>Chương trình
+        <span class="feat-tab-num">01</span>Program
       </button>
       <button class="feat-tab" onclick="switchFeat(1)">
-        <span class="feat-tab-num">02</span>Tiến độ
+        <span class="feat-tab-num">02</span>Progress
       </button>
       <button class="feat-tab" onclick="switchFeat(2)">
-        <span class="feat-tab-num">03</span>Sức mạnh
+        <span class="feat-tab-num">03</span>Strength
       </button>
     </div>
 
@@ -1161,15 +1257,15 @@
     <div class="feat-panels">
 
       <!-- Panel 01: Exercise flow -->
-      <div class="feat-panel active" id="feat-0">
+      <div class="feat-panel active anim" id="feat-0">
         <div class="feat-info">
           <div class="feat-num">01</div>
-          <h3 class="feat-title">Chương trình cá nhân hóa</h3>
-          <p class="feat-desc">Mỗi buổi tập được thiết kế riêng cho bạn — bài tập, số set, tempo và cue huấn luyện viên. Xem toàn bộ workflow trong một lần vuốt.</p>
+          <h3 class="feat-title">Personalized Program</h3>
+          <p class="feat-desc">Every session is designed just for you — exercises, sets, tempo, and coach cues. See the full workout flow at a glance.</p>
         </div>
         <div class="feat-mock">
           <div class="mock-card">
-            <div class="mock-label">THỨ HAI — PUSH DAY</div>
+            <div class="mock-label">MONDAY — PUSH DAY</div>
             <div class="mock-flow">
               <div class="mock-node">
                 <div class="mock-node-top"><span class="mock-node-num">01</span><span class="mock-node-check">✓</span></div>
@@ -1193,7 +1289,7 @@
               </div>
             </div>
             <div class="mock-progress-bar"><div class="mock-progress-fill" style="width:33%"></div></div>
-            <div class="mock-progress-label">33% complete · 2 bài còn lại</div>
+            <div class="mock-progress-label">33% complete · 2 exercises left</div>
           </div>
         </div>
       </div>
@@ -1202,8 +1298,8 @@
       <div class="feat-panel" id="feat-1">
         <div class="feat-info">
           <div class="feat-num">02</div>
-          <h3 class="feat-title">Theo dõi tiến độ thực sự</h3>
-          <p class="feat-desc">Đo lường từ ngày đầu. Checkpoint mỗi 4 tuần so sánh cân nặng, body fat và muscle mass — visualize rõ ràng từng giai đoạn.</p>
+          <h3 class="feat-title">Real Progress Tracking</h3>
+          <p class="feat-desc">Measured from day one. 4-week checkpoints compare weight, body fat, and muscle mass — visualized clearly at every stage.</p>
         </div>
         <div class="feat-mock">
           <div class="mock-card">
@@ -1240,8 +1336,8 @@
       <div class="feat-panel" id="feat-2">
         <div class="feat-info">
           <div class="feat-num">03</div>
-          <h3 class="feat-title">Strength progression</h3>
-          <p class="feat-desc">Mỗi bài tập ghi lại kg theo từng buổi. So sánh tuần này vs tuần trước — biết ngay bạn đang tiến hay cần điều chỉnh.</p>
+          <h3 class="feat-title">Strength Progression</h3>
+          <p class="feat-desc">Every exercise logs kg session by session. Compare this week vs last — know instantly if you're progressing or need to adjust.</p>
         </div>
         <div class="feat-mock">
           <div class="mock-card">
@@ -1284,7 +1380,7 @@
     </div><!-- /feat-panels -->
 
     <div style="text-align:center;margin-top:52px;">
-      <a class="btn-hero primary" href="/index.html">Thử ngay →</a>
+      <a class="btn-hero primary" href="/index.html">Try Now →</a>
     </div>
   </div>
 </section>
@@ -1700,15 +1796,14 @@
     var panels = document.querySelectorAll('.feat-panel');
     tabs.forEach(function (t, i) { t.classList.toggle('active', i === index); });
     panels.forEach(function (p, i) {
-      var wasActive = p.classList.contains('active');
-      p.classList.toggle('active', i === index);
-      // Re-trigger animation when switching to a panel
-      if (i === index && !wasActive) {
-        p.style.animation = 'none';
-        p.offsetHeight; // reflow
-        p.style.animation = '';
-      }
+      // Remove both active + anim first
+      p.classList.remove('active', 'anim');
     });
+    var target = panels[index];
+    if (!target) return;
+    target.classList.add('active');
+    target.offsetHeight; // force reflow so animations restart
+    target.classList.add('anim');
   }
 </script>
 
