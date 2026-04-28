@@ -1243,52 +1243,76 @@ function renderExercises() {
     if (editMode) html += `<div class="phase-edit-bar"><button class="btn-delete-phase" onclick="deletePhase(${pi})">Delete Phase</button></div>`;
     html += `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span></div>
     ${phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${phase.note}</div></div></div>` : ''}`;
-    phase.exercises.forEach((ex, ei) => {
-      const safeExerciseNote = escHtml(ex.note || '');
-      const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
-      const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
-      // Hide completed exercises unless user toggled to show them
-      if (done && !showDoneExercises) { /* skip done exercises - shown in done-strip */ }
-      const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
-      vKeys.push(vKey);
-      const coachUrl  = getVideoUrl(vKey, 'coach');
-      const clientUrl = getVideoUrl(vKey, 'client');
-      html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}">
-        <div class="exercise-header">
-          <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
-          <div class="ex-number">${ei+1}</div>
-          <div class="exercise-name${done?' done':''}" onclick="${editMode?`toggleEditCard('${key}')`:`openModal(${pi},${ei})`}">${ex.name}</div>
-          <button class="info-btn" onclick="openModal(${pi},${ei})">i</button>
-        </div>
-        <div class="sets-row">
-          <span class="sets-text">${ex.setsReps}</span>
-          ${ex.tempo ? `<span class="tempo-text">@ ${ex.tempo}</span>` : ''}
-          <span class="badge">${ex.type||''}</span>
-          <div class="weight-load">
-            <input class="weight-input" id="weight_${key}" type="number" min="0" step="0.5" placeholder="kg" value="${getExerciseLoadValue(key)}" oninput="setExerciseLoad('${key}', this.value)">
-            <span class="weight-unit">kg</span>
+    if (!editMode) {
+      // ── Node-based horizontal flow (view / workout mode) ─────────────────
+      html += `<div class="exercise-flow">`;
+      phase.exercises.forEach((ex, ei) => {
+        const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
+        const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        vKeys.push(vKey);
+        if (ei > 0) html += `<div class="flow-arrow">→</div>`;
+        html += `<div class="exercise-node${done?' done-node':''}" id="card_${key}">
+          <div class="node-top">
+            <div class="node-num">${String(ei+1).padStart(2,'0')}</div>
+            <div class="node-check${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
           </div>
-        </div>
-        ${editMode ? `
-        <div class="edit-actions" id="edit_${key}">
-          <button class="action-btn btn-move" onclick="showMoveRow('${key}',${pi},${ei})">Move</button>
-          <button class="action-btn btn-delete" onclick="deleteExercise(${pi},${ei})">Delete</button>
-          <button class="action-btn btn-cancel" onclick="toggleEditCard('${key}')">Cancel</button>
-        </div>
-        <div class="move-row" id="move_${key}">
-          <select class="move-select" id="movesel_${key}">
-            ${day.phases.map((p2,p2i)=>`<option value="${p2i}"${p2i===pi?' selected':''}>${p2.name}</option>`).join('')}
-          </select>
-          <button class="move-confirm" onclick="confirmMove('${key}',${pi},${ei})">Move</button>
-        </div>` : ''}
-        ${userRole === 'coach'
-          ? `<div class="exercise-note-row">
-               <textarea class="exercise-note-input" id="note_${vKey}" placeholder="Coach note..." onblur="saveExerciseNote('${pi}','${ei}',this.value)">${safeExerciseNote}</textarea>
-             </div>`
-          : (ex.note ? `<div class="exercise-note-display">${safeExerciseNote}</div>` : '')
-        }
-      </div>`;
-    });
+          <div class="node-name${done?' done':''}" onclick="openModal(${pi},${ei})">${ex.name}</div>
+          <div class="node-sets">${ex.setsReps}${ex.tempo?' · '+ex.tempo:''}</div>
+          <div class="node-weight">
+            <input class="node-weight-input" id="weight_${key}" type="number" min="0" step="0.5" placeholder="—" value="${getExerciseLoadValue(key)}" oninput="setExerciseLoad('${key}', this.value)">
+            <span class="node-weight-unit">kg</span>
+            <button class="node-info" onclick="openModal(${pi},${ei})">i</button>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      // ── Vertical card layout (edit mode) ─────────────────────────────────
+      phase.exercises.forEach((ex, ei) => {
+        const safeExerciseNote = escHtml(ex.note || '');
+        const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
+        const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        vKeys.push(vKey);
+        const coachUrl  = getVideoUrl(vKey, 'coach');
+        const clientUrl = getVideoUrl(vKey, 'client');
+        html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}">
+          <div class="exercise-header">
+            <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
+            <div class="ex-number">${ei+1}</div>
+            <div class="exercise-name${done?' done':''}" onclick="toggleEditCard('${key}')">${ex.name}</div>
+            <button class="info-btn" onclick="openModal(${pi},${ei})">i</button>
+          </div>
+          <div class="sets-row">
+            <span class="sets-text">${ex.setsReps}</span>
+            ${ex.tempo ? `<span class="tempo-text">@ ${ex.tempo}</span>` : ''}
+            <span class="badge">${ex.type||''}</span>
+            <div class="weight-load">
+              <input class="weight-input" id="weight_${key}" type="number" min="0" step="0.5" placeholder="kg" value="${getExerciseLoadValue(key)}" oninput="setExerciseLoad('${key}', this.value)">
+              <span class="weight-unit">kg</span>
+            </div>
+          </div>
+          <div class="edit-actions" id="edit_${key}">
+            <button class="action-btn btn-move" onclick="showMoveRow('${key}',${pi},${ei})">Move</button>
+            <button class="action-btn btn-delete" onclick="deleteExercise(${pi},${ei})">Delete</button>
+            <button class="action-btn btn-cancel" onclick="toggleEditCard('${key}')">Cancel</button>
+          </div>
+          <div class="move-row" id="move_${key}">
+            <select class="move-select" id="movesel_${key}">
+              ${day.phases.map((p2,p2i)=>`<option value="${p2i}"${p2i===pi?' selected':''}>${p2.name}</option>`).join('')}
+            </select>
+            <button class="move-confirm" onclick="confirmMove('${key}',${pi},${ei})">Move</button>
+          </div>
+          ${userRole === 'coach'
+            ? `<div class="exercise-note-row">
+                 <textarea class="exercise-note-input" id="note_${vKey}" placeholder="Coach note..." onblur="saveExerciseNote('${pi}','${ei}',this.value)">${safeExerciseNote}</textarea>
+               </div>`
+            : (ex.note ? `<div class="exercise-note-display">${safeExerciseNote}</div>` : '')
+          }
+        </div>`;
+      });
+    }
     if (editMode) {
       html += `<button class="add-exercise-btn" onclick="toggleAddForm(${pi})">+ Add Exercise</button>
       <div class="add-form" id="add-form-${pi}">
@@ -1479,8 +1503,8 @@ function toggleExercise(key) {
   }
 }
 function updateProgress() {
-  const cards = document.querySelectorAll('.exercise-card');
-  const done  = document.querySelectorAll('.exercise-card.done-card').length;
+  const cards = document.querySelectorAll('.exercise-card, .exercise-node');
+  const done  = document.querySelectorAll('.exercise-card.done-card, .exercise-node.done-node').length;
   const total = cards.length, pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('progress').style.width        = pct + '%';
   document.getElementById('progress-label').textContent  = pct + '% complete';
@@ -2798,6 +2822,32 @@ h1 span{color:#1e90ff;}
 .exercise-name.done{color:rgba(255,255,255,0.35);text-decoration:line-through;}
 .info-btn{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,0.16);background:transparent;color:rgba(255,255,255,0.60);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .info-btn:hover{border-color:#1e90ff;color:#1e90ff;}
+/* ── Exercise node flow (horizontal) ── */
+.exercise-flow{display:flex;align-items:stretch;overflow-x:auto;padding:4px 2px 12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;margin-bottom:6px;gap:0;}
+.exercise-flow::-webkit-scrollbar{height:3px;}
+.exercise-flow::-webkit-scrollbar-track{background:transparent;}
+.exercise-flow::-webkit-scrollbar-thumb{background:oklch(1 0 0/0.15);border-radius:2px;}
+.flow-arrow{display:flex;align-items:center;justify-content:center;color:oklch(1 0 0/0.22);font-size:12px;flex-shrink:0;padding:0 5px;margin-top:-12px;}
+.exercise-node{flex-shrink:0;width:155px;min-height:110px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:10px;padding:10px 11px;scroll-snap-align:start;transition:border-color .2s,background .2s,opacity .3s ease,transform .3s ease,width .35s ease,padding .35s ease,border-width .35s ease;position:relative;display:flex;flex-direction:column;gap:5px;}
+.exercise-node:hover{border-color:oklch(51% .23 277/0.45);background:rgba(255,255,255,0.09);}
+.exercise-node.done-node{border-color:rgba(30,144,255,0.35);background:rgba(30,144,255,0.06);}
+.node-top{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
+.node-num{width:17px;height:17px;border-radius:4px;background:oklch(1 0 0/0.10);border:1px solid oklch(1 0 0/0.14);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:oklch(60% 0 0);flex-shrink:0;}
+.node-check{width:17px;height:17px;border-radius:4px;border:1.5px solid rgba(255,255,255,0.20);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:700;transition:all .15s;margin-left:auto;}
+.node-check:hover{border-color:#1e90ff;}
+.node-check.done{background:#1e90ff;border-color:#1e90ff;color:#0a0e1a;}
+.node-name{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.3px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer;flex:1;}
+.node-name:hover{color:oklch(68% .16 277);}
+.node-name.done{color:rgba(255,255,255,0.30);text-decoration:line-through;}
+.node-sets{font-size:11px;color:rgba(255,255,255,0.55);font-weight:600;line-height:1.3;}
+.node-weight{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:4px;}
+.node-weight-input{width:48px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:#fff;font-size:11px;padding:3px 5px;font-family:'Figtree',sans-serif;text-align:center;}
+.node-weight-input:focus{outline:none;border-color:#1e90ff;}
+.node-weight-unit{font-size:9px;color:rgba(255,255,255,0.45);font-weight:700;text-transform:uppercase;}
+.node-info{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.40);font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-left:auto;}
+.node-info:hover{border-color:#1e90ff;color:#1e90ff;}
+.add-node-btn{flex-shrink:0;width:80px;min-height:110px;border:1.5px dashed oklch(1 0 0/0.16);background:transparent;border-radius:10px;color:oklch(55% 0 0);font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;transition:border-color .2s,color .2s;scroll-snap-align:start;}
+.add-node-btn:hover{border-color:oklch(51% .23 277/0.55);color:oklch(68% .16 277);}
 .edit-actions{display:none;gap:6px;margin-top:8px;}
 .edit-actions.show{display:flex;flex-wrap:wrap;}
 .action-btn{padding:5px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.16);background:transparent;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
@@ -3011,6 +3061,7 @@ h1 span{color:#1e90ff;}
 /* ── EXERCISE DISMISS ANIMATION ── */
 .exercise-card{transition:opacity .35s ease, transform .35s ease, max-height .4s ease, margin .35s ease, padding .35s ease;}
 .exercise-card.dismissing{opacity:0;transform:translateX(60px) scale(.96);max-height:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;overflow:hidden;}
+.exercise-node.dismissing{opacity:0;transform:scale(.85) translateY(-6px);width:0!important;min-width:0!important;padding:0!important;border-width:0!important;overflow:hidden;transition:opacity .3s ease,transform .3s ease,width .35s ease,padding .35s ease,border-width .35s ease;}
 
 /* ── BACK STRIP ── */
 .done-strip{background:rgba(255,255,255,0.07);border:1px solid #1e1e1e;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;}
