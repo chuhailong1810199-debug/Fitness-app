@@ -2782,7 +2782,7 @@ document.dispatchEvent(new Event('app-ready'));
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;background:#0d0d0d;color:#ffffff;padding:1rem;min-height:100vh;}
+body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;background-color:#0d0d0d;background-image:linear-gradient(rgba(255,255,255,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.045) 1px,transparent 1px);background-size:40px 40px;background-attachment:fixed;color:#ffffff;padding:1rem;min-height:100vh;}
 .hidden{display:none!important;}
 .app{max-width:500px;margin:0 auto;}
 
@@ -2896,7 +2896,7 @@ h1 span{color:#1e90ff;}
 /* ── Dashed add exercise btn ── */
 .add-exercise-btn{width:100%;padding:11px;border-radius:8px;border:1.5px dashed oklch(1 0 0/0.18);background:transparent;color:oklch(60% 0 0);font-family:inherit;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:8px;transition:border-color .2s,color .2s;}
 .add-exercise-btn:hover{border-color:oklch(51% .23 295/0.55);color:oklch(68% .16 295);}
-#exercise-list{border-radius:14px;padding:12px;background-image:radial-gradient(circle,oklch(1 0 0/0.18) 1.2px,transparent 1.2px);background-size:24px 24px;}
+#exercise-list{border-radius:14px;padding:12px;}
 .exercise-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-left:3px solid rgba(255,255,255,0.16);border-radius:8px;padding:12px 14px;margin-bottom:6px;transition:border-left-color .2s;}
 .exercise-card.done-card{border-left-color:#1e90ff;}
 .exercise-card.editing{border-left-color:#6688ff;background:#111122;}
