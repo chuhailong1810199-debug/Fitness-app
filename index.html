@@ -2713,23 +2713,28 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 /* LOGIN */
 
 /* INTRO SLIDES */
-.slides-screen{position:fixed;inset:0;background:#0a0e1a;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.slides-screen{position:fixed;inset:0;background:#080a12;z-index:300;}
 .slides-screen.hidden{display:none;}
-.slide{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2.5rem 2rem;width:100%;max-width:400px;}
+.slide{display:none;position:absolute;inset:0;flex-direction:column;justify-content:flex-end;padding:0 0 56px;}
 .slide.active{display:flex;}
-.slide-visual{width:100%;max-width:320px;aspect-ratio:4/3;border-radius:16px;margin-bottom:2rem;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.slide-visual svg{opacity:.15;}
-.slide-badge{font-family:'Figtree',sans-serif;font-size:11px;color:#1e90ff;text-transform:none;letter-spacing:1px;font-weight:800;margin-bottom:.75rem;}
-.slide-title{font-family:'Figtree',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:.75rem;line-height:1.1;}
-.slide-title span{color:#1e90ff;}
-.slide-desc{font-size:14px;color:rgba(255,255,255,0.58);line-height:1.7;margin-bottom:2rem;max-width:300px;}
-.slide-dots{display:flex;gap:8px;margin-bottom:1.5rem;}
-.slide-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.12);transition:all .2s;}
-.slide-dot.on{background:#1e90ff;width:24px;border-radius:4px;}
-.slide-next{padding:14px 36px;border-radius:6px;background:#1e90ff;color:#0a0e1a;border:none;font-family:'Figtree',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .15s;}
-.slide-next:hover{background:#00d4ff;}
-.slide-skip{font-size:12px;color:rgba(255,255,255,0.22);margin-top:1rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
-.slide-skip:hover{color:rgba(255,255,255,0.60);}
+/* bg decoration per slide */
+.slide-bg{position:absolute;inset:0;pointer-events:none;z-index:0;}
+.slide-bg-glow{position:absolute;border-radius:50%;filter:blur(80px);}
+/* content layer */
+.slide-body{position:relative;z-index:2;padding:0 28px;}
+.slide-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:11px;color:oklch(68% .16 277);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:18px;background:oklch(51% .23 277/0.12);border:1px solid oklch(51% .23 277/0.25);border-radius:999px;padding:5px 12px;}
+.slide-title{font-family:'Figtree',sans-serif;font-size:clamp(44px,11vw,64px);font-weight:900;text-transform:uppercase;color:#fff;line-height:1.0;letter-spacing:-0.5px;margin-bottom:16px;}
+.slide-title span{color:oklch(68% .16 277);}
+.slide-desc{font-size:14px;color:rgba(255,255,255,0.50);line-height:1.75;margin-bottom:32px;max-width:300px;}
+.slide-coach{font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:28px;letter-spacing:.3px;}
+.slide-coach strong{color:rgba(255,255,255,0.80);}
+.slide-dots{display:flex;gap:7px;margin-bottom:22px;}
+.slide-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:all .25s;}
+.slide-dot.on{background:oklch(68% .16 277);width:18px;border-radius:3px;}
+.slide-next{width:100%;padding:16px;border-radius:999px;background:#fff;color:#080a12;border:none;font-family:'Figtree',sans-serif;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-bottom:14px;}
+.slide-next:hover{background:rgba(255,255,255,0.88);transform:translateY(-1px);}
+.slide-skip{text-align:center;font-size:12px;color:rgba(255,255,255,0.25);cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;padding:6px;}
+.slide-skip:hover{color:rgba(255,255,255,0.55);}
 
 .login-screen{position:fixed;inset:0;background:#0a0e1a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
 .login-logo{font-family:'Figtree',sans-serif;font-size:52px;font-weight:800;text-transform:none;color:#fff;margin-bottom:.25rem;letter-spacing:1px;}
@@ -3268,7 +3273,8 @@ body::before{display:none;}
 .stat::before{background:#fff;height:2px;opacity:0.3;}
 .stat-num{font-size:clamp(26px,5vw,36px)!important;color:#fff;text-shadow:none;}
 .stat-label,.subtitle,.form-label,.cp-label,.baseline-label,.progress-label,.wl-stat-lbl,.month-title,.cd-stat-lbl,.cd-card-title,.cp-subsection-title,.slide-desc,.login-sub{color:var(--txt-muted)!important;}
-h1,.login-logo,.slide-badge,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
+h1,.login-logo,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
+.slide-badge{font-family:'Figtree',sans-serif!important;color:oklch(68% .16 277)!important;}
 .slide-title,.celebration-title,.baseline-title,.modal-title,.cp-header-title,.section-title,.cd-section-title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:700;}
 h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.modal-phase,.wl-day,.cd-section-title,.streak-num,.done-strip-count{color:#fff!important;}
 .google-btn,.finish-btn,.btn-save,.baseline-save-btn,.celebration-btn,.intro-enter,.slide-next,.cp-save-btn,.pp-upload-label{background:#ffffff!important;color:#0d0d0d!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:700;letter-spacing:0.5px;}
@@ -3469,53 +3475,75 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
 <!-- INTRO SLIDES -->
 <div id="slides-screen" class="slides-screen">
+
   <!-- Slide 1 -->
   <div class="slide active" id="slide-1">
-    <div class="slide-visual">
-      <svg width="160" height="120" viewBox="0 0 160 120">
-        <rect x="20" y="30" width="50" height="60" rx="6" fill="#1e90ff"/>
-        <rect x="90" y="50" width="50" height="40" rx="6" fill="#1e90ff"/>
-        <circle cx="45" cy="20" r="12" fill="#fff"/>
-        <circle cx="115" cy="40" r="12" fill="#fff"/>
-        <line x1="45" y1="30" x2="45" y2="90" stroke="#0a0e1a" stroke-width="3"/>
-        <line x1="115" y1="52" x2="115" y2="90" stroke="#0a0e1a" stroke-width="3"/>
-        <line x1="30" y1="65" x2="60" y2="55" stroke="#0a0e1a" stroke-width="2"/>
-        <line x1="100" y1="70" x2="130" y2="60" stroke="#0a0e1a" stroke-width="2"/>
+    <!-- Background: violet radial glow top-right + bezier flow lines -->
+    <div class="slide-bg">
+      <div class="slide-bg-glow" style="width:340px;height:340px;top:-80px;right:-60px;background:oklch(51% .23 277/0.22);"></div>
+      <div class="slide-bg-glow" style="width:200px;height:200px;bottom:30%;left:-40px;background:oklch(51% .23 277/0.10);"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.6;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
+        <path d="M 100 0 C 110 200, 220 320, 200 800" stroke="oklch(68% .16 277 / 0.20)" stroke-width="1" stroke-linecap="round"/>
+        <path d="M 300 0 C 290 200, 180 320, 200 800" stroke="oklch(68% .16 277 / 0.20)" stroke-width="1" stroke-linecap="round"/>
+        <path d="M 200 0 L 200 800" stroke="oklch(68% .16 277 / 0.10)" stroke-width="0.8"/>
+        <circle cx="200" cy="400" r="3" fill="oklch(72% .18 277 / 0.6)"/>
       </svg>
     </div>
-    <div class="slide-badge">Pulse</div>
-    <div class="slide-title">Your Personal <span>Coach</span> in Your Pocket</div>
-    <div class="slide-desc">Chương trình tập luyện được cá nhân hóa, theo dõi tiến độ theo thời gian thực.</div>
-    <div class="slide-dots">
-      <div class="slide-dot on"></div>
-      <div class="slide-dot"></div>
+    <!-- Content -->
+    <div class="slide-body">
+      <div class="slide-badge">⚡ Pulse</div>
+      <div class="slide-title">TRAIN.<br/>TRACK.<br/><span>CONQUER.</span></div>
+      <div class="slide-desc">Chương trình tập luyện cá nhân hóa, theo dõi tiến độ real-time cùng HLV của bạn.</div>
+      <div class="slide-coach">Your coach — <strong>Long Chu</strong></div>
+      <div class="slide-dots">
+        <div class="slide-dot on"></div>
+        <div class="slide-dot"></div>
+      </div>
+      <button class="slide-next" onclick="nextSlide()">ENTER APP →</button>
+      <div class="slide-skip" onclick="skipSlides()">SKIP</div>
     </div>
-    <button class="slide-next" onclick="nextSlide()">Tiếp theo →</button>
-    <div class="slide-skip" onclick="skipSlides()">Bỏ qua</div>
   </div>
+
   <!-- Slide 2 -->
   <div class="slide" id="slide-2">
-    <div class="slide-visual">
-      <svg width="160" height="120" viewBox="0 0 160 120">
-        <rect x="15" y="20" width="130" height="80" rx="10" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-        <rect x="25" y="30" width="50" height="8" rx="4" fill="#1e90ff" opacity=".9"/>
-        <rect x="25" y="45" width="110" height="4" rx="2" fill="rgba(255,255,255,0.16)"/>
-        <rect x="25" y="45" width="70" height="4" rx="2" fill="#1e90ff" opacity=".6"/>
-        <rect x="25" y="56" width="110" height="4" rx="2" fill="rgba(255,255,255,0.16)"/>
-        <rect x="25" y="56" width="40" height="4" rx="2" fill="#44cc66" opacity=".7"/>
-        <circle cx="120" cy="75" r="18" fill="#2a1208" stroke="#1e90ff" stroke-width="1.5"/>
-        <text x="120" y="80" text-anchor="middle" fill="#1e90ff" font-size="12" font-weight="700">72kg</text>
+    <!-- Background: circuit/node decoration -->
+    <div class="slide-bg">
+      <div class="slide-bg-glow" style="width:280px;height:280px;top:15%;left:50%;transform:translateX(-50%);background:oklch(51% .23 277/0.15);"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
+        <!-- Vertical rails -->
+        <line x1="80"  y1="0" x2="80"  y2="800" stroke="oklch(68% .16 277/0.12)" stroke-width="1"/>
+        <line x1="320" y1="0" x2="320" y2="800" stroke="oklch(68% .16 277/0.12)" stroke-width="1"/>
+        <!-- Horizontal connector -->
+        <line x1="80" y1="300" x2="320" y2="300" stroke="oklch(68% .16 277/0.18)" stroke-width="1"/>
+        <line x1="80" y1="500" x2="320" y2="500" stroke="oklch(68% .16 277/0.18)" stroke-width="1"/>
+        <!-- Nodes -->
+        <circle cx="80"  cy="300" r="5" fill="none" stroke="oklch(68% .16 277/0.45)" stroke-width="1.2"/>
+        <circle cx="80"  cy="300" r="2" fill="oklch(72% .18 277/0.7)"/>
+        <circle cx="320" cy="300" r="5" fill="none" stroke="oklch(68% .16 277/0.45)" stroke-width="1.2"/>
+        <circle cx="320" cy="300" r="2" fill="oklch(72% .18 277/0.7)"/>
+        <circle cx="80"  cy="500" r="5" fill="none" stroke="oklch(68% .16 277/0.45)" stroke-width="1.2"/>
+        <circle cx="80"  cy="500" r="2" fill="oklch(72% .18 277/0.7)"/>
+        <circle cx="320" cy="500" r="5" fill="none" stroke="oklch(68% .16 277/0.45)" stroke-width="1.2"/>
+        <circle cx="320" cy="500" r="2" fill="oklch(72% .18 277/0.7)"/>
+        <!-- Center large node -->
+        <circle cx="200" cy="400" r="16" fill="none" stroke="oklch(68% .16 277/0.30)" stroke-width="1.2"/>
+        <circle cx="200" cy="400" r="8"  fill="none" stroke="oklch(68% .16 277/0.20)" stroke-width="1"/>
+        <circle cx="200" cy="400" r="3"  fill="oklch(72% .18 277/0.8)"/>
       </svg>
     </div>
-    <div class="slide-badge">Track Progress</div>
-    <div class="slide-title">Baseline → <span>Results</span></div>
-    <div class="slide-desc">Đo lường từ ngày đầu, checkpoint mỗi 4 tuần, biểu đồ tiến độ rõ ràng.</div>
-    <div class="slide-dots">
-      <div class="slide-dot"></div>
-      <div class="slide-dot on"></div>
+    <!-- Content -->
+    <div class="slide-body">
+      <div class="slide-badge">📈 Progress Tracking</div>
+      <div class="slide-title">BASELINE<br/>→ <span>RESULTS.</span></div>
+      <div class="slide-desc">Đo lường từ ngày đầu. Checkpoint mỗi 4 tuần. Biểu đồ tiến độ rõ ràng từng giai đoạn.</div>
+      <div class="slide-dots">
+        <div class="slide-dot"></div>
+        <div class="slide-dot on"></div>
+      </div>
+      <button class="slide-next" onclick="skipSlides()">BẮT ĐẦU →</button>
     </div>
-    <button class="slide-next" onclick="skipSlides()">Bắt đầu →</button>
   </div>
+
 </div>
 
 <!-- LOGIN SCREEN -->
