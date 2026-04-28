@@ -2779,11 +2779,15 @@ h1{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;text-transfor
 h1 span{color:#1e90ff;}
 .user-bar h1{overflow:visible;text-overflow:clip;white-space:nowrap;max-width:none;flex-shrink:0;}
 .subtitle{font-size:11px;color:rgba(255,255,255,0.60);margin-top:2px;text-transform:uppercase;letter-spacing:3px;font-weight:500;}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
-.stat{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
-.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#1e90ff;}
+.stats{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;margin-bottom:1rem;padding-bottom:2px;}
+.stats::-webkit-scrollbar{display:none;}
+.stat{flex:0 0 calc(50% - 5px);scroll-snap-align:start;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:16px 12px;text-align:center;position:relative;overflow:hidden;transition:border-color .2s;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#1e90ff,transparent);}
 .stat-num{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;color:#1e90ff;}
 .stat-label{font-size:10px;color:rgba(255,255,255,0.60);margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+.stat-dots{display:flex;gap:6px;justify-content:center;margin-bottom:1rem;}
+.stat-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);cursor:pointer;transition:background .2s,width .25s;}
+.stat-dot.active{background:#1e90ff;width:14px;border-radius:3px;}
 .day-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
 .day-tab{padding:6px 14px;border-radius:4px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.07);font-size:12px;font-weight:700;cursor:pointer;color:rgba(255,255,255,0.60);text-transform:uppercase;transition:all .15s;}
 .day-tab:hover{border-color:rgba(255,255,255,0.35);color:rgba(255,255,255,0.82);}
@@ -3260,9 +3264,9 @@ body::before{display:none;}
 .nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(13,13,13,0.75)!important;}
 .nav-tab{border-radius:999px;border:1px solid transparent;color:var(--txt-muted);letter-spacing:1.4px;}
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
-.stat{border-radius:20px;padding:18px 12px;}
+.stat{border-radius:16px;padding:16px 12px;flex:0 0 calc(50% - 5px);}
 .stat::before{background:#fff;height:2px;opacity:0.3;}
-.stat-num{font-size:clamp(32px,5vw,42px)!important;color:#fff;text-shadow:none;}
+.stat-num{font-size:clamp(26px,5vw,36px)!important;color:#fff;text-shadow:none;}
 .stat-label,.subtitle,.form-label,.cp-label,.baseline-label,.progress-label,.wl-stat-lbl,.month-title,.cd-stat-lbl,.cd-card-title,.cp-subsection-title,.slide-desc,.login-sub{color:var(--txt-muted)!important;}
 h1,.login-logo,.slide-badge,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
 .slide-title,.celebration-title,.baseline-title,.modal-title,.cp-header-title,.section-title,.cd-section-title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:700;}
@@ -3333,7 +3337,7 @@ h1 span,.slide-title span,.login-logo span,.cp-header-title span,.empty-sub stro
   .client-select{min-width:170px;max-width:58vw;}
 }
 @media (max-width: 520px){
-  .stats{grid-template-columns:1fr;}
+  .stat{flex:0 0 60%;}
   .nav-tab{font-size:12px;letter-spacing:1px;}
   .client-label{display:none;}
   .client-select{min-width:150px;max-width:52vw;}
@@ -3435,6 +3439,30 @@ window.openExercisePicker  = function(pi){ _q('_openExercisePicker',[pi]); };
 window.closeExercisePicker = function() { _q('_closeExercisePicker',[]); };
 window.renderPickerResults = function() { _q('_renderPickerResults',[]); };
 window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
+
+// ── Stat slider dots ────────────────────────────────
+(function() {
+  var slider = document.getElementById('stats-slider');
+  var dots   = document.querySelectorAll('#stat-dots .stat-dot');
+  if (!slider || !dots.length) return;
+  var items = slider.querySelectorAll('.stat');
+  // dot click → scroll to card
+  dots.forEach(function(dot, i) {
+    dot.addEventListener('click', function() {
+      items[i].scrollIntoView({ behavior:'smooth', block:'nearest', inline:'start' });
+    });
+  });
+  // scroll → update active dot
+  slider.addEventListener('scroll', function() {
+    var left = slider.getBoundingClientRect().left;
+    var closest = 0, minDist = Infinity;
+    items.forEach(function(item, i) {
+      var dist = Math.abs(item.getBoundingClientRect().left - left);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    dots.forEach(function(d, i) { d.classList.toggle('active', i === closest); });
+  }, { passive: true });
+})();
 </script>
 </head>
 <body>
@@ -3643,10 +3671,15 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- WORKOUT PAGE -->
   <div class="workout-page" id="workout-page">
-    <div class="stats">
-      <div class="stat"><div class="stat-num" id="sessions">1</div><div class="stat-label">Sessions</div></div>
+    <div class="stats" id="stats-slider">
+      <div class="stat"><div class="stat-num" id="sessions">0</div><div class="stat-label">Sessions</div></div>
       <div class="stat"><div class="stat-num" id="done-count">0/0</div><div class="stat-label">Completed</div></div>
       <div class="stat"><div class="stat-num" id="total-vol">0</div><div class="stat-label">Volume kg</div></div>
+    </div>
+    <div class="stat-dots" id="stat-dots">
+      <div class="stat-dot active"></div>
+      <div class="stat-dot"></div>
+      <div class="stat-dot"></div>
     </div>
     <div class="edit-mode-bar">
       <span class="edit-mode-label">Edit Program</span>
