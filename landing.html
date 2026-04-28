@@ -464,7 +464,6 @@
     #philosophy {
       position: relative; overflow: hidden;
       background: oklch(9% 0 0);
-      padding: 100px 0 110px;
     }
     #philosophy::after {
       content: '';
@@ -970,6 +969,11 @@
     /* ── Responsive ─────────────────────────────────── */
     @media (max-width: 1024px) {
       .about-grid, .app-panel { grid-template-columns: 1fr; }
+      .about-grid { text-align: center; }
+      .credentials { text-align: center; }
+      .credentials p, .credentials h3 { text-align: center; }
+      .stat-chips { justify-content: center; }
+      .cert-gallery { justify-content: center; }
       .services-grid, .pillar-grid { grid-template-columns: 1fr 1fr; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
     }
