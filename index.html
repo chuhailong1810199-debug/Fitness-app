@@ -317,8 +317,7 @@ async function loadApp() {
   renderExercises();
   await renderStats();
   subscribeProgram();
-  // Show intro slide for all roles — app reveals only after user taps through
-  showIntroSlide(() => showScreen('app'));
+  showScreen('app');
 }
 
 async function loadAllClients() {
@@ -3328,9 +3327,6 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .cp-tab.active{border-bottom-color:var(--cyan)!important;box-shadow:inset 0 -2px 0 var(--cyan);}
 .signup-cta{background:linear-gradient(135deg,var(--blue),var(--cyan))!important;border-radius:999px!important;color:#fff!important;}
 .signup-icon,.signup-perk-icon{background:linear-gradient(135deg,rgba(30,144,255,0.9),rgba(0,212,255,0.7))!important;color:#fff!important;}
-.intro-overlay{background:linear-gradient(to bottom,rgba(7,10,18,.1) 0%,rgba(10,15,28,.08) 35%,rgba(8,15,28,.7) 72%,rgba(7,12,24,.96) 100%)!important;}
-.intro-slogan-line.accent{color:var(--cyan)!important;text-shadow:0 0 20px rgba(0,212,255,.45);}
-#intro-slide{background:linear-gradient(160deg,var(--bg-1),var(--bg-2))!important;}
 .loading{color:var(--txt-muted);text-align:center;padding:1rem 0;}
 @media (max-width: 900px){body{padding:0.8rem;}.app{max-width:100%;}}
 @media (max-width: 700px){
@@ -3644,50 +3640,6 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   </div>
 </div>
 
-<!-- COACH INTRO SLIDE -->
-<div id="intro-slide" class="hidden" style="position:fixed;inset:0;z-index:150;overflow:hidden;">
-  <style>
-    #intro-slide{background:#000;}
-    .intro-bg{
-      position:absolute;inset:0;
-      background-image:url('/longchu-hero.jpg');
-      background-size:cover;background-position:center top;
-      filter:brightness(.45) contrast(1.1);
-      transition:transform 8s ease;
-      transform:scale(1.05);
-    }
-    #intro-slide.loaded .intro-bg{transform:scale(1);}
-    .intro-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,.0) 35%,rgba(0,0,0,.75) 70%,rgba(0,0,0,.97) 100%);}
-    .intro-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:3.5rem 2rem 2.8rem;max-width:430px;margin:0 auto;}
-    .intro-brand{font-family:'Figtree',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.6);text-transform:none;}
-    .intro-slogan{display:flex;flex-direction:column;gap:.1rem;}
-    .intro-slogan-line{font-family:'Figtree',sans-serif;font-size:clamp(48px,13vw,72px);font-weight:700;text-transform:uppercase;line-height:1;color:#fff;opacity:0;transform:translateY(18px);transition:opacity .5s ease, transform .5s ease;}
-    .intro-slogan-line.accent{color:#1e90ff;}
-    .intro-slogan-line.vis{opacity:1;transform:translateY(0);}
-    .intro-bottom{display:flex;flex-direction:column;gap:1rem;}
-    .intro-name{font-size:13px;color:rgba(255,255,255,.45);letter-spacing:1px;}
-    .intro-name strong{color:rgba(255,255,255,.8);}
-    .intro-enter{width:100%;padding:16px;border-radius:8px;background:#1e90ff;color:#fff;border:none;font-family:'Figtree',sans-serif;font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
-    .intro-enter:hover{background:#2563eb;}
-    .intro-skip{font-size:11px;color:rgba(255,255,255,.25);border:none;background:none;cursor:pointer;padding:.25rem;letter-spacing:1px;}
-    .intro-skip:hover{color:rgba(255,255,255,.5);}
-  </style>
-  <div class="intro-bg"></div>
-  <div class="intro-overlay"></div>
-  <div class="intro-content">
-    <div class="intro-brand">Pulse</div>
-    <div class="intro-slogan">
-      <div class="intro-slogan-line" id="isl1">Train.</div>
-      <div class="intro-slogan-line" id="isl2">Track.</div>
-      <div class="intro-slogan-line accent" id="isl3">Conquer.</div>
-    </div>
-    <div class="intro-bottom">
-      <div class="intro-name">Your coach — <strong>Long Chu</strong></div>
-      <button class="intro-enter" onclick="dismissIntro()">Enter App →</button>
-      <button class="intro-skip" onclick="dismissIntro()">SKIP</button>
-    </div>
-  </div>
-</div>
 
 <!-- APP SCREEN -->
 <div id="app-screen" class="hidden">
