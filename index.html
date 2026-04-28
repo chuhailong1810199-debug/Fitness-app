@@ -131,33 +131,18 @@ let _authInitialized = false;
 
 onAuthStateChanged(auth, async user => {
   if (user) {
-    // User logged in - always show app
     _authInitialized = true;
     currentUser = user;
-    // Hide slides and login immediately
     document.getElementById('slides-screen')?.classList.add('hidden');
     document.getElementById('login-screen')?.classList.add('hidden');
     await loadUserProfile(user);
   } else {
     currentUser = null;
     userRole = null;
-    // Only show slides/login on first auth check
-    if (_authInitialized) {
-      // Already initialized - user logged out, show login
-      document.getElementById('slides-screen')?.classList.add('hidden');
-      showScreen('login');
-    } else {
-      _authInitialized = true;
-      // First load - show slides or login
-      const slidesEl = document.getElementById('slides-screen');
-      if (!sessionStorage.getItem('slides-seen') && slidesEl) {
-        slidesEl.classList.remove('hidden');
-        document.getElementById('login-screen')?.classList.add('hidden');
-      } else {
-        if (slidesEl) slidesEl.classList.add('hidden');
-        showScreen('login');
-      }
-    }
+    // Hide slides, show login
+    document.getElementById('slides-screen')?.classList.add('hidden');
+    _authInitialized = true;
+    showScreen('login');
   }
 });
 
@@ -317,6 +302,14 @@ async function loadApp() {
   renderExercises();
   await renderStats();
   subscribeProgram();
+  // Show intro slides after login (once per session)
+  if (!sessionStorage.getItem('slides-seen')) {
+    const slidesEl = document.getElementById('slides-screen');
+    if (slidesEl) {
+      slidesEl.classList.remove('hidden');
+      return; // App will be shown when user finishes slides
+    }
+  }
   showScreen('app');
 }
 
@@ -3400,10 +3393,8 @@ function nextSlide() {
 function skipSlides() {
   sessionStorage.setItem('slides-seen','1');
   document.getElementById('slides-screen').classList.add('hidden');
-  // Only show login if user is NOT already logged in
-  if (!firebase.auth().currentUser) {
-    document.getElementById('login-screen').classList.remove('hidden');
-  }
+  // User is already logged in (slides show post-login), go straight to app
+  showScreen('app');
 }
 // All other functions are set by the module on window.*
 // Use a queue for calls that happen before module loads
@@ -3521,8 +3512,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div class="slide-dot on"></div>
         <div class="slide-dot"></div>
       </div>
-      <button class="slide-next" onclick="nextSlide()">ENTER APP →</button>
-      <div class="slide-skip" onclick="skipSlides()">SKIP</div>
+      <button class="slide-next" onclick="nextSlide()">TIẾP THEO →</button>
     </div>
   </div>
 
