@@ -81,7 +81,14 @@ let _pickerPhaseIndex = null;
 let _lastPickedExercise = null;
 let _dashVolumeChart = null;
 let exerciseLoads = {};
+let setLoads = {}; // exerciseKey → [kg_set1, kg_set2, ...]
 let strengthHistory = {}; // exerciseKey → [{date, kg}] sorted newest first
+
+function parseSetsCount(setsReps) {
+  if (!setsReps) return 3;
+  const m = setsReps.match(/^(\d+)\s*[×x]/i);
+  return m ? Math.min(parseInt(m[1]), 6) : 3; // cap at 6 sets
+}
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MUSCLE_WEIGHTS = {P:1.0, S:0.5, T:0.333, Q:0.25};
@@ -730,10 +737,14 @@ async function finishWorkout() {
       day.phases.forEach((phase, pi) => {
         phase.exercises.forEach((ex, ei) => {
           const exerciseKey = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
-          const loadKg = parseFloat(exerciseLoads[exerciseKey]);
-          if (!Number.isFinite(loadKg) || loadKg <= 0) return;
+          const perSet = (setLoads[exerciseKey] || []).filter(v => Number.isFinite(v) && v > 0);
           const { sets, reps } = parseSetsReps(ex.setsReps);
-          totalVolume += sets * reps * loadKg;
+          if (perSet.length > 0) {
+            totalVolume += perSet.reduce((s, kg) => s + kg * reps, 0);
+          } else {
+            const loadKg = parseFloat(exerciseLoads[exerciseKey]);
+            if (Number.isFinite(loadKg) && loadKg > 0) totalVolume += sets * reps * loadKg;
+          }
         });
       });
     }
@@ -749,11 +760,15 @@ async function finishWorkout() {
       day.phases.forEach((phase, pi) => {
         phase.exercises.forEach((ex, ei) => {
           const exerciseKey = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
-          const loadKg = parseFloat(exerciseLoads[exerciseKey]);
+          const perSet = (setLoads[exerciseKey] || []).filter(v => Number.isFinite(v) && v > 0);
+          const loadKg = perSet.length > 0 ? Math.max(...perSet) : parseFloat(exerciseLoads[exerciseKey]);
           if (!Number.isFinite(loadKg) || loadKg <= 0) return;
           const { sets, reps } = parseSetsReps(ex.setsReps);
+          const tonnage = perSet.length > 0
+            ? Math.round(perSet.reduce((s, kg) => s + kg * reps, 0))
+            : Math.round(sets * reps * loadKg);
           const exerciseRef = doc(db, 'clients', activeClient.id, 'workoutHistory', sessionRef.id, 'exercises', exerciseKey);
-          batch.set(exerciseRef, { exerciseKey, loadKg, exerciseName: ex.name || '', day: activeDay, sets, reps, tonnage: Math.round(sets * reps * loadKg) });
+          batch.set(exerciseRef, { exerciseKey, loadKg, exerciseName: ex.name || '', day: activeDay, sets, reps, tonnage, setLoads: perSet });
           writeCount++;
         });
       });
@@ -1254,16 +1269,51 @@ function getExerciseLoadValue(exerciseKey) {
   return Number.isFinite(val) ? String(val) : '';
 }
 
+// ── PER-SET LOAD STORAGE ─────────────────────────────────
+function getSetLoadStorageKey() {
+  return activeClient ? `setLoads_${activeClient.id}_${activeDay}` : '';
+}
+function saveSetLoadsToLocal() {
+  const k = getSetLoadStorageKey();
+  if (k) localStorage.setItem(k, JSON.stringify(setLoads));
+}
+function getSetLoad(key, si) {
+  const v = (setLoads[key] || [])[si];
+  return Number.isFinite(v) && v > 0 ? String(v) : '';
+}
+function setSetLoad(key, si, rawValue) {
+  const val = parseFloat(rawValue);
+  if (!setLoads[key]) setLoads[key] = [];
+  setLoads[key][si] = Number.isFinite(val) && val > 0 ? val : null;
+  // keep exerciseLoads in sync (max of all sets, for backward-compat)
+  const valid = setLoads[key].filter(v => Number.isFinite(v) && v > 0);
+  if (valid.length > 0) {
+    exerciseLoads[key] = Math.max(...valid);
+    saveExerciseLoadsToLocal();
+  }
+  saveSetLoadsToLocal();
+}
+
 async function hydrateExerciseLoadsForActiveDay() {
   exerciseLoads = {};
+  setLoads = {};
   if (!activeClient) return;
 
+  // Restore from localStorage first
   const localKey = getLoadStorageKey();
   const localRaw = localStorage.getItem(localKey);
   if (localRaw) {
     try {
       const parsed = JSON.parse(localRaw);
       if (parsed && typeof parsed === 'object') exerciseLoads = parsed;
+    } catch (_e) {}
+  }
+  const slKey = getSetLoadStorageKey();
+  const slRaw = localStorage.getItem(slKey);
+  if (slRaw) {
+    try {
+      const parsed = JSON.parse(slRaw);
+      if (parsed && typeof parsed === 'object') setLoads = parsed;
     } catch (_e) {}
   }
 
@@ -1281,19 +1331,16 @@ async function hydrateExerciseLoadsForActiveDay() {
     ));
     if (!exSnap.docs.length) return;
 
-    const restored = {};
+    const restored = {}, restoredSets = {};
     exSnap.forEach(d => {
       const data = d.data() || {};
+      const key = data.exerciseKey || d.id;
       const load = parseFloat(data.loadKg);
-      if (Number.isFinite(load) && load > 0) {
-        const key = data.exerciseKey || d.id;
-        restored[key] = load;
-      }
+      if (Number.isFinite(load) && load > 0) restored[key] = load;
+      if (Array.isArray(data.setLoads) && data.setLoads.length > 0) restoredSets[key] = data.setLoads;
     });
-    if (Object.keys(restored).length > 0) {
-      exerciseLoads = restored;
-      saveExerciseLoadsToLocal();
-    }
+    if (Object.keys(restored).length > 0) { exerciseLoads = restored; saveExerciseLoadsToLocal(); }
+    if (Object.keys(restoredSets).length > 0) { setLoads = restoredSets; saveSetLoadsToLocal(); }
   } catch (_e) {}
 }
 
@@ -1439,11 +1486,16 @@ function renderExercises() {
           <div class="node-name${done?' done':''}" onclick="openModal(${pi},${ei})">${ex.name}</div>
           <div class="node-sets">${ex.setsReps}${ex.tempo?' · '+ex.tempo:''}</div>
           ${getStrengthBadge(key)}
-          <div class="node-weight">
-            <input class="node-weight-input" id="weight_${key}" type="number" min="0" step="0.5" placeholder="—" value="${getExerciseLoadValue(key)}" oninput="setExerciseLoad('${key}', this.value)">
-            <span class="node-weight-unit">kg</span>
-            <button class="node-info" onclick="openModal(${pi},${ei})">i</button>
+          <div class="node-setloads">
+            ${Array.from({length: parseSetsCount(ex.setsReps)}, (_,si) => `
+              <div class="set-load-row">
+                <span class="set-load-label">S${si+1}</span>
+                <input class="set-load-input" type="number" min="0" step="0.5" placeholder="—"
+                  value="${getSetLoad(key,si)}" oninput="setSetLoad('${key}',${si},this.value)">
+                <span class="set-load-unit">kg</span>
+              </div>`).join('')}
           </div>
+          <button class="node-info" onclick="openModal(${pi},${ei})">i</button>
         </div>`;
       });
       html += `</div>`;
@@ -3114,10 +3166,12 @@ h1 span{color:#1e90ff;}
 .str-hist-row:last-child{border-bottom:none;}
 .str-hist-date{font-size:12px;color:rgba(255,255,255,0.45);}
 .str-hist-kg{font-size:12px;font-weight:700;color:#fff;}
-.node-weight{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:4px;}
-.node-weight-input{width:48px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:#fff;font-size:11px;padding:3px 5px;font-family:'Figtree',sans-serif;text-align:center;}
-.node-weight-input:focus{outline:none;border-color:#1e90ff;}
-.node-weight-unit{font-size:9px;color:rgba(255,255,255,0.45);font-weight:700;text-transform:uppercase;}
+.node-setloads{display:flex;flex-direction:column;gap:3px;margin-top:auto;padding-top:6px;}
+.set-load-row{display:flex;align-items:center;gap:4px;}
+.set-load-label{font-size:9px;font-weight:800;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.5px;width:14px;flex-shrink:0;}
+.set-load-input{width:46px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:5px;color:#fff;font-size:11px;font-weight:600;padding:3px 4px;font-family:'Figtree',sans-serif;text-align:center;outline:none;}
+.set-load-input:focus{border-color:oklch(68% .16 295);}
+.set-load-unit{font-size:9px;color:rgba(255,255,255,0.35);font-weight:700;text-transform:uppercase;}
 .node-info{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.40);font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-left:auto;}
 .node-info:hover{border-color:#1e90ff;color:#1e90ff;}
 .add-node-btn{flex-shrink:0;width:80px;min-height:110px;border:1.5px dashed oklch(1 0 0/0.16);background:transparent;border-radius:10px;color:oklch(55% 0 0);font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4;transition:border-color .2s,color .2s;scroll-snap-align:start;}
