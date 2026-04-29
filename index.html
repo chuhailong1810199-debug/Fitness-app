@@ -92,11 +92,14 @@ const PHASE_ORDER = ['warmup','strength','accessories','circuit'];
 function phaseRank(phase) {
   const tag  = (phase.tag  || '').toLowerCase();
   const name = (phase.name || '').toLowerCase();
+  // Name takes priority over tag (user can rename; tag may be stale)
   for (let i = 0; i < PHASE_ORDER.length; i++) {
-    const key = PHASE_ORDER[i];
-    if (tag.includes(key) || name.includes(key)) return i;
+    if (name.includes(PHASE_ORDER[i])) return i;
   }
-  return PHASE_ORDER.length; // unknown phases go to end
+  for (let i = 0; i < PHASE_ORDER.length; i++) {
+    if (tag.includes(PHASE_ORDER[i])) return i;
+  }
+  return PHASE_ORDER.length;
 }
 function sortPhases(phases) {
   return [...phases].sort((a, b) => phaseRank(a) - phaseRank(b));
