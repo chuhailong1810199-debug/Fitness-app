@@ -1386,9 +1386,22 @@ function renderExercises() {
   const vKeys = [];
   day.phases.forEach((phase, pi) => {
     html += `<div class="phase-header">`;
-    if (editMode) html += `<div class="phase-edit-bar"><button class="btn-delete-phase" onclick="deletePhase(${pi})">Delete Phase</button></div>`;
-    html += `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span></div>
-    ${phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${phase.note}</div></div></div>` : ''}`;
+    if (editMode) {
+      html += `<div class="phase-edit-bar">
+        <button class="btn-rename-phase" onclick="startRenamePhase(${pi})">✏ Rename</button>
+        <button class="btn-delete-phase" onclick="deletePhase(${pi})">Delete</button>
+      </div>
+      <span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}" id="phase-label-${pi}">${phase.name}</span>
+      <div class="phase-rename-row" id="phase-rename-${pi}">
+        <input class="phase-rename-input" id="phase-rename-input-${pi}" value="${phase.name.replace(/"/g,'&quot;')}"
+          onkeydown="if(event.key==='Enter')saveRenamePhase(${pi});if(event.key==='Escape')cancelRenamePhase(${pi})">
+        <button class="phase-rename-ok" onclick="saveRenamePhase(${pi})">✓</button>
+        <button class="phase-rename-cancel" onclick="cancelRenamePhase(${pi})">✕</button>
+      </div></div>`;
+    } else {
+      html += `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span></div>`;
+    }
+    html += phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${phase.note}</div></div></div>` : '';
     if (!editMode) {
       // ── Node-based horizontal flow (view / workout mode) ─────────────────
       html += `<div class="exercise-flow">`;
@@ -1416,6 +1429,9 @@ function renderExercises() {
       html += `</div>`;
     } else {
       // ── Vertical card layout (edit mode) ─────────────────────────────────
+      html += `<div class="phase-exercises-wrap" id="drop-zone-${pi}"
+        ondragover="dragOver(event,${pi})" ondrop="dropExercise(event,${pi})"
+        ondragleave="dragLeave(event,${pi})">`;
       phase.exercises.forEach((ex, ei) => {
         const safeExerciseNote = escHtml(ex.note || '');
         const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
@@ -1424,7 +1440,8 @@ function renderExercises() {
         vKeys.push(vKey);
         const coachUrl  = getVideoUrl(vKey, 'coach');
         const clientUrl = getVideoUrl(vKey, 'client');
-        html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}">
+        html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}"
+          draggable="true" ondragstart="dragStart(event,${pi},${ei})" ondragend="dragEnd(event)">
           <div class="exercise-header">
             <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
             <div class="ex-number">${ei+1}</div>
@@ -1459,6 +1476,7 @@ function renderExercises() {
           }
         </div>`;
       });
+      html += `<div class="drop-hint">↓ kéo bài vào đây</div></div>`;
     }
     if (editMode) {
       html += `<button class="add-exercise-btn" onclick="toggleAddForm(${pi})">+ Add Exercise</button>
@@ -1554,6 +1572,61 @@ async function deletePhase(pi) {
   getOrCreateProgram()[activeDay].phases.splice(pi, 1);
   await saveProgramToFirestore(); renderExercises();
 }
+
+// ── RENAME PHASE ────────────────────────────────────────
+function startRenamePhase(pi) {
+  document.getElementById('phase-label-'+pi).style.display = 'none';
+  document.getElementById('phase-rename-'+pi).classList.add('show');
+  document.getElementById('phase-rename-input-'+pi).focus();
+}
+function cancelRenamePhase(pi) {
+  document.getElementById('phase-label-'+pi).style.display = '';
+  document.getElementById('phase-rename-'+pi).classList.remove('show');
+}
+async function saveRenamePhase(pi) {
+  const val = document.getElementById('phase-rename-input-'+pi).value.trim();
+  if (!val) return;
+  getOrCreateProgram()[activeDay].phases[pi].name = val;
+  await saveProgramToFirestore();
+  renderExercises();
+}
+
+// ── DRAG AND DROP ───────────────────────────────────────
+let _drag = null;
+function dragStart(event, pi, ei) {
+  _drag = { pi, ei };
+  event.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => event.target.classList.add('dragging'), 0);
+}
+function dragEnd(event) {
+  event.target.classList.remove('dragging');
+  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+}
+function dragOver(event, pi) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+  document.getElementById('drop-zone-'+pi)?.classList.add('drag-over');
+}
+function dragLeave(event, pi) {
+  // only remove if leaving to outside the zone
+  const zone = document.getElementById('drop-zone-'+pi);
+  if (zone && !zone.contains(event.relatedTarget)) zone.classList.remove('drag-over');
+}
+async function dropExercise(event, toPi) {
+  event.preventDefault();
+  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+  if (!_drag) return;
+  const { pi: fromPi, ei: fromEi } = _drag;
+  _drag = null;
+  if (fromPi === toPi) return;
+  const prog = getOrCreateProgram();
+  const ex = prog[activeDay].phases[fromPi].exercises.splice(fromEi, 1)[0];
+  prog[activeDay].phases[toPi].exercises.push(ex);
+  await saveProgramToFirestore();
+  renderExercises();
+}
+
 function toggleAddForm(pi) { document.getElementById('add-form-'+pi)?.classList.toggle('show'); }
 function toggleAddPhaseForm() { document.getElementById('add-phase-form')?.classList.toggle('show'); }
 
@@ -3064,6 +3137,21 @@ h1 span{color:#1e90ff;}
 .phase-edit-bar{display:flex;align-items:center;gap:6px;margin-bottom:.5rem;}
 .btn-delete-phase{padding:4px 10px;border-radius:4px;border:1px solid #4e2a2a;background:transparent;color:#ff4444;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;}
 .btn-delete-phase:hover{background:#2e1a1a;}
+.btn-rename-phase{padding:4px 10px;border-radius:4px;border:1px solid oklch(68% .16 295 / 0.35);background:transparent;color:oklch(68% .16 295);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;}
+.btn-rename-phase:hover{background:oklch(68% .16 295 / 0.10);}
+.phase-rename-row{display:none;align-items:center;gap:6px;}
+.phase-rename-row.show{display:flex;}
+.phase-rename-input{background:rgba(255,255,255,0.07);border:1px solid oklch(68% .16 295 / 0.50);border-radius:6px;color:#fff;font-family:'Figtree',sans-serif;font-size:12px;font-weight:700;padding:4px 8px;outline:none;width:160px;}
+.phase-rename-input:focus{border-color:oklch(68% .16 295);}
+.phase-rename-ok{padding:4px 8px;border-radius:4px;background:oklch(68% .16 295);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
+.phase-rename-cancel{padding:4px 8px;border-radius:4px;background:transparent;border:1px solid rgba(255,255,255,0.20);color:rgba(255,255,255,0.60);font-size:11px;cursor:pointer;}
+/* Drag and drop */
+.phase-exercises-wrap{position:relative;transition:background 0.18s ease;border-radius:8px;padding:4px 0 4px;}
+.phase-exercises-wrap.drag-over{background:oklch(68% .16 295 / 0.07);outline:2px dashed oklch(68% .16 295 / 0.40);}
+.exercise-card[draggable=true]{cursor:grab;}
+.exercise-card.dragging{opacity:0.40;transform:scale(0.97);}
+.drop-hint{display:none;text-align:center;font-size:11px;color:oklch(68% .16 295 / 0.50);padding:10px;letter-spacing:1px;text-transform:uppercase;}
+.phase-exercises-wrap.drag-over .drop-hint{display:block;}
 
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;padding:1rem;}
