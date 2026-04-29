@@ -1429,10 +1429,7 @@ function renderExercises() {
       html += `</div>`;
     } else {
       // ── Vertical card layout (edit mode) ─────────────────────────────────
-      html += `<div class="phase-exercises-wrap" id="drop-zone-${pi}"
-        ondragenter="enterZone(event,${pi})"
-        ondragover="allowDrop(event)"
-        ondrop="dropExercise(event,${pi})">`;
+      html += `<div class="phase-exercises-wrap" id="drop-zone-${pi}">`;
       phase.exercises.forEach((ex, ei) => {
         const safeExerciseNote = escHtml(ex.note || '');
         const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
@@ -1442,8 +1439,7 @@ function renderExercises() {
         const coachUrl  = getVideoUrl(vKey, 'coach');
         const clientUrl = getVideoUrl(vKey, 'client');
         html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}"
-          draggable="true" ondragstart="dragStart(event,${pi},${ei})" ondragend="dragEnd(event)"
-          ondragover="allowDrop(event)" ondrop="dropExercise(event,${pi})">
+          onpointerdown="lpDown(event,${pi},${ei})" onpointerup="lpUp()" onpointercancel="lpUp()" onpointermove="lpMove(event)">
           <div class="exercise-header">
             <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
             <div class="ex-number">${ei+1}</div>
@@ -1478,7 +1474,7 @@ function renderExercises() {
           }
         </div>`;
       });
-      html += `<div class="drop-hint">↓ kéo bài vào đây</div></div>`;
+      html += `</div>`;
     }
     if (editMode) {
       html += `<button class="add-exercise-btn" onclick="toggleAddForm(${pi})">+ Add Exercise</button>
@@ -1593,30 +1589,53 @@ async function saveRenamePhase(pi) {
   renderExercises();
 }
 
-// ── DRAG AND DROP ───────────────────────────────────────
-let _drag = null;
-function allowDrop(event) { event.preventDefault(); }
-function enterZone(event, pi) {
-  // dragenter bubbles from child cards up to zone wrapper — use it to highlight
-  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
-  document.getElementById('drop-zone-'+pi)?.classList.add('drag-over');
+// ── LONG-PRESS TO MOVE EXERCISE ─────────────────────────
+let _lpTimer = null, _lpStartX = 0, _lpStartY = 0, _lpPi = -1, _lpEi = -1;
+
+function lpDown(event, pi, ei) {
+  _lpPi = pi; _lpEi = ei;
+  _lpStartX = event.clientX; _lpStartY = event.clientY;
+  _lpTimer = setTimeout(() => showMovePicker(pi, ei), 900);
 }
-function dragStart(event, pi, ei) {
-  _drag = { pi, ei };
-  event.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => event.target.classList.add('dragging'), 0);
+function lpUp() {
+  clearTimeout(_lpTimer); _lpTimer = null;
 }
-function dragEnd(event) {
-  event.target.classList.remove('dragging');
-  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+function lpMove(event) {
+  if (_lpTimer === null) return;
+  const dx = Math.abs(event.clientX - _lpStartX);
+  const dy = Math.abs(event.clientY - _lpStartY);
+  if (dx > 8 || dy > 8) { clearTimeout(_lpTimer); _lpTimer = null; }
 }
-async function dropExercise(event, toPi) {
-  event.preventDefault();
-  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
-  if (!_drag) return;
-  const { pi: fromPi, ei: fromEi } = _drag;
-  _drag = null;
-  if (fromPi === toPi) return;
+
+function showMovePicker(pi, ei) {
+  if (navigator.vibrate) navigator.vibrate(50);
+  const prog = getOrCreateProgram();
+  const day  = prog[activeDay];
+  const exName = day.phases[pi].exercises[ei].name;
+  const phases = day.phases;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'lp-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;';
+
+  const phaseButtons = phases.map((ph, tPi) => tPi === pi ? '' :
+    `<button onclick="executeLpMove(${pi},${ei},${tPi})" style="padding:14px 16px;border-radius:10px;background:oklch(18% .04 295);border:1px solid oklch(68% .16 295 / 0.30);color:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;text-align:left;cursor:pointer;width:100%;">${ph.name}</button>`
+  ).join('');
+
+  overlay.innerHTML = `<div style="width:100%;background:oklch(11% .02 295);border-radius:20px 20px 0 0;padding:24px 20px 32px;display:flex;flex-direction:column;gap:10px;">
+    <div style="font-size:11px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1px;">Di chuyển bài tập</div>
+    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">${exName}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Chọn phase đích</div>
+    ${phaseButtons}
+    <button onclick="document.getElementById('lp-overlay').remove()" style="padding:14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.50);font-family:'Figtree',sans-serif;font-size:14px;cursor:pointer;margin-top:4px;">Huỷ</button>
+  </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function executeLpMove(fromPi, fromEi, toPi) {
+  document.getElementById('lp-overlay')?.remove();
   const prog = getOrCreateProgram();
   const ex = prog[activeDay].phases[fromPi].exercises.splice(fromEi, 1)[0];
   prog[activeDay].phases[toPi].exercises.push(ex);
@@ -3142,13 +3161,8 @@ h1 span{color:#1e90ff;}
 .phase-rename-input:focus{border-color:oklch(68% .16 295);}
 .phase-rename-ok{padding:4px 8px;border-radius:4px;background:oklch(68% .16 295);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
 .phase-rename-cancel{padding:4px 8px;border-radius:4px;background:transparent;border:1px solid rgba(255,255,255,0.20);color:rgba(255,255,255,0.60);font-size:11px;cursor:pointer;}
-/* Drag and drop */
-.phase-exercises-wrap{position:relative;transition:background 0.18s ease;border-radius:8px;padding:4px 0 4px;}
-.phase-exercises-wrap.drag-over{background:oklch(68% .16 295 / 0.07);outline:2px dashed oklch(68% .16 295 / 0.40);}
-.exercise-card[draggable=true]{cursor:grab;}
-.exercise-card.dragging{opacity:0.40;transform:scale(0.97);}
-.drop-hint{display:none;text-align:center;font-size:11px;color:oklch(68% .16 295 / 0.50);padding:10px;letter-spacing:1px;text-transform:uppercase;}
-.phase-exercises-wrap.drag-over .drop-hint{display:block;}
+/* Long-press move */
+.exercise-card{touch-action:pan-y;user-select:none;}
 
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;padding:1rem;}
