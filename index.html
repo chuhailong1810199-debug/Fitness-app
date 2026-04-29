@@ -1619,10 +1619,7 @@ function openModal(pi, ei) {
   modalEl.dataset.pi = pi;
   modalEl.dataset.ei = ei;
 
-  // Coach-only: show edit + delete controls, reset to view state
-  const isCoach = userRole === 'coach';
-  document.getElementById('modal-edit-btn').style.display   = isCoach ? '' : 'none';
-  document.getElementById('modal-delete-btn').style.display = isCoach ? '' : 'none';
+  // Reset to view state — edit/delete available to all users
   document.getElementById('modal-setsreps-row').style.display  = '';
   document.getElementById('modal-setsreps-edit').style.display = 'none';
   const sparkWrap = document.getElementById('modal-strength-history');
@@ -3083,6 +3080,7 @@ h1 span{color:#1e90ff;}
 .modal-delete-btn{padding:10px 16px;border-radius:6px;background:transparent;border:1px solid oklch(65% .18 27 / 0.50);color:oklch(65% .18 27);font-family:'Figtree',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;white-space:nowrap;}
 .modal-delete-btn:hover{background:oklch(65% .18 27 / 0.12);}
 .modal-edit-row{display:flex;align-items:center;gap:8px;}
+.modal-edit-col{display:flex;flex-direction:column;gap:8px;}
 .modal-edit-btn{padding:3px 10px;border-radius:20px;background:oklch(18% .04 295);border:1px solid oklch(68% .16 295 / 0.40);color:oklch(68% .16 295);font-family:'Figtree',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
 .modal-edit-btn:hover{background:oklch(68% .16 295 / 0.15);}
 .modal-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid oklch(68% .16 295 / 0.45);border-radius:6px;color:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;padding:6px 10px;outline:none;width:100px;}
@@ -4022,9 +4020,12 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
           <div class="modal-value" id="modal-setsreps"></div>
           <button class="modal-edit-btn" id="modal-edit-btn" onclick="startEditSetsReps()">Edit</button>
         </div>
-        <div class="modal-edit-row" id="modal-setsreps-edit" style="display:none;">
-          <input class="modal-input" id="modal-setsreps-input" placeholder="e.g. 4 × 8" onkeydown="if(event.key==='Enter')saveModalSetsReps()">
-          <button class="modal-save-btn" onclick="saveModalSetsReps()">Save</button>
+        <div class="modal-edit-col" id="modal-setsreps-edit" style="display:none;">
+          <div class="modal-edit-row">
+            <input class="modal-input" id="modal-setsreps-input" placeholder="e.g. 4 × 8" onkeydown="if(event.key==='Enter')saveModalSetsReps()">
+            <button class="modal-save-btn" onclick="saveModalSetsReps()">Save</button>
+          </div>
+          <button class="modal-delete-btn" onclick="deleteExerciseFromModal()">🗑 Delete this exercise</button>
         </div>
       </div>
       <div><div class="modal-label">Tempo</div><div class="modal-value" id="modal-tempo"></div></div>
@@ -4033,7 +4034,6 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div id="modal-strength-history" style="display:none;margin-top:1rem;"></div>
     <div class="modal-actions">
       <button class="modal-close" onclick="closeModal('modal')">Close</button>
-      <button class="modal-delete-btn" id="modal-delete-btn" onclick="deleteExerciseFromModal()">Delete Exercise</button>
     </div>
   </div>
 </div>
