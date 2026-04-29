@@ -1441,7 +1441,8 @@ function renderExercises() {
         const coachUrl  = getVideoUrl(vKey, 'coach');
         const clientUrl = getVideoUrl(vKey, 'client');
         html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}"
-          draggable="true" ondragstart="dragStart(event,${pi},${ei})" ondragend="dragEnd(event)">
+          draggable="true" ondragstart="dragStart(event,${pi},${ei})" ondragend="dragEnd(event)"
+          ondragover="dragOver(event,${pi})" ondrop="dropExercise(event,${pi})">
           <div class="exercise-header">
             <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
             <div class="ex-number">${ei+1}</div>
@@ -1593,6 +1594,7 @@ async function saveRenamePhase(pi) {
 
 // ── DRAG AND DROP ───────────────────────────────────────
 let _drag = null;
+let _dragOverPi = -1;
 function dragStart(event, pi, ei) {
   _drag = { pi, ei };
   event.dataTransfer.effectAllowed = 'move';
@@ -1601,21 +1603,30 @@ function dragStart(event, pi, ei) {
 function dragEnd(event) {
   event.target.classList.remove('dragging');
   document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+  _dragOverPi = -1;
 }
 function dragOver(event, pi) {
   event.preventDefault();
+  event.stopPropagation();
   event.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
-  document.getElementById('drop-zone-'+pi)?.classList.add('drag-over');
+  if (_dragOverPi !== pi) {
+    document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+    document.getElementById('drop-zone-'+pi)?.classList.add('drag-over');
+    _dragOverPi = pi;
+  }
 }
 function dragLeave(event, pi) {
-  // only remove if leaving to outside the zone
   const zone = document.getElementById('drop-zone-'+pi);
-  if (zone && !zone.contains(event.relatedTarget)) zone.classList.remove('drag-over');
+  if (zone && !zone.contains(event.relatedTarget)) {
+    zone.classList.remove('drag-over');
+    if (_dragOverPi === pi) _dragOverPi = -1;
+  }
 }
 async function dropExercise(event, toPi) {
   event.preventDefault();
+  event.stopPropagation();
   document.querySelectorAll('.phase-exercises-wrap').forEach(z => z.classList.remove('drag-over'));
+  _dragOverPi = -1;
   if (!_drag) return;
   const { pi: fromPi, ei: fromEi } = _drag;
   _drag = null;
