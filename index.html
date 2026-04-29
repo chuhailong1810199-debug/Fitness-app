@@ -85,7 +85,22 @@ let strengthHistory = {}; // exerciseKey → [{date, kg}] sorted newest first
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MUSCLE_WEIGHTS = {P:1.0, S:0.5, T:0.333, Q:0.25};
-const phaseTagClass = {warmup:'phase-warmup',core:'phase-core',strength:'phase-strength',accessories:'phase-accessories'};
+const phaseTagClass = {warmup:'phase-warmup',core:'phase-core',strength:'phase-strength',accessories:'phase-accessories',circuit:'phase-accessories'};
+
+// Phase sort order: match tag OR name (case-insensitive)
+const PHASE_ORDER = ['warmup','strength','accessories','circuit'];
+function phaseRank(phase) {
+  const tag  = (phase.tag  || '').toLowerCase();
+  const name = (phase.name || '').toLowerCase();
+  for (let i = 0; i < PHASE_ORDER.length; i++) {
+    const key = PHASE_ORDER[i];
+    if (tag.includes(key) || name.includes(key)) return i;
+  }
+  return PHASE_ORDER.length; // unknown phases go to end
+}
+function sortPhases(phases) {
+  return [...phases].sort((a, b) => phaseRank(a) - phaseRank(b));
+}
 const COMPLIMENTS = [
   'Xuất sắc! Cơ thể đang phản ứng rất tốt với chương trình.',
   'Tuyệt vời! Kết quả rõ ràng sau những tuần kiên trì.',
@@ -1384,7 +1399,9 @@ function renderExercises() {
 
   let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
   const vKeys = [];
-  day.phases.forEach((phase, pi) => {
+  const sortedPhases = sortPhases(day.phases);
+  sortedPhases.forEach((phase) => {
+    const pi = day.phases.indexOf(phase); // always use original Firestore index
     html += `<div class="phase-header">`;
     if (editMode) {
       html += `<div class="phase-edit-bar">
