@@ -1613,6 +1613,18 @@ function openModal(pi, ei) {
   document.getElementById('modal-setsreps').textContent  = ex.setsReps;
   document.getElementById('modal-tempo').textContent     = ex.tempo || '—';
   document.getElementById('modal-cue').textContent       = ex.cue   || '—';
+
+  // Store pi/ei for edit/delete actions
+  const modalEl = document.getElementById('modal');
+  modalEl.dataset.pi = pi;
+  modalEl.dataset.ei = ei;
+
+  // Coach-only: show edit + delete controls, reset to view state
+  const isCoach = userRole === 'coach';
+  document.getElementById('modal-edit-btn').style.display   = isCoach ? '' : 'none';
+  document.getElementById('modal-delete-btn').style.display = isCoach ? '' : 'none';
+  document.getElementById('modal-setsreps-row').style.display  = '';
+  document.getElementById('modal-setsreps-edit').style.display = 'none';
   const sparkWrap = document.getElementById('modal-strength-history');
   if (sparkWrap) {
     const hist = strengthHistory[key];
@@ -1638,6 +1650,39 @@ function openModal(pi, ei) {
 }
 function closeModal(id) {
   document.getElementById(id)?.classList.remove('open');
+}
+
+function startEditSetsReps() {
+  const current = document.getElementById('modal-setsreps').textContent;
+  document.getElementById('modal-setsreps-input').value = current;
+  document.getElementById('modal-setsreps-row').style.display  = 'none';
+  document.getElementById('modal-setsreps-edit').style.display = '';
+  document.getElementById('modal-setsreps-input').focus();
+}
+
+async function saveModalSetsReps() {
+  const val = document.getElementById('modal-setsreps-input').value.trim();
+  if (!val) return;
+  const modalEl = document.getElementById('modal');
+  const pi = parseInt(modalEl.dataset.pi), ei = parseInt(modalEl.dataset.ei);
+  const prog = getOrCreateProgram();
+  prog[activeDay].phases[pi].exercises[ei].setsReps = val;
+  await saveProgramToFirestore();
+  document.getElementById('modal-setsreps').textContent = val;
+  document.getElementById('modal-setsreps-row').style.display  = '';
+  document.getElementById('modal-setsreps-edit').style.display = 'none';
+  renderExercises();
+}
+
+async function deleteExerciseFromModal() {
+  const name = document.getElementById('modal-name').textContent;
+  if (!confirm('Delete "' + name + '"?')) return;
+  const modalEl = document.getElementById('modal');
+  const pi = parseInt(modalEl.dataset.pi), ei = parseInt(modalEl.dataset.ei);
+  getOrCreateProgram()[activeDay].phases[pi].exercises.splice(ei, 1);
+  await saveProgramToFirestore();
+  closeModal('modal');
+  renderExercises();
 }
 
 // ── WORKOUT STATE ──────────────────────────────────────
@@ -3032,8 +3077,18 @@ h1 span{color:#1e90ff;}
 .modal-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;}
 .modal-label{font-size:10px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;}
 .modal-value{font-size:14px;color:rgba(255,255,255,0.88);line-height:1.6;}
-.modal-close{width:100%;padding:10px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.82);font-family:'Figtree',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;margin-top:1rem;}
-.modal-close:hover{border-color:#1e90ff;color:#1e90ff;}
+.modal-actions{display:flex;gap:8px;margin-top:1rem;}
+.modal-close{flex:1;padding:10px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.82);font-family:'Figtree',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.modal-close:hover{border-color:oklch(68% .16 295);color:oklch(68% .16 295);}
+.modal-delete-btn{padding:10px 16px;border-radius:6px;background:transparent;border:1px solid oklch(65% .18 27 / 0.50);color:oklch(65% .18 27);font-family:'Figtree',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;white-space:nowrap;}
+.modal-delete-btn:hover{background:oklch(65% .18 27 / 0.12);}
+.modal-edit-row{display:flex;align-items:center;gap:8px;}
+.modal-edit-btn{padding:3px 10px;border-radius:20px;background:oklch(18% .04 295);border:1px solid oklch(68% .16 295 / 0.40);color:oklch(68% .16 295);font-family:'Figtree',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.modal-edit-btn:hover{background:oklch(68% .16 295 / 0.15);}
+.modal-input{flex:1;background:rgba(255,255,255,0.07);border:1px solid oklch(68% .16 295 / 0.45);border-radius:6px;color:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;padding:6px 10px;outline:none;width:100px;}
+.modal-input:focus{border-color:oklch(68% .16 295);}
+.modal-save-btn{padding:6px 14px;border-radius:6px;background:oklch(68% .16 295);border:none;color:#fff;font-family:'Figtree',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.modal-save-btn:hover{background:oklch(72% .18 295);}
 .modal-title{font-family:'Figtree',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:4px;}
 .modal-sub{font-size:12px;color:rgba(255,255,255,0.60);margin-bottom:1.25rem;line-height:1.5;}
 
@@ -3961,12 +4016,25 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="modal-name" id="modal-name"></div>
     <div class="modal-phase" id="modal-phase"></div>
     <div class="modal-row">
-      <div><div class="modal-label">Sets × Reps</div><div class="modal-value" id="modal-setsreps"></div></div>
+      <div>
+        <div class="modal-label">Sets × Reps</div>
+        <div class="modal-edit-row" id="modal-setsreps-row">
+          <div class="modal-value" id="modal-setsreps"></div>
+          <button class="modal-edit-btn" id="modal-edit-btn" onclick="startEditSetsReps()">Edit</button>
+        </div>
+        <div class="modal-edit-row" id="modal-setsreps-edit" style="display:none;">
+          <input class="modal-input" id="modal-setsreps-input" placeholder="e.g. 4 × 8" onkeydown="if(event.key==='Enter')saveModalSetsReps()">
+          <button class="modal-save-btn" onclick="saveModalSetsReps()">Save</button>
+        </div>
+      </div>
       <div><div class="modal-label">Tempo</div><div class="modal-value" id="modal-tempo"></div></div>
     </div>
     <div><div class="modal-label">Coaching Cue</div><div class="modal-value" id="modal-cue"></div></div>
     <div id="modal-strength-history" style="display:none;margin-top:1rem;"></div>
-    <button class="modal-close" onclick="closeModal('modal')">Close</button>
+    <div class="modal-actions">
+      <button class="modal-close" onclick="closeModal('modal')">Close</button>
+      <button class="modal-delete-btn" id="modal-delete-btn" onclick="deleteExerciseFromModal()">Delete Exercise</button>
+    </div>
   </div>
 </div>
 
