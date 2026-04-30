@@ -388,27 +388,126 @@ exports.pulseGenerate = onCall(
     };
     const days = dayMaps[sessionsPerWeek] || dayMaps[3];
 
-    // Assessment context
+    // ── Body composition deep analysis ───────────────────────────────────────
     let assessContext = "";
     if (assessment) {
-      assessContext = `
-BASELINE ASSESSMENT:
-- Weight: ${assessment.weight || "?"}kg, Height: ${assessment.height || "?"}cm
-- Age: ${assessment.age || "?"}, Gender: ${assessment.gender || "?"}
-- PBF: ${assessment.pbf || "?"}%, SMM: ${assessment.smm || "?"}kg
-- Measurements: Waist ${assessment.waist || "?"}cm, Hip ${assessment.hip || "?"}cm`;
+      const w  = parseFloat(assessment.weight) || null;
+      const h  = parseFloat(assessment.height) || null;
+      const a  = parseInt(assessment.age)      || null;
+      const g  = (assessment.gender || "").toLowerCase();
+      const pbf  = parseFloat(assessment.pbf)  || null;  // % body fat
+      const smm  = parseFloat(assessment.smm)  || null;  // skeletal muscle mass kg
+      const waist = parseFloat(assessment.waist) || null;
+      const hip   = parseFloat(assessment.hip)   || null;
+
+      const lines = ["BODY ASSESSMENT (InBody):"];
+      lines.push(`- Weight: ${w || "?"}kg | Height: ${h || "?"}cm | Age: ${a || "?"} | Gender: ${assessment.gender || "?"}`);
+
+      // ── BMI ──────────────────────────────────────────────────────────────
+      let bmiRule = "";
+      if (w && h) {
+        const bmi = w / Math.pow(h / 100, 2);
+        const bmiR = Math.round(bmi * 10) / 10;
+        let bmiCat;
+        if      (bmi < 18.5) { bmiCat = "Underweight"; bmiRule = "BMI underweight — prioritise muscle gain, avoid excessive cardio, caloric surplus cues in notes."; }
+        else if (bmi < 25)   { bmiCat = "Normal";      bmiRule = "BMI normal — follow stated goal, standard periodisation."; }
+        else if (bmi < 30)   { bmiCat = "Overweight";  bmiRule = "BMI overweight — increase metabolic demand, shorter rest (45-60s), add conditioning finisher each session."; }
+        else                 { bmiCat = "Obese";        bmiRule = "BMI obese — fat loss priority regardless of stated goal, low-impact exercises, full-body circuits, 15-20 reps, 30-45s rest."; }
+        lines.push(`- BMI: ${bmiR} (${bmiCat}) → ${bmiRule}`);
+      }
+
+      // ── Body fat % (gender-specific thresholds) ───────────────────────────
+      let pbfRule = "";
+      if (pbf !== null) {
+        const isFemale = g === "female" || g === "nữ";
+        let pbfCat;
+        if (isFemale) {
+          if      (pbf < 18) { pbfCat = "Very lean / athletic";  pbfRule = "Very low body fat (female) — avoid aggressive fat loss, maintain muscle mass focus."; }
+          else if (pbf < 28) { pbfCat = "Fit range";             pbfRule = "Healthy body fat (female) — follow stated goal, standard programming."; }
+          else if (pbf < 35) { pbfCat = "Above average";         pbfRule = "Elevated body fat (female) — include fat loss conditioning in every session, prioritise compound movements."; }
+          else               { pbfCat = "High body fat";          pbfRule = "High body fat (female) — fat loss override, low-impact circuits, progressive cardio, track waist reduction."; }
+        } else {
+          if      (pbf < 10) { pbfCat = "Very lean / athletic";  pbfRule = "Very low body fat (male) — muscle building focus, avoid cardio overload, caloric surplus cues."; }
+          else if (pbf < 20) { pbfCat = "Fit range";             pbfRule = "Healthy body fat (male) — follow stated goal, standard periodisation."; }
+          else if (pbf < 25) { pbfCat = "Above average";         pbfRule = "Elevated body fat (male) — add metabolic conditioning, increase daily movement cues in notes."; }
+          else               { pbfCat = "High body fat";          pbfRule = "High body fat (male) — fat loss priority, compound movements, HIIT finishers, minimal isolation."; }
+        }
+        lines.push(`- Body Fat: ${pbf}% (${pbfCat}) → ${pbfRule}`);
+      }
+
+      // ── Skeletal Muscle Mass ──────────────────────────────────────────────
+      let smmRule = "";
+      if (smm !== null && w !== null) {
+        const smmRatio = (smm / w) * 100;
+        const smmRatioR = Math.round(smmRatio * 10) / 10;
+        const isFemale = g === "female" || g === "nữ";
+        const lowThreshold = isFemale ? 27 : 33;
+        if (smmRatio < lowThreshold) {
+          smmRule = `Low muscle mass ratio (${smmRatioR}% of body weight) — increase strength volume, prioritise compound hypertrophy movements, progressive overload is critical.`;
+        } else {
+          smmRule = `Good muscle mass ratio (${smmRatioR}% of body weight) — maintain muscle, adjust based on goal.`;
+        }
+        lines.push(`- SMM: ${smm}kg (${smmRatioR}% body weight) → ${smmRule}`);
+      }
+
+      // ── Waist-to-Hip ratio ────────────────────────────────────────────────
+      if (waist && hip) {
+        const whr = Math.round((waist / hip) * 100) / 100;
+        const isFemale = g === "female" || g === "nữ";
+        const highRisk = isFemale ? whr > 0.85 : whr > 0.9;
+        if (highRisk) {
+          lines.push(`- Waist/Hip ratio: ${whr} (HIGH cardiovascular risk) → prioritise visceral fat reduction: cardio conditioning, caloric awareness cues in notes.`);
+        } else {
+          lines.push(`- Waist/Hip ratio: ${whr} (Healthy range)`);
+        }
+      }
+
+      // ── Age rules ─────────────────────────────────────────────────────────
+      if (a) {
+        if (a < 25) {
+          lines.push(`- Age ${a}: Young — high volume/frequency, fast recovery, can use intensity techniques (drop sets, supersets).`);
+        } else if (a <= 40) {
+          lines.push(`- Age ${a}: Standard adult — balanced volume and intensity.`);
+        } else if (a <= 55) {
+          lines.push(`- Age ${a}: 40+ — extend warm-up 10-12 min, extra mobility work, 30s extra rest between sets, avoid high-impact plyometrics, prioritise joint health cues.`);
+        } else {
+          lines.push(`- Age ${a}: 55+ — CRITICAL: longer warm-up (12-15 min), RPE max 6-7, avoid heavy axial loading, include balance drills, prefer cables/machines over barbell where possible.`);
+        }
+      }
+
+      assessContext = "\n" + lines.join("\n");
     }
 
-    // Checkpoint trend
+    // ── Checkpoint trend with intelligent analysis ────────────────────────────
     let progressContext = "";
     if (checkpoints.length > 0) {
       const latest = checkpoints[0];
       const oldest = checkpoints[checkpoints.length - 1];
+      const dW   = ((latest.weight || 0) - (oldest.weight || 0)).toFixed(1);
+      const dPBF = ((latest.pbf   || 0) - (oldest.pbf   || 0)).toFixed(1);
+      const dSMM = ((latest.smm   || 0) - (oldest.smm   || 0)).toFixed(1);
+
+      let trend = "";
+      const wGain  = parseFloat(dW)   > 0.5;
+      const wLoss  = parseFloat(dW)   < -0.5;
+      const fatUp  = parseFloat(dPBF) > 0.5;
+      const fatDown= parseFloat(dPBF) < -0.5;
+      const muUp   = parseFloat(dSMM) > 0.3;
+      const muDown = parseFloat(dSMM) < -0.3;
+
+      if (wGain  && fatUp)   trend = "⚠️ Weight up + body fat up — gaining fat, not muscle. INCREASE conditioning volume, REVIEW nutrition cues in program.";
+      else if (wGain && fatDown && muUp) trend = "✅ Body recomp working — muscle up, fat down. Continue current approach, increase load progressively.";
+      else if (wLoss && fatDown) trend = "✅ Cutting effectively — fat loss on track. Monitor muscle retention; if SMM dropping, add strength volume.";
+      else if (wLoss && muDown)  trend = "⚠️ Losing muscle — likely under-eating or over-cardio. REDUCE cardio, ADD strength volume, increase protein cues.";
+      else if (muUp  && !fatUp)  trend = "✅ Clean muscle gain. Progressive overload working. Continue and slightly increase intensity.";
+      else                       trend = "Stable — limited change. May need a program refresh or increased stimulus.";
+
       progressContext = `
-PROGRESS TREND (${checkpoints.length} checkpoints):
-- Latest: Weight ${latest.weight || "?"}kg, PBF ${latest.pbf || "?"}%, SMM ${latest.smm || "?"}kg
-- Change: Weight ${((latest.weight || 0) - (oldest.weight || 0)).toFixed(1)}kg, PBF ${((latest.pbf || 0) - (oldest.pbf || 0)).toFixed(1)}%
-- Assessment: ${workoutHistory.length} sessions logged total`;
+PROGRESS TREND (${checkpoints.length} checkpoints, ${workoutHistory.length} sessions logged):
+- Weight: ${oldest.weight || "?"}kg → ${latest.weight || "?"}kg (${dW > 0 ? "+" : ""}${dW}kg)
+- Body Fat: ${oldest.pbf || "?"}% → ${latest.pbf || "?"}% (${dPBF > 0 ? "+" : ""}${dPBF}%)
+- Muscle Mass: ${oldest.smm || "?"}kg → ${latest.smm || "?"}kg (${dSMM > 0 ? "+" : ""}${dSMM}kg)
+- ANALYSIS: ${trend}`;
     }
 
     // Volume trend
@@ -485,11 +584,14 @@ Each day structure:
 }
 
 RULES:
-- Warm-up: 3-4 exercises
-- Main Lifts: 3-5 compound exercises
-- Accessories: 3-5 isolation exercises
-- Embed 4-week progression in "cue" field
-- Vary session focus logically across days
+- Warm-up: 3-4 exercises (adjust duration based on age guidance above)
+- Main Lifts: 3-5 compound exercises matching the split focus
+- Accessories: 3-5 isolation / support exercises
+- Embed 4-week progression in "cue" field (Week 1→4 load/intensity/sets)
+- Vary session focus logically across days — do NOT hit the same muscle group two days in a row
+- BODY COMPOSITION RULES OVERRIDE GOAL if they conflict (e.g. high BMI overrides "muscle gain" toward conditioning)
+- PROGRESS TREND RULES override generic programming — if client is losing muscle, add strength; if gaining fat, add conditioning
+- Exercise names must be clean standard names — never append equipment qualifiers
 - Do NOT add any text outside the JSON`;
 
     // ── Call Groq ─────────────────────────────────────────────────────────────
