@@ -34,6 +34,115 @@ const GROQ_API_KEY   = defineSecret("GROQ_API_KEY");
 const COACH_EMAIL = "chuhailong1810199@gmail.com";
 const APP_NAME = "Striveo";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED GOAL GUIDANCE — used by both generateProgram and pulseGenerateFree
+// ─────────────────────────────────────────────────────────────────────────────
+const GOAL_GUIDANCE = {
+  fatLoss:
+    "Fat loss & body recomposition. Prioritise metabolic conditioning, " +
+    "circuit-style supersets, 12-15 reps, 30-60s rest. Include HIIT finishers. " +
+    "Keep sessions intense and time-efficient.",
+
+  muscle:
+    "Muscle hypertrophy & strength. Prioritise compound lifts with " +
+    "progressive overload, 6-10 reps, 2-3 min rest. Periodise load across weeks " +
+    "(e.g. Week 1-2 at 70%, Week 3-4 at 75-80% 1RM). Add isolation accessories.",
+
+  endurance:
+    "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
+    "functional compound movements, 15-20 reps, minimal rest / supersets. " +
+    "Build aerobic base while maintaining muscle.",
+
+  general:
+    "General fitness & health. Balanced mix of strength and conditioning. " +
+    "3-4 sets, 10-12 reps, full-body compound focus with light accessories. " +
+    "Prioritise movement quality and consistency.",
+
+  hyrox:
+    `HYROX / Hybrid Performance Program.
+
+HYROX RACE FORMAT: 8 rounds of (1km run + 1 functional station):
+  Station 1: SkiErg 1000m
+  Station 2: Sled Push 50m (heavy)
+  Station 3: Sled Pull 50m (heavy)
+  Station 4: Burpee Broad Jump 80m
+  Station 5: Rowing 1000m
+  Station 6: Farmer Carry 200m
+  Station 7: Sandbag Lunges 100m
+  Station 8: Wall Balls 75-100 reps
+
+PROGRAM STRUCTURE — every week must include ALL of these session types:
+
+1. ZONE 2 RUN (1-2x/week)
+   - Easy pace (60-70% max HR), 30-60 min
+   - Purpose: build aerobic base, fat oxidation
+   - Cue: "Should be able to hold a conversation the entire run."
+
+2. STRENGTH SESSION (2x/week) — focus on HYROX-specific movements:
+   - Sled Push/Pull (or substitute: Bulgarian Split Squat, Leg Press heavy)
+   - Wall Ball (or substitute: Goblet Squat + DB Thruster)
+   - Sandbag Lunge (or substitute: Walking Lunge, Barbell Lunge)
+   - Farmer Carry (or substitute: Dumbbell Carry, Trap Bar Carry)
+   - Rowing Machine or SkiErg intervals
+   - Supporting lifts: Deadlift, Hip Thrust, Pull-Up, Row, Push-Up
+   - Sets/reps: 4x8-12, 90-120s rest. Emphasise endurance under load.
+
+3. TEMPO / THRESHOLD RUN (1x/week)
+   - 20-30 min at 80-85% max HR (uncomfortable but sustainable)
+   - Or: 6x800m intervals with 90s rest
+   - Purpose: raise lactate threshold, improve race pace
+
+4. BRICK SESSION (1x/week) — simulate race conditions:
+   - Alternate short runs (400-800m) with HYROX stations back-to-back
+   - Example: 800m run → Wall Balls 30 reps → 800m run → Farmer Carry 50m → 800m run
+   - Keep rest minimal (30s max between movements)
+   - Cue: "Practice transitioning under fatigue — this is what race day feels like."
+
+5. RECOVERY / MOBILITY (1x/week if sessions allow):
+   - Hip flexor stretch, thoracic rotation, ankle mobility
+   - Light row or bike 20 min zone 1
+
+PROGRESSION ACROSS 4 WEEKS:
+- Week 1: Base volume, moderate intensity, focus on movement quality
+- Week 2: Add load or reps (+5-10%)
+- Week 3: Peak volume and intensity — most demanding week
+- Week 4: Deload — reduce volume 40%, maintain intensity, full recovery
+
+EXERCISE NAMING for HYROX sessions: use real station names where possible
+(SkiErg, Sled Push, Wall Ball, Farmer Carry, Sandbag Lunge, Burpee Broad Jump, Rowing).
+If stations not available, name the substitute clearly in the cue field.`,
+};
+
+function detectGoal(goalStr) {
+  const g = (goalStr || "").toLowerCase();
+  if (/hyrox|hybrid.?perform|hybrid.?athlet/i.test(g)) return GOAL_GUIDANCE.hyrox;
+  if (/fat|loss|lean|cut|recomp/i.test(g))             return GOAL_GUIDANCE.fatLoss;
+  if (/muscle|strength|gain|hypertrophy/i.test(g))     return GOAL_GUIDANCE.muscle;
+  if (/endurance|conditioning|cardio|run|stamina/i.test(g)) return GOAL_GUIDANCE.endurance;
+  return GOAL_GUIDANCE.general;
+}
+
+function detectSplit(sessions, goalStr) {
+  const isHyrox = /hyrox|hybrid.?perform/i.test(goalStr || "");
+  if (isHyrox) {
+    const hyroxSplits = {
+      3: "HYROX 3-day: Day 1 Strength (HYROX stations) | Day 2 Zone 2 Run | Day 3 Brick Session",
+      4: "HYROX 4-day: Day 1 Strength | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Brick Session",
+      5: "HYROX 5-day: Day 1 Strength A | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Strength B | Day 5 Brick Session",
+      6: "HYROX 6-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick | Day 6 Recovery/Mobility",
+    };
+    return hyroxSplits[sessions] || hyroxSplits[4];
+  }
+  const splits = {
+    3: "Full-Body A/B/C or Push/Pull/Legs",
+    4: "Upper/Lower × 2 or Push/Pull/Legs/Full-Body",
+    5: "Push/Pull/Legs/Upper/Lower",
+    6: "Push/Pull/Legs × 2",
+    7: "PPL × 2 + 1 active recovery day",
+  };
+  return splits[sessions] || splits[3];
+}
+
 /**
  * Sends an email notification to the coach whenever a new lead doc is created
  * in the /leads collection.
@@ -164,25 +273,9 @@ exports.generateProgram = onCall(
       (d) => !days.includes(d)
     );
 
-    // ── Goal guidance ────────────────────────────────────────────────────────
-    const goalGuidanceMap = {
-      fatLoss:
-        "Fat loss & body recomposition. Prioritise metabolic conditioning, " +
-        "circuit-style supersets, 12-15 reps, 30-60 s rest. Include HIIT finishers. " +
-        "Keep sessions intense and time-efficient.",
-      muscle:
-        "Muscle hypertrophy & strength. Prioritise compound lifts with " +
-        "progressive overload, 6-10 reps, 2-3 min rest. Periodise load across 4 weeks " +
-        "(e.g. Week 1-2 at 70%, Week 3-4 at 75-80% 1RM). Add isolation accessories.",
-      endurance:
-        "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
-        "functional compound movements, 15-20 reps, minimal rest / supersets. " +
-        "Build aerobic base while maintaining muscle.",
-    };
-    const g = (goal || "").toLowerCase();
-    let goalGuidance = goalGuidanceMap.muscle;
-    if (/fat|lean|cut|giam|giảm|weight.?loss/i.test(g)) goalGuidance = goalGuidanceMap.fatLoss;
-    else if (/endurance|sức.?bền|suc.?ben|stamina|run|cardio/i.test(g)) goalGuidance = goalGuidanceMap.endurance;
+    // ── Goal & split guidance ─────────────────────────────────────────────────
+    const goalGuidance = detectGoal(goal);
+    const splitGuidance = detectSplit(sessionsPerWeek, goal);
 
     // ── Level guidance ───────────────────────────────────────────────────────
     const levelMap = {
@@ -548,11 +641,20 @@ CLIENT PROFILE:
 ${assessContext}
 ${progressContext}
 ${volumeContext}
+
+GOAL APPROACH:
+${goalGuidance}
+
+LEVEL GUIDANCE:
+${levelGuidance}
+
+SPLIT STRUCTURE:
+${splitGuidance}
 ${styleContext}
 
 TASK: Generate a 4-week progressive training program that:
 1. Continues naturally from where this client left off
-2. Matches exactly the coaching style shown in the examples above
+2. Follows the GOAL APPROACH and SPLIT STRUCTURE above precisely
 3. Progresses load/volume intelligently based on their history
 4. Addresses any weak points shown in their progress data
 
@@ -762,30 +864,9 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       }
     }
 
-    // ── Step 3b: Goal & level guidance ──────────────────────────────────────
-    const goalGuidanceMap = {
-      fatLoss:
-        "Fat loss & body recomposition. Prioritise metabolic conditioning, " +
-        "circuit-style supersets, 12-15 reps, 30-60 s rest. Include HIIT finishers. " +
-        "Keep sessions intense and time-efficient.",
-      muscle:
-        "Muscle hypertrophy & strength. Prioritise compound lifts with " +
-        "progressive overload, 6-10 reps, 2-3 min rest. Periodise load: " +
-        "Week 1 moderate intensity → build across the week. Add isolation accessories.",
-      endurance:
-        "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
-        "functional compound movements, 15-20 reps, minimal rest / supersets. " +
-        "Build aerobic base while maintaining muscle.",
-      general:
-        "General fitness & health. Balanced mix of strength and conditioning. " +
-        "3-4 sets, 10-12 reps, full-body compound focus with light accessories. " +
-        "Prioritise movement quality and consistency.",
-    };
-    const g = (goal || "").toLowerCase();
-    let goalGuidance = goalGuidanceMap.general;
-    if (/fat|loss|lean|cut|recomp/i.test(g))      goalGuidance = goalGuidanceMap.fatLoss;
-    else if (/muscle|strength|gain|hypertrophy/i.test(g)) goalGuidance = goalGuidanceMap.muscle;
-    else if (/endurance|conditioning|cardio|run|stamina/i.test(g)) goalGuidance = goalGuidanceMap.endurance;
+    // ── Step 3b: Goal, level & split guidance ────────────────────────────────
+    const goalGuidance = detectGoal(goal);
+    const splitGuidance = detectSplit(sessions, goal);
 
     const levelGuidanceMap = {
       Beginner:
@@ -800,16 +881,6 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
         "(tempo, pause reps). Complex periodisation across the week.",
     };
     const levelGuidance = levelGuidanceMap[level] || levelGuidanceMap["Intermediate"];
-
-    // ── Step 3c: Split structure guidance ────────────────────────────────────
-    const splitMap = {
-      3: "Use a Full-Body split (Session A/B/C alternating) or Push/Pull/Legs.",
-      4: "Use Upper/Lower split (2× upper, 2× lower) or Push/Pull/Legs/Full-Body.",
-      5: "Use Push/Pull/Legs/Upper/Lower or a body-part split.",
-      6: "Use Push/Pull/Legs × 2 (PPL repeated).",
-      7: "Use PPL × 2 + 1 active recovery / conditioning day.",
-    };
-    const splitGuidance = splitMap[sessions] || splitMap[3];
 
     // ── Step 4: Load exercise library ───────────────────────────────────────
     steps.push({ icon: "📚", text: "Loading exercise library..." });
