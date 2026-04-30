@@ -285,6 +285,7 @@ RULES
 - Total session: 45-75 min
 - Vary session focus logically across days (e.g. Push / Pull / Legs, or Upper / Lower)
 - INJURY RULES OVERRIDE ALL OTHER RULES — never recommend contraindicated exercises
+- EXERCISE NAMES must be clean standard names ONLY — e.g. "Barbell Back Squat", "Romanian Deadlift", "Dumbbell Row". NEVER append equipment qualifiers like "with a Weighted Vest", "with Resistance Band", "with Kettlebell" to the exercise name. Equipment context belongs in the "cue" field only.
 - Do NOT add any text outside the JSON`;
 
     // ── Call Groq ────────────────────────────────────────────────────────────
@@ -592,7 +593,42 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       console.warn("[pulseGenerateFree] Could not load style examples:", e.message);
     }
 
-    // ── Step 4: Build prompt ─────────────────────────────────────────────────
+    // ── Step 4: Load exercise library ───────────────────────────────────────
+    steps.push({ icon: "📚", text: "Loading exercise library..." });
+    let exerciseLibraryContext = "";
+    try {
+      const exSnap = await db.collection("exercises").get();
+      if (!exSnap.empty) {
+        // Group by primary muscle for readability in prompt
+        const byMuscle = {};
+        exSnap.docs.forEach((doc) => {
+          const d = doc.data();
+          if (!d.name) return;
+          // primary muscle = first key in muscles map, or "General"
+          let muscle = "General";
+          if (d.muscles && typeof d.muscles === "object") {
+            const keys = Object.keys(d.muscles);
+            if (keys.length > 0) muscle = keys[0];
+          }
+          if (!byMuscle[muscle]) byMuscle[muscle] = [];
+          byMuscle[muscle].push(d.name);
+        });
+
+        const lines = Object.entries(byMuscle)
+          .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
+          .join("\n");
+
+        exerciseLibraryContext = `
+EXERCISE LIBRARY — you MUST only pick exercises from this list:
+${lines}
+
+CRITICAL: Use ONLY the exact exercise names listed above. Do NOT invent exercises not in this list. Do NOT append equipment modifiers (e.g. "with Weighted Vest") to any name.`;
+      }
+    } catch (e) {
+      console.warn("[pulseGenerateFree] Could not load exercise library:", e.message);
+    }
+
+    // ── Step 5: Build prompt ─────────────────────────────────────────────────
     steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 1 tuần..." });
 
     const physicalContext = (gender || weight)
@@ -610,6 +646,7 @@ CLIENT INFO:
 - Level: ${level}
 - Goal: ${goal}
 - Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
+${exerciseLibraryContext}
 ${styleContext}
 
 TASK: Generate a complete 1-week training program that:
