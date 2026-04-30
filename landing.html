@@ -946,18 +946,21 @@
     input::placeholder, textarea::placeholder { color: var(--muted); }
     .service-radios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .service-radios label {
-      display: flex; gap: 8px; align-items: center;
-      padding: 11px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 14px 16px;
       border-radius: var(--r-sm);
       border: 1px solid var(--border);
       background: var(--surface);
       text-transform: none; letter-spacing: 0;
-      font-size: 13px; font-weight: 500;
       cursor: pointer; color: var(--fg);
       transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
     }
     .service-radios label:hover { border-color: var(--border-md); background: var(--surface-md); }
-    .service-radios input { width: auto; accent-color: var(--accent); }
+    .service-radios label:has(input:checked) { border-color: var(--accent); background: oklch(51% .23 295 / .08); }
+    .service-radios input { width: auto; accent-color: var(--accent); margin: 0; }
+    .service-radio-top { display: flex; align-items: center; gap: 8px; }
+    .service-radio-name { font-size: 13px; font-weight: 700; color: var(--fg); }
+    .service-radio-desc { font-size: 11px; color: var(--muted2); line-height: 1.5; padding-left: 22px; }
     .form-actions {
       margin-top: 20px; display: flex;
       justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -1059,6 +1062,7 @@
       .nav-mobile-btn { display: block; }
       section { padding: 80px 20px; }
       .service-radios { grid-template-columns: 1fr; }
+      .service-radio-desc { padding-left: 22px; }
     }
     @media (max-width: 600px) {
       .hero-title { font-size: 48px; }
@@ -1542,9 +1546,27 @@
           <div class="field-full">
             <label>Service Preference</label>
             <div class="service-radios">
-              <label><input type="radio" name="service" value="hybrid-performance" required/> Hybrid</label>
-              <label><input type="radio" name="service" value="body-recomp"/> Recomp</label>
-              <label><input type="radio" name="service" value="accountability"/> Accountability</label>
+              <label>
+                <div class="service-radio-top">
+                  <input type="radio" name="service" value="hybrid-performance" required/>
+                  <span class="service-radio-name">Hybrid</span>
+                </div>
+                <span class="service-radio-desc">Strength + endurance combined. Built for athletes training for HYROX, running, or general performance.</span>
+              </label>
+              <label>
+                <div class="service-radio-top">
+                  <input type="radio" name="service" value="body-recomp"/>
+                  <span class="service-radio-name">Recomp</span>
+                </div>
+                <span class="service-radio-desc">Lose fat and build muscle simultaneously. Precise programming and nutrition cues for body transformation.</span>
+              </label>
+              <label>
+                <div class="service-radio-top">
+                  <input type="radio" name="service" value="accountability"/>
+                  <span class="service-radio-name">Accountability</span>
+                </div>
+                <span class="service-radio-desc">Weekly check-ins, progress reviews, and real-time plan adjustments. For those who need structure and consistency.</span>
+              </label>
             </div>
           </div>
           <div class="field-full">
