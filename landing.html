@@ -132,6 +132,59 @@
       box-shadow: 0 8px 28px var(--accent-glow);
     }
 
+    /* Ghost / transparent variant */
+    .btn-hero.ghost {
+      background: transparent;
+      border: 1.5px solid oklch(68% .16 295 / .45);
+      color: oklch(75% .12 295);
+      backdrop-filter: blur(4px);
+    }
+    .btn-hero.ghost:hover {
+      background: oklch(68% .16 295 / .12);
+      border-color: oklch(68% .16 295 / .75);
+      color: oklch(90% .12 295);
+      transform: translateY(-1px);
+    }
+
+    /* Shimmer / shiny CTA button */
+    @keyframes shimmer-sweep {
+      0%   { transform: translateX(-120%) skewX(-15deg); }
+      100% { transform: translateX(220%) skewX(-15deg); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 18px 2px oklch(68% .22 295 / .45), 0 4px 24px oklch(68% .22 295 / .3); }
+      50%       { box-shadow: 0 0 32px 6px oklch(68% .22 295 / .7), 0 8px 36px oklch(68% .22 295 / .5); }
+    }
+    .btn-shiny {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, oklch(58% .25 295) 0%, oklch(52% .28 310) 50%, oklch(62% .22 280) 100%);
+      border: 1.5px solid oklch(72% .2 295 / .6);
+      color: #fff;
+      border-radius: 50px;
+      padding: 15px 36px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      cursor: pointer;
+      animation: pulse-glow 2.4s ease-in-out infinite;
+      transition: transform .22s ease, filter .22s ease;
+    }
+    .btn-shiny::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+      width: 60%;
+      animation: shimmer-sweep 2.2s ease-in-out infinite;
+    }
+    .btn-shiny:hover {
+      transform: translateY(-2px) scale(1.03);
+      filter: brightness(1.15);
+    }
+
     .nav-mobile-btn {
       display: none;
       background: none;
@@ -1399,9 +1452,9 @@
 
     </div><!-- /feat-panels -->
 
-    <div style="text-align:center;margin-top:52px;display:flex;flex-direction:column;align-items:center;gap:14px;">
-      <a class="btn-hero primary" href="/index.html">Open App →</a>
-      <button onclick="openPulseFreeModal()" style="padding:13px 28px;border-radius:8px;background:oklch(68% .16 295 / .15);border:1px solid oklch(68% .16 295 / .55);color:oklch(82% .14 295);font-family:inherit;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='oklch(68% .16 295 / .28)'" onmouseout="this.style.background='oklch(68% .16 295 / .15)'">⚡ Get Your Free Week</button>
+    <div style="text-align:center;margin-top:52px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+      <a class="btn-hero ghost" href="/index.html">Open App →</a>
+      <button class="btn-shiny" onclick="openPulseFreeModal()">⚡ Get Your Free Week</button>
     </div>
   </div>
 </section>
