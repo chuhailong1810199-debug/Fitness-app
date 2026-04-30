@@ -1831,27 +1831,39 @@
 
 <!-- ── PULSE FREE MODAL ─────────────────────────────────────────────── -->
 <style>
-.pfm-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);overflow-y:auto;}
-.pfm-sheet{width:100%;max-width:480px;background:#0a0e1a;border-radius:20px;overflow:hidden;margin:auto;}
+/* Overlay — fades in */
+.pfm-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0);backdrop-filter:blur(0px);overflow-y:auto;transition:background .35s ease,backdrop-filter .35s ease;}
+.pfm-overlay.pfm-open{background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);}
+
+/* Sheet — slides up */
+.pfm-sheet{width:100%;max-width:480px;background:#0a0e1a;border-radius:20px;overflow:hidden;margin:auto;transform:translateY(40px);opacity:0;transition:transform .4s cubic-bezier(.22,.68,0,1.2),opacity .35s ease;}
+.pfm-overlay.pfm-open .pfm-sheet{transform:translateY(0);opacity:1;}
+
+/* Phase transition */
+.pfm-phase{transition:opacity .25s ease,transform .25s ease;}
+.pfm-phase.pfm-out{opacity:0;transform:translateY(8px);pointer-events:none;}
+.pfm-phase.pfm-hidden{display:none;}
+
 .pfm-close-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:4px 8px;line-height:1;border-radius:6px;transition:color .15s;}
 .pfm-close-btn:hover{color:#fff;}
 .pfm-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.45);margin-bottom:6px;display:block;}
-.pfm-input,.pfm-select{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box;transition:border-color .15s;outline:none;-webkit-appearance:none;}
-.pfm-input:focus,.pfm-select:focus{border-color:oklch(68% .16 295 / .7);background:rgba(255,255,255,0.08);}
+.pfm-input,.pfm-select{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:#fff;font-family:inherit;font-size:14px;box-sizing:border-box;transition:border-color .2s,background .2s;outline:none;-webkit-appearance:none;}
+.pfm-input:focus,.pfm-select:focus{border-color:oklch(68% .16 295 / .7);background:rgba(255,255,255,0.09);}
 .pfm-select option{background:#0d1526;}
 .pfm-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.pfm-submit{width:100%;padding:15px;border-radius:10px;background:oklch(68% .16 295);color:#fff;border:none;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 0 20px oklch(68% .16 295 / .3);margin-top:4px;}
-.pfm-submit:hover{background:oklch(74% .18 295);box-shadow:0 0 28px oklch(68% .16 295 / .5);}
-.pfm-submit:disabled{opacity:.5;cursor:not-allowed;}
-.pfm-cta-primary{display:block;width:100%;padding:15px;border-radius:10px;background:linear-gradient(135deg,#1e90ff,#7665ff);color:#fff;border:none;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box;transition:opacity .2s;}
-.pfm-cta-primary:hover{opacity:.88;}
-.pfm-cta-secondary{display:block;width:100%;padding:13px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.55);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.pfm-submit{width:100%;padding:15px;border-radius:10px;background:oklch(68% .16 295);color:#fff;border:none;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .25s;box-shadow:0 0 20px oklch(68% .16 295 / .3);}
+.pfm-submit:hover{background:oklch(74% .18 295);box-shadow:0 0 32px oklch(68% .16 295 / .55);transform:translateY(-1px);}
+.pfm-submit:active{transform:translateY(0);}
+.pfm-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.pfm-cta-primary{display:block;width:100%;padding:15px;border-radius:10px;background:linear-gradient(135deg,#1e90ff,#7665ff);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box;transition:opacity .2s,transform .2s;}
+.pfm-cta-primary:hover{opacity:.88;transform:translateY(-1px);}
+.pfm-cta-secondary{display:block;width:100%;padding:13px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
 .pfm-cta-secondary:hover{border-color:rgba(255,255,255,0.3);color:#fff;}
-.pfm-step-done{display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:9px;animation:pfm-step-in .3s ease;}
+.pfm-step-done{display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:9px;animation:pfm-step-in .35s cubic-bezier(.22,.68,0,1.1);}
 .pfm-step-done .ps-icon{font-size:14px;flex-shrink:0;}
 .pfm-step-done .ps-text{color:rgba(255,255,255,.55);font-size:11px;font-weight:500;}
 .pfm-step-done .ps-check{margin-left:auto;color:#44cc88;font-size:12px;font-weight:700;}
-@keyframes pfm-step-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pfm-step-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pfm-dot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 .pfm-dot-spinner{display:flex;gap:4px;flex-shrink:0;}
 .pfm-dot-spinner::before,.pfm-dot-spinner::after,.pfm-dot-spinner span{content:'';width:6px;height:6px;background:oklch(68% .16 295);border-radius:50%;animation:pfm-dot 1.2s infinite ease-in-out;}
@@ -1870,102 +1882,102 @@
           <div style="width:36px;height:36px;background:oklch(68% .16 295);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px oklch(68% .16 295 / .45);">⚡</div>
           <div>
             <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px;">Pulse Free</div>
-            <div id="pfm-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);">Nhận chương trình 1 tuần miễn phí</div>
+            <div id="pfm-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);transition:opacity .2s;">Your free 1-week program</div>
           </div>
         </div>
         <button class="pfm-close-btn" onclick="closePulseFreeModal()">×</button>
       </div>
 
       <!-- PHASE 1: Form -->
-      <div id="pfm-form-phase" style="padding:22px;">
+      <div id="pfm-form-phase" class="pfm-phase" style="padding:22px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px;">
-          Điền thông tin bên dưới — Pulse sẽ tạo <strong style="color:#fff;">chương trình tập 1 tuần</strong> cá nhân hoá hoàn toàn miễn phí.
+          Fill in your details — Pulse will build a <strong style="color:#fff;">personalised 1-week program</strong> for you, completely free.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
-          <div><label class="pfm-label">Tên của bạn *</label><input class="pfm-input" id="pfm-name" type="text" placeholder="Ví dụ: Nguyễn Văn A"></div>
-          <div><label class="pfm-label">Email *</label><input class="pfm-input" id="pfm-email" type="email" placeholder="email@gmail.com"></div>
+          <div><label class="pfm-label">Your name *</label><input class="pfm-input" id="pfm-name" type="text" placeholder="e.g. Alex Johnson"></div>
+          <div><label class="pfm-label">Email *</label><input class="pfm-input" id="pfm-email" type="email" placeholder="you@email.com"></div>
           <div>
-            <label class="pfm-label">Mục tiêu *</label>
+            <label class="pfm-label">Goal *</label>
             <select class="pfm-select" id="pfm-goal">
-              <option value="">— Chọn mục tiêu —</option>
-              <option value="Giảm mỡ, cải thiện vóc dáng">🔥 Giảm mỡ, cải thiện vóc dáng</option>
-              <option value="Tăng cơ, tăng sức mạnh">💪 Tăng cơ, tăng sức mạnh</option>
-              <option value="Duy trì thể lực, tăng độ bền">🏃 Duy trì thể lực, tăng độ bền</option>
-              <option value="Cải thiện tư thế, phục hồi">🧘 Cải thiện tư thế, phục hồi</option>
-              <option value="Tổng quát — cân bằng sức khoẻ">⚖️ Tổng quát — cân bằng sức khoẻ</option>
+              <option value="">— Select your goal —</option>
+              <option value="Fat loss & body recomposition">🔥 Fat loss & body recomposition</option>
+              <option value="Muscle gain & strength">💪 Muscle gain & strength</option>
+              <option value="Endurance & conditioning">🏃 Endurance & conditioning</option>
+              <option value="Posture & injury rehab">🧘 Posture & injury rehab</option>
+              <option value="General fitness & health">⚖️ General fitness & health</option>
             </select>
           </div>
           <div class="pfm-row">
             <div>
-              <label class="pfm-label">Trình độ *</label>
+              <label class="pfm-label">Level *</label>
               <select class="pfm-select" id="pfm-level">
-                <option value="">— Chọn —</option>
-                <option value="Beginner">🌱 Mới bắt đầu</option>
-                <option value="Intermediate">🔥 Trung cấp</option>
-                <option value="Advanced">⚡ Nâng cao</option>
+                <option value="">— Select —</option>
+                <option value="Beginner">🌱 Beginner</option>
+                <option value="Intermediate">🔥 Intermediate</option>
+                <option value="Advanced">⚡ Advanced</option>
               </select>
             </div>
             <div>
-              <label class="pfm-label">Số buổi/tuần *</label>
+              <label class="pfm-label">Sessions / week *</label>
               <select class="pfm-select" id="pfm-sessions">
                 <option value="">—</option>
-                <option value="3">3 buổi</option>
-                <option value="4">4 buổi</option>
-                <option value="5">5 buổi</option>
-                <option value="6">6 buổi</option>
+                <option value="3">3 days</option>
+                <option value="4">4 days</option>
+                <option value="5">5 days</option>
+                <option value="6">6 days</option>
               </select>
             </div>
           </div>
           <div class="pfm-row">
             <div>
-              <label class="pfm-label">Giới tính</label>
+              <label class="pfm-label">Gender <span style="font-weight:400;opacity:.5">(optional)</span></label>
               <select class="pfm-select" id="pfm-gender">
-                <option value="">— Không bắt buộc —</option>
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
+                <option value="">— Optional —</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
               </select>
             </div>
             <div>
-              <label class="pfm-label">Cân nặng (kg)</label>
-              <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="Ví dụ: 68">
+              <label class="pfm-label">Weight (kg) <span style="font-weight:400;opacity:.5">(optional)</span></label>
+              <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="e.g. 75">
             </div>
           </div>
         </div>
         <div id="pfm-form-error" style="display:none;color:#ff6b6b;font-size:12px;margin-top:12px;padding:10px 14px;background:rgba(255,107,107,.08);border-radius:8px;border:1px solid rgba(255,107,107,.2);"></div>
-        <button class="pfm-submit" id="pfm-submit-btn" onclick="submitPulseFreeForm()" style="margin-top:20px;">⚡ Generate chương trình</button>
-        <div style="font-size:11px;color:rgba(255,255,255,0.28);text-align:center;margin-top:12px;line-height:1.6;">Thông tin của bạn được bảo mật.<br>Coach Long Chu có thể liên hệ để tư vấn thêm.</div>
+        <button class="pfm-submit" id="pfm-submit-btn" onclick="submitPulseFreeForm()" style="margin-top:20px;">⚡ Generate My Program</button>
+        <div style="font-size:11px;color:rgba(255,255,255,0.25);text-align:center;margin-top:12px;line-height:1.6;">Your information is kept private.<br>Coach Long Chu may reach out to offer guidance.</div>
       </div>
 
       <!-- PHASE 2: Loading -->
-      <div id="pfm-loading-phase" style="display:none;padding:22px;">
-        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Pulse đang phân tích và tạo chương trình cho bạn...</div>
+      <div id="pfm-loading-phase" class="pfm-phase pfm-hidden" style="padding:22px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Pulse is analysing your profile and building your program…</div>
         <div id="pfm-steps-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
         <div id="pfm-current-step" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:oklch(68% .16 295 / .08);border:1px solid oklch(68% .16 295 / .25);border-radius:10px;">
           <div class="pfm-dot-spinner"><span></span></div>
-          <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pfm-current-text">Khởi động Pulse...</div>
+          <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pfm-current-text">Starting Pulse…</div>
         </div>
       </div>
 
       <!-- PHASE 3: Result -->
-      <div id="pfm-result-phase" style="display:none;">
+      <div id="pfm-result-phase" class="pfm-phase pfm-hidden">
         <div style="padding:16px 22px 0;">
           <div style="background:rgba(68,204,136,.12);border:1px solid rgba(68,204,136,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <div style="font-size:22px;">✅</div>
             <div>
-              <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Chương trình của bạn đã sẵn sàng!</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1 tuần tập luyện — được tạo bởi Pulse AI</div>
+              <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Your program is ready!</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1-week training plan — built by ⚡ Pulse AI</div>
             </div>
           </div>
         </div>
         <div id="pfm-program-preview" style="padding:0 22px;max-height:55vh;overflow-y:auto;"></div>
         <div style="padding:16px 22px 22px;border-top:1px solid #1a1a2e;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
           <div style="text-align:center;">
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">Muốn có full 4-week program tối ưu riêng?</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Đăng ký để coach Long Chu thiết kế chương trình chuyên sâu, theo dõi sát sao tiến trình của bạn.</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">Want a full 4-week program built just for you?</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;">Coach Long Chu will design a complete plan, track your progress, and support you every step of the way.</div>
           </div>
-          <a class="pfm-cta-primary" href="#cta" onclick="closePulseFreeModal()">📋 Đăng ký Full Program →</a>
-          <a class="pfm-cta-primary" href="https://zalo.me/0902787150" target="_blank" style="background:linear-gradient(135deg,#0068ff,#00a6ff);">💬 Chat với coach ngay</a>
-          <button class="pfm-cta-secondary" onclick="closePulseFreeModal()">Đóng</button>
+          <a class="pfm-cta-primary" href="#cta" onclick="closePulseFreeModal()">📋 Apply for Full Program →</a>
+          <a class="pfm-cta-primary" href="https://zalo.me/0902787150" target="_blank" style="background:linear-gradient(135deg,#0068ff,#00a6ff);">💬 Chat with Coach Now</a>
+          <button class="pfm-cta-secondary" onclick="closePulseFreeModal()">Close</button>
         </div>
       </div>
 
@@ -1975,18 +1987,49 @@
 
 <script>
   function openPulseFreeModal() {
-    document.getElementById('pfm-form-phase').style.display = 'block';
-    document.getElementById('pfm-loading-phase').style.display = 'none';
-    document.getElementById('pfm-result-phase').style.display = 'none';
+    const modal = document.getElementById('pulse-free-modal');
+    _pfmShowPhase('form');
     document.getElementById('pfm-form-error').style.display = 'none';
-    document.getElementById('pfm-subtitle').textContent = 'Nhận chương trình 1 tuần miễn phí';
-    document.getElementById('pulse-free-modal').style.display = 'block';
+    document.getElementById('pfm-subtitle').textContent = 'Your free 1-week program';
+    modal.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('pfm-open')));
     document.body.style.overflow = 'hidden';
   }
+
   function closePulseFreeModal() {
-    document.getElementById('pulse-free-modal').style.display = 'none';
-    document.body.style.overflow = '';
+    const modal = document.getElementById('pulse-free-modal');
+    modal.classList.remove('pfm-open');
+    setTimeout(() => { modal.style.display = 'none'; document.body.style.overflow = ''; }, 380);
   }
+
+  function _pfmShowPhase(name) {
+    const phases = { form: 'pfm-form-phase', loading: 'pfm-loading-phase', result: 'pfm-result-phase' };
+    Object.entries(phases).forEach(([key, id]) => {
+      const el = document.getElementById(id);
+      if (key === name) {
+        el.classList.remove('pfm-hidden', 'pfm-out');
+        requestAnimationFrame(() => el.classList.remove('pfm-out'));
+      } else {
+        el.classList.add('pfm-out');
+        setTimeout(() => el.classList.add('pfm-hidden'), 260);
+      }
+    });
+  }
+
+  function _pfmTransitionTo(name) {
+    const currentPhase = ['form','loading','result'].find(n => {
+      const el = document.getElementById({ form:'pfm-form-phase', loading:'pfm-loading-phase', result:'pfm-result-phase' }[n]);
+      return el && !el.classList.contains('pfm-hidden');
+    });
+    if (currentPhase) {
+      const curEl = document.getElementById({ form:'pfm-form-phase', loading:'pfm-loading-phase', result:'pfm-result-phase' }[currentPhase]);
+      curEl.classList.add('pfm-out');
+      setTimeout(() => { curEl.classList.add('pfm-hidden'); _pfmShowPhase(name); }, 260);
+    } else {
+      _pfmShowPhase(name);
+    }
+  }
+
   function _pfmCompleteStep(icon, text) {
     const list = document.getElementById('pfm-steps-list');
     const el = document.createElement('div');
@@ -1994,6 +2037,7 @@
     el.innerHTML = `<span class="ps-icon">${icon}</span><span class="ps-text">${text}</span><span class="ps-check">✓</span>`;
     list.appendChild(el);
   }
+
   async function submitPulseFreeForm() {
     const name     = (document.getElementById('pfm-name').value || '').trim();
     const email    = (document.getElementById('pfm-email').value || '').trim();
@@ -2004,28 +2048,27 @@
     const weight   = document.getElementById('pfm-weight').value;
     const errEl    = document.getElementById('pfm-form-error');
 
-    if (!name)  { errEl.textContent='Vui lòng nhập tên.'; errEl.style.display='block'; return; }
-    if (!email || !email.includes('@')) { errEl.textContent='Email không hợp lệ.'; errEl.style.display='block'; return; }
-    if (!goal)  { errEl.textContent='Vui lòng chọn mục tiêu.'; errEl.style.display='block'; return; }
-    if (!level) { errEl.textContent='Vui lòng chọn trình độ.'; errEl.style.display='block'; return; }
-    if (!sessions){ errEl.textContent='Vui lòng chọn số buổi/tuần.'; errEl.style.display='block'; return; }
+    if (!name)                       { errEl.textContent = 'Please enter your name.'; errEl.style.display = 'block'; return; }
+    if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
+    if (!goal)                       { errEl.textContent = 'Please select a goal.'; errEl.style.display = 'block'; return; }
+    if (!level)                      { errEl.textContent = 'Please select your level.'; errEl.style.display = 'block'; return; }
+    if (!sessions)                   { errEl.textContent = 'Please select sessions per week.'; errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
 
-    document.getElementById('pfm-form-phase').style.display = 'none';
-    document.getElementById('pfm-loading-phase').style.display = 'block';
     document.getElementById('pfm-steps-list').innerHTML = '';
-    document.getElementById('pfm-subtitle').textContent = `Đang tạo chương trình cho ${name}...`;
-    document.getElementById('pfm-current-text').textContent = 'Khởi động Pulse...';
+    document.getElementById('pfm-current-text').textContent = 'Starting Pulse…';
+    document.getElementById('pfm-subtitle').textContent = `Building your program, ${name}…`;
+    _pfmTransitionTo('loading');
 
     const fakeSteps = [
-      { icon:'📝', text:`Lưu thông tin ${name}...` },
-      { icon:'🎯', text:`Phân tích mục tiêu...` },
-      { icon:'🎨', text:'Học phong cách coaching...' },
-      { icon:'⚡', text:'Pulse đang tạo chương trình 1 tuần...' },
+      { icon: '📝', text: `Saving your profile…` },
+      { icon: '🎯', text: `Analysing your goal: ${goal.split('&')[0].trim()}` },
+      { icon: '🎨', text: 'Loading coaching style…' },
+      { icon: '⚡', text: 'Pulse is writing your 1-week plan…' },
     ];
     let stepIdx = 0;
     const stepInterval = setInterval(() => {
-      if (stepIdx > 0 && stepIdx <= fakeSteps.length) _pfmCompleteStep(fakeSteps[stepIdx-1].icon, fakeSteps[stepIdx-1].text);
+      if (stepIdx > 0 && stepIdx <= fakeSteps.length) _pfmCompleteStep(fakeSteps[stepIdx - 1].icon, fakeSteps[stepIdx - 1].text);
       if (stepIdx < fakeSteps.length) document.getElementById('pfm-current-text').textContent = fakeSteps[stepIdx].text;
       stepIdx++;
     }, 1800);
@@ -2035,50 +2078,52 @@
       const result = await fn({ name, email, goal, level, sessionsPerWeek: parseInt(sessions), gender, weight: weight ? parseFloat(weight) : null });
       clearInterval(stepInterval);
       fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
-      _pfmCompleteStep('✅', 'Chương trình của bạn đã sẵn sàng!');
-      document.getElementById('pfm-current-text').textContent = 'Hoàn thành! ✨';
-      await new Promise(r => setTimeout(r, 700));
+      _pfmCompleteStep('✅', 'Your program is ready!');
+      document.getElementById('pfm-current-text').textContent = 'Done ✨';
+      await new Promise(r => setTimeout(r, 800));
 
-      document.getElementById('pfm-result-title').textContent = `Chương trình 1 tuần của ${name} đã sẵn sàng!`;
+      document.getElementById('pfm-result-title').textContent = `${name}'s 1-week program is ready!`;
       _renderFreeProgram(result.data.program);
-      document.getElementById('pfm-loading-phase').style.display = 'none';
-      document.getElementById('pfm-result-phase').style.display = 'block';
-      document.getElementById('pfm-subtitle').textContent = 'Chương trình cá nhân hoá bởi Pulse AI';
+      document.getElementById('pfm-subtitle').textContent = 'Personalised by Pulse AI';
+      _pfmTransitionTo('result');
     } catch (err) {
       clearInterval(stepInterval);
       document.getElementById('pfm-current-step').innerHTML = `
-        <div style="text-align:center;width:100%;padding:12px 0;">
+        <div style="text-align:center;width:100%;padding:14px 0;">
           <div style="font-size:28px;margin-bottom:8px;">❌</div>
-          <div style="color:#ff6b6b;font-size:13px;font-weight:600;margin-bottom:6px;">Pulse gặp lỗi</div>
+          <div style="color:#ff6b6b;font-size:13px;font-weight:600;margin-bottom:6px;">Something went wrong</div>
           <div style="color:rgba(255,255,255,0.4);font-size:11px;">${err.message}</div>
-          <button onclick="openPulseFreeModal()" style="margin-top:14px;padding:8px 18px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;">← Thử lại</button>
+          <button onclick="openPulseFreeModal()" style="margin-top:14px;padding:8px 20px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">← Try Again</button>
         </div>`;
     }
   }
+
   function _renderFreeProgram(program) {
     const preview = document.getElementById('pfm-program-preview');
-    const phaseColors = { warmup:'#e8a838', strength:'#7665ff', accessories:'#44cc88' };
+    const phaseColors = { warmup: '#e8a838', strength: '#7665ff', accessories: '#44cc88' };
     const days = Object.keys(program);
-    const totalEx = days.reduce((s,d) => s + (program[d].phases||[]).reduce((ps,ph) => ps+(ph.exercises||[]).length,0),0);
+    const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
     let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} ngày tập · ${totalEx} bài tập</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Chương trình cá nhân hoá bởi ⚡ Pulse AI</div>
+      <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} training days · ${totalEx} exercises</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Personalised by ⚡ Pulse AI</div>
     </div>`;
     for (const day of days) {
       const session = program[day];
       html += `<div style="margin-bottom:20px;">
         <div style="font-weight:700;font-size:11px;color:#fff;padding:7px 12px;background:#111827;border-radius:7px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-          <span>📅 ${day}</span><span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label||''}</span>
+          <span>📅 ${day}</span><span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label || ''}</span>
         </div>`;
-      for (const phase of (session.phases||[])) {
-        const col = phaseColors[phase.tag]||'#aaa';
+      for (const phase of (session.phases || [])) {
+        const col = phaseColors[phase.tag] || '#aaa';
         html += `<div style="margin-bottom:8px;padding-left:10px;border-left:2px solid ${col}50;">
           <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name}</div>`;
-        for (const ex of (phase.exercises||[])) {
+        for (const ex of (phase.exercises || [])) {
           html += `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #0d0d1a;align-items:start;">
-            <div><span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
-            ${ex.cue?`<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0,100)}${ex.cue.length>100?'…':''}</div>`:''}
-            </div><div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
+            <div>
+              <span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
+              ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0, 100)}${ex.cue.length > 100 ? '…' : ''}</div>` : ''}
+            </div>
+            <div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
           </div>`;
         }
         html += '</div>';
