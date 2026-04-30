@@ -634,6 +634,10 @@ exports.pulseGenerateFree = onCall(
     if (!name || !email || !goal || !level || !sessionsPerWeek) {
       throw new Error("Thiếu thông tin: name, email, goal, level, sessionsPerWeek là bắt buộc.");
     }
+    const sessionsParsed = parseInt(sessionsPerWeek);
+    if (isNaN(sessionsParsed) || sessionsParsed < 3 || sessionsParsed > 7) {
+      throw new Error("Sessions per week must be between 3 and 7.");
+    }
 
     const db = getFirestore();
     const steps = [];
@@ -658,7 +662,7 @@ exports.pulseGenerateFree = onCall(
     // ── Step 2: Build context ─────────────────────────────────────────────────
     steps.push({ icon: "🎯", text: "Phân tích mục tiêu của bạn..." });
 
-    const sessions = parseInt(sessionsPerWeek) || 3;
+    const sessions = sessionsParsed;
     const dayMaps = {
       3: ["Mon", "Wed", "Fri"],
       4: ["Mon", "Tue", "Thu", "Fri"],
@@ -809,16 +813,30 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
 
     // ── Step 4: Load exercise library ───────────────────────────────────────
     steps.push({ icon: "📚", text: "Loading exercise library..." });
+    const FALLBACK_EXERCISES = {
+      "Chest":      ["Barbell Bench Press", "Dumbbell Bench Press", "Incline Dumbbell Press", "Cable Fly", "Push-Up", "Dips"],
+      "Back":       ["Barbell Row", "Dumbbell Row", "Pull-Up", "Lat Pulldown", "Seated Cable Row", "Deadlift", "Romanian Deadlift"],
+      "Shoulders":  ["Dumbbell Shoulder Press", "Lateral Raise", "Front Raise", "Face Pull", "Arnold Press"],
+      "Biceps":     ["Barbell Curl", "Dumbbell Curl", "Hammer Curl", "Incline Curl", "Cable Curl"],
+      "Triceps":    ["Tricep Pushdown", "Skull Crusher", "Overhead Tricep Extension", "Close-Grip Bench Press", "Dips"],
+      "Quads":      ["Barbell Back Squat", "Leg Press", "Leg Extension", "Hack Squat", "Bulgarian Split Squat", "Lunge"],
+      "Hamstrings": ["Romanian Deadlift", "Leg Curl", "Nordic Curl", "Good Morning", "Glute-Ham Raise"],
+      "Glutes":     ["Hip Thrust", "Glute Bridge", "Cable Kickback", "Sumo Deadlift", "Step-Up"],
+      "Calves":     ["Standing Calf Raise", "Seated Calf Raise", "Donkey Calf Raise"],
+      "Core":       ["Plank", "Ab Wheel Rollout", "Hanging Knee Raise", "Cable Crunch", "Russian Twist", "Dead Bug"],
+      "Cardio":     ["Jump Rope", "Rowing Machine", "Assault Bike", "Treadmill Run", "Stair Climber"],
+      "Warm-up":    ["Hip Circle", "World's Greatest Stretch", "Band Pull-Apart", "Thoracic Rotation", "Leg Swing", "Arm Circle", "Glute Activation Walk"],
+    };
+
     let exerciseLibraryContext = "";
     try {
       const exSnap = await db.collection("exercises").get();
+      const byMuscle = {};
+
       if (!exSnap.empty) {
-        // Group by primary muscle for readability in prompt
-        const byMuscle = {};
         exSnap.docs.forEach((doc) => {
           const d = doc.data();
           if (!d.name) return;
-          // primary muscle = first key in muscles map, or "General"
           let muscle = "General";
           if (d.muscles && typeof d.muscles === "object") {
             const keys = Object.keys(d.muscles);
@@ -827,19 +845,31 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
           if (!byMuscle[muscle]) byMuscle[muscle] = [];
           byMuscle[muscle].push(d.name);
         });
+      } else {
+        // Firestore library empty — use fallback
+        console.warn("[pulseGenerateFree] Exercise library empty, using fallback list.");
+        Object.assign(byMuscle, FALLBACK_EXERCISES);
+      }
 
-        const lines = Object.entries(byMuscle)
-          .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
-          .join("\n");
+      const lines = Object.entries(byMuscle)
+        .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
+        .join("\n");
 
-        exerciseLibraryContext = `
+      exerciseLibraryContext = `
 EXERCISE LIBRARY — you MUST only pick exercises from this list:
 ${lines}
 
 CRITICAL: Use ONLY the exact exercise names listed above. Do NOT invent exercises not in this list. Do NOT append equipment modifiers (e.g. "with Weighted Vest") to any name.`;
-      }
     } catch (e) {
       console.warn("[pulseGenerateFree] Could not load exercise library:", e.message);
+      // Even on error, inject fallback so AI doesn't hallucinate
+      const lines = Object.entries(FALLBACK_EXERCISES)
+        .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
+        .join("\n");
+      exerciseLibraryContext = `
+EXERCISE LIBRARY — use exercises from this list:
+${lines}
+Do NOT append equipment modifiers to exercise names.`;
     }
 
     // ── Step 5: Build prompt ─────────────────────────────────────────────────
