@@ -593,6 +593,55 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       console.warn("[pulseGenerateFree] Could not load style examples:", e.message);
     }
 
+    // ── Step 3b: Goal & level guidance ──────────────────────────────────────
+    const goalGuidanceMap = {
+      fatLoss:
+        "Fat loss & body recomposition. Prioritise metabolic conditioning, " +
+        "circuit-style supersets, 12-15 reps, 30-60 s rest. Include HIIT finishers. " +
+        "Keep sessions intense and time-efficient.",
+      muscle:
+        "Muscle hypertrophy & strength. Prioritise compound lifts with " +
+        "progressive overload, 6-10 reps, 2-3 min rest. Periodise load: " +
+        "Week 1 moderate intensity → build across the week. Add isolation accessories.",
+      endurance:
+        "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
+        "functional compound movements, 15-20 reps, minimal rest / supersets. " +
+        "Build aerobic base while maintaining muscle.",
+      general:
+        "General fitness & health. Balanced mix of strength and conditioning. " +
+        "3-4 sets, 10-12 reps, full-body compound focus with light accessories. " +
+        "Prioritise movement quality and consistency.",
+    };
+    const g = (goal || "").toLowerCase();
+    let goalGuidance = goalGuidanceMap.general;
+    if (/fat|loss|lean|cut|recomp/i.test(g))      goalGuidance = goalGuidanceMap.fatLoss;
+    else if (/muscle|strength|gain|hypertrophy/i.test(g)) goalGuidance = goalGuidanceMap.muscle;
+    else if (/endurance|conditioning|cardio|run|stamina/i.test(g)) goalGuidance = goalGuidanceMap.endurance;
+
+    const levelGuidanceMap = {
+      Beginner:
+        "Beginner: 2-3 sets per exercise, fundamental movement patterns only " +
+        "(squat, hinge, push, pull, carry). Emphasise technique over load. " +
+        "Longer warm-up, more mobility/activation work. Keep rest 90s+.",
+      Intermediate:
+        "Intermediate: 3-4 sets, compound + accessory split, moderate complexity. " +
+        "Introduce progressive overload across sessions.",
+      Advanced:
+        "Advanced: 4-5 sets, higher volume, advanced techniques where appropriate " +
+        "(tempo, pause reps). Complex periodisation across the week.",
+    };
+    const levelGuidance = levelGuidanceMap[level] || levelGuidanceMap["Intermediate"];
+
+    // ── Step 3c: Split structure guidance ────────────────────────────────────
+    const splitMap = {
+      3: "Use a Full-Body split (Session A/B/C alternating) or Push/Pull/Legs.",
+      4: "Use Upper/Lower split (2× upper, 2× lower) or Push/Pull/Legs/Full-Body.",
+      5: "Use Push/Pull/Legs/Upper/Lower or a body-part split.",
+      6: "Use Push/Pull/Legs × 2 (PPL repeated).",
+      7: "Use PPL × 2 + 1 active recovery / conditioning day.",
+    };
+    const splitGuidance = splitMap[sessions] || splitMap[3];
+
     // ── Step 4: Load exercise library ───────────────────────────────────────
     steps.push({ icon: "📚", text: "Loading exercise library..." });
     let exerciseLibraryContext = "";
@@ -646,15 +695,17 @@ CLIENT INFO:
 - Level: ${level}
 - Goal: ${goal}
 - Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
+
+GOAL APPROACH:
+${goalGuidance}
+
+LEVEL GUIDANCE:
+${levelGuidance}
+
+SPLIT STRUCTURE:
+${splitGuidance}
 ${exerciseLibraryContext}
 ${styleContext}
-
-TASK: Generate a complete 1-week training program that:
-1. Is appropriate for their level and goal
-2. Matches the coaching style shown above
-3. Includes proper warm-up, main work, and accessories
-4. Has progression cues embedded in exercise notes
-5. Is immediately actionable — no fluff
 
 OUTPUT FORMAT — Return ONLY raw JSON, no markdown:
 {
@@ -684,9 +735,12 @@ Each day structure:
 }
 
 RULES:
-- Warm-up: 3-4 exercises
-- Main Lifts: 3-5 compound exercises
-- Accessories: 3-5 isolation exercises
+- Warm-up: 3-4 exercises (mobility, activation — not heavy)
+- Main Lifts: 3-5 compound exercises matching the split focus
+- Accessories: 3-5 isolation / support exercises
+- Sets/reps must match the level and goal guidance above
+- Vary session focus logically across the week — do NOT repeat the same muscle group two days in a row
+- Exercise names must be clean standard names — NEVER append equipment qualifiers to the name
 - Do NOT add any text outside the JSON`;
 
     // ── Step 5: Call Groq ─────────────────────────────────────────────────────
