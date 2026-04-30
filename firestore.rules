@@ -2,11 +2,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Helper: là coach nếu email khớp HOẶC role == 'coach' trong Firestore
+    function isCoach() {
+      return request.auth != null && (
+        request.auth.token.email == 'chuhailong1810199@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coach')
+      );
+    }
+
+    // ── Helper: user hiện tại là chủ của clientId (email khớp)
+    function isClientOwner(clientId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/clients/$(clientId)) &&
+        get(/databases/$(database)/documents/clients/$(clientId)).data.email == request.auth.token.email;
+    }
+
     // ── LEADS collection ─────────────────────────────────
-    // Public: anyone can create a lead (contact form from landing page)
-    //   - name and email must be non-empty strings
-    //   - only allowed fields to prevent data stuffing
-    // Coach only: read, update (status changes), delete
+    // Public: ai cũng có thể tạo lead (contact form từ landing page)
+    // Coach only: đọc, update, xóa
     match /leads/{leadId} {
       allow create: if
         request.resource.data.keys().hasAll(['name', 'email']) &&
@@ -19,15 +33,27 @@ service cloud.firestore {
           'service', 'note', 'createdAt', 'source', 'status'
         ]);
 
-      allow read, update, delete: if
-        request.auth != null &&
-        request.auth.token.email == 'chuhailong1810199@gmail.com';
+      allow read, update, delete: if isCoach();
     }
 
-    // ── All other collections: keep existing auth rules ──
-    // clients, sessions, checkpoints, etc. require auth
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // ── USERS collection ─────────────────────────────────
+    // Mỗi user chỉ đọc/ghi profile của chính mình
+    // Coach có thể đọc tất cả (để kiểm tra role)
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isCoach();
+    }
+
+    // ── CLIENTS collection ────────────────────────────────
+    // Coach: full access tất cả clients
+    // Client: chỉ đọc/ghi data của chính mình (khớp email)
+    match /clients/{clientId} {
+      allow read, write: if isCoach() || isClientOwner(clientId);
+
+      // Tất cả subcollections: assessment, checkpoints, workoutHistory, videos
+      match /{subcollection}/{docId} {
+        allow read, write: if isCoach() || isClientOwner(clientId);
+      }
     }
   }
 }

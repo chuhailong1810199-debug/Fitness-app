@@ -10,7 +10,7 @@
  * Setup secrets (run once):
  *   firebase functions:secrets:set SMTP_USER
  *   firebase functions:secrets:set SMTP_PASS
- *   firebase functions:secrets:set CLAUDE_API_KEY
+ *   firebase functions:secrets:set GROQ_API_KEY
  *
  * Deploy:
  *   cd functions && npm install
@@ -21,13 +21,15 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall }             = require("firebase-functions/v2/https");
 const { defineSecret }       = require("firebase-functions/params");
 const { initializeApp }      = require("firebase-admin/app");
+const { getFirestore }       = require("firebase-admin/firestore");
 const nodemailer             = require("nodemailer");
+const { Groq }               = require("groq-sdk");
 
 initializeApp();
 
 const SMTP_USER     = defineSecret("SMTP_USER");
 const SMTP_PASS     = defineSecret("SMTP_PASS");
-const CLAUDE_API_KEY = defineSecret("CLAUDE_API_KEY");
+const GROQ_API_KEY   = defineSecret("GROQ_API_KEY");
 
 const COACH_EMAIL = "chuhailong1810199@gmail.com";
 const APP_NAME = "Striveo";
@@ -143,7 +145,7 @@ exports.notifyNewLead = onDocumentCreated(
 // ─────────────────────────────────────────────────────────────────────────────
 exports.generateProgram = onCall(
   {
-    secrets: [CLAUDE_API_KEY],
+    secrets: [GROQ_API_KEY],
     region: "asia-southeast1",
     timeoutSeconds: 90,
     memory: "256MiB",
@@ -201,8 +203,29 @@ exports.generateProgram = onCall(
       .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65+i)} — [focus]", "phases": [...] }`)
       .join(",\n");
 
+    // ── Injury protocol ──────────────────────────────────────────────────────
+    const injurySection = notes && notes.trim() && notes.trim().toLowerCase() !== "none"
+      ? `
+INJURY & LIMITATION PROTOCOL — CRITICAL, DO NOT IGNORE
+Client has the following injuries/limitations: "${notes}"
+
+You MUST follow ALL of these rules:
+1. AVOID any exercise that directly loads or stresses the injured area.
+2. SUBSTITUTE with safe alternatives that train the same movement pattern without aggravating the injury.
+   - Knee injury → replace Squat/Lunge with Leg Press, Leg Curl, Seated Leg Extension, Box Step-up (low box)
+   - Lower back → replace Deadlift/Good Morning with Hip Thrust, Trap Bar Deadlift, Cable Pull-Through, Bird Dog
+   - Shoulder → replace Overhead Press/Upright Row with Landmine Press, Cable Lateral Raise, Neutral-grip Press
+   - Wrist → replace Barbell movements with Dumbbell or Cable alternatives, avoid push-up on wrists
+   - Hip flexor → replace heavy squats and hip-flexion movements with glute-focused alternatives
+3. INCLUDE 1-2 REHAB exercises in the warm-up phase targeting the injured area (mobility, activation, low load).
+4. ADD a note in the "cue" field of every exercise near the injury: "⚠️ Modify or skip if pain >3/10."
+5. REDUCE total session intensity by 10-15% — prioritise movement quality over load.
+6. If the injury affects an entire movement category (e.g. all pressing for shoulder), restructure the session split to compensate with more pulling/lower body volume.`
+      : `
+INJURIES / LIMITATIONS: None reported. Train normally.`;
+
     // ── Prompt ───────────────────────────────────────────────────────────────
-    const prompt = `You are an elite personal trainer. Create a 4-week progressive training program.
+    const prompt = `You are an elite personal trainer and sports rehab specialist. Create a 4-week progressive training program.
 
 CLIENT
 - Name: ${name}
@@ -210,7 +233,7 @@ CLIENT
 - Goal: ${goal}
 - Sessions/week: ${sessionsPerWeek} days (${days.join(", ")})
 - Rest days: ${restDays.join(", ")}
-- Notes / injuries: ${notes || "none"}
+${injurySection}
 
 GOAL APPROACH
 ${goalGuidance}
@@ -255,30 +278,235 @@ Each day must follow this EXACT structure:
 }
 
 RULES
-- Warm-up: 3-4 exercises (5-10 min total)
+- Warm-up: 3-4 exercises (5-10 min total). If client has injury, include rehab/activation exercises here.
 - Main Lifts: 3-5 compound exercises
 - Accessories: 3-5 isolation / support exercises
 - Embed 4-week progression inside the "cue" field (load, sets, or intensity)
 - Total session: 45-75 min
 - Vary session focus logically across days (e.g. Push / Pull / Legs, or Upper / Lower)
+- INJURY RULES OVERRIDE ALL OTHER RULES — never recommend contraindicated exercises
 - Do NOT add any text outside the JSON`;
 
-    // ── Call Claude ──────────────────────────────────────────────────────────
-    const Anthropic = require("@anthropic-ai/sdk");
-    const anthropic = new Anthropic({ apiKey: CLAUDE_API_KEY.value() });
+    // ── Call Groq ────────────────────────────────────────────────────────────
+    const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
 
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 4096,
+      temperature: 0.4,
       messages: [{ role: "user", content: prompt }],
     });
 
-    let raw = message.content[0].text.trim();
-    // Strip markdown fences if Claude adds them despite instructions
+    let raw = completion.choices[0].message.content.trim();
+    // Strip markdown fences if model wraps output
     raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
     const program = JSON.parse(raw);
-    console.log(`[generateProgram] program generated for ${name} (${level}, ${goal})`);
+    console.log(`[generateProgram] Groq program generated for ${name} (${level}, ${goal})`);
     return { program };
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pulseGenerate — Pulse AI, HTTPS Callable
+// Reads client's full Firestore history + all existing programs for style context
+// Returns { program, steps } where steps[] is the Pulse analysis log
+// ─────────────────────────────────────────────────────────────────────────────
+exports.pulseGenerate = onCall(
+  {
+    secrets: [GROQ_API_KEY],
+    region: "asia-southeast1",
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async (request) => {
+    const { clientId } = request.data;
+    if (!clientId) throw new Error("clientId is required");
+
+    const db = getFirestore();
+    const steps = [];
+
+    // ── Step 1: Read target client profile ───────────────────────────────────
+    steps.push({ icon: "📖", text: "Đọc hồ sơ khách hàng..." });
+    const clientDoc = await db.collection("clients").doc(clientId).get();
+    if (!clientDoc.exists) throw new Error("Client not found: " + clientId);
+    const client = clientDoc.data();
+    const { name, level, goal, sessionsPerWeek } = client;
+
+    // ── Step 2: Read assessment ───────────────────────────────────────────────
+    steps.push({ icon: "📋", text: "Phân tích baseline assessment..." });
+    const assessDoc = await db
+      .collection("clients").doc(clientId)
+      .collection("assessment").doc("baseline").get();
+    const assessment = assessDoc.exists ? assessDoc.data() : null;
+
+    // ── Step 3: Read checkpoints ──────────────────────────────────────────────
+    steps.push({ icon: "📊", text: "Xem checkpoint & tiến độ..." });
+    const cpSnap = await db
+      .collection("clients").doc(clientId)
+      .collection("checkpoints")
+      .orderBy("date", "desc").limit(4).get();
+    const checkpoints = cpSnap.docs.map((d) => d.data());
+
+    // ── Step 4: Read workout history ──────────────────────────────────────────
+    steps.push({ icon: "🏋️", text: "Phân tích lịch sử tập luyện..." });
+    const histSnap = await db
+      .collection("clients").doc(clientId)
+      .collection("workoutHistory")
+      .orderBy("date", "desc").limit(20).get();
+    const workoutHistory = histSnap.docs.map((d) => d.data());
+
+    // ── Step 5: Read existing programs for coaching style ─────────────────────
+    steps.push({ icon: "🎨", text: "Học phong cách coaching từ các chương trình hiện có..." });
+    const allClientsSnap = await db.collection("clients").get();
+    const styleExamples = [];
+    for (const doc of allClientsSnap.docs) {
+      if (doc.id === clientId) continue;
+      const data = doc.data();
+      if (!data.program) continue;
+      // Extract one day as style example (avoid token overload)
+      const days = Object.keys(data.program);
+      if (days.length === 0) continue;
+      const sampleDay = data.program[days[0]];
+      styleExamples.push({
+        clientLevel: data.level,
+        clientGoal: data.goal,
+        sampleSession: sampleDay,
+      });
+    }
+
+    // ── Step 6: Build prompt ─────────────────────────────────────────────────
+    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình..." });
+
+    const dayMaps = {
+      3: ["Mon", "Wed", "Fri"],
+      4: ["Mon", "Tue", "Thu", "Fri"],
+      5: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      6: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      7: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    };
+    const days = dayMaps[sessionsPerWeek] || dayMaps[3];
+
+    // Assessment context
+    let assessContext = "";
+    if (assessment) {
+      assessContext = `
+BASELINE ASSESSMENT:
+- Weight: ${assessment.weight || "?"}kg, Height: ${assessment.height || "?"}cm
+- Age: ${assessment.age || "?"}, Gender: ${assessment.gender || "?"}
+- PBF: ${assessment.pbf || "?"}%, SMM: ${assessment.smm || "?"}kg
+- Measurements: Waist ${assessment.waist || "?"}cm, Hip ${assessment.hip || "?"}cm`;
+    }
+
+    // Checkpoint trend
+    let progressContext = "";
+    if (checkpoints.length > 0) {
+      const latest = checkpoints[0];
+      const oldest = checkpoints[checkpoints.length - 1];
+      progressContext = `
+PROGRESS TREND (${checkpoints.length} checkpoints):
+- Latest: Weight ${latest.weight || "?"}kg, PBF ${latest.pbf || "?"}%, SMM ${latest.smm || "?"}kg
+- Change: Weight ${((latest.weight || 0) - (oldest.weight || 0)).toFixed(1)}kg, PBF ${((latest.pbf || 0) - (oldest.pbf || 0)).toFixed(1)}%
+- Assessment: ${workoutHistory.length} sessions logged total`;
+    }
+
+    // Volume trend
+    let volumeContext = "";
+    if (workoutHistory.length > 0) {
+      const avgVol = workoutHistory.reduce((s, w) => s + (w.volume || 0), 0) / workoutHistory.length;
+      const avgDone = workoutHistory.reduce((s, w) => s + (w.done || 0), 0) / workoutHistory.length;
+      volumeContext = `
+WORKOUT HISTORY:
+- Avg session volume: ${Math.round(avgVol)}kg
+- Avg exercises completed: ${Math.round(avgDone)}
+- Adherence trend: ${workoutHistory.slice(0, 5).map((w) => Math.round((w.done / (w.total || 1)) * 100) + "%").join(", ")}`;
+    }
+
+    // Coach style examples
+    let styleContext = "";
+    if (styleExamples.length > 0) {
+      styleContext = `
+COACH'S TRAINING STYLE (learned from ${styleExamples.length} existing programs):
+${styleExamples.slice(0, 2).map((ex, i) => `
+Example ${i + 1} — ${ex.clientLevel} client, goal: ${ex.clientGoal}:
+${JSON.stringify(ex.sampleSession, null, 2).substring(0, 800)}
+`).join("")}
+IMPORTANT: Mirror this coaching style — same phase structure, similar exercise selection philosophy, same cue/note format.`;
+    }
+
+    const daySkeletonLines = days
+      .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65 + i)} — [focus]", "phases": [...] }`)
+      .join(",\n");
+
+    const prompt = `You are Pulse, an elite AI personal trainer. Create a personalized next training cycle for this client.
+
+CLIENT PROFILE:
+- Name: ${name}
+- Level: ${level}
+- Goal: ${goal}
+- Sessions/week: ${sessionsPerWeek} (${days.join(", ")})
+${assessContext}
+${progressContext}
+${volumeContext}
+${styleContext}
+
+TASK: Generate a 4-week progressive training program that:
+1. Continues naturally from where this client left off
+2. Matches exactly the coaching style shown in the examples above
+3. Progresses load/volume intelligently based on their history
+4. Addresses any weak points shown in their progress data
+
+OUTPUT FORMAT — Return ONLY raw JSON, no markdown:
+{
+${daySkeletonLines}
+}
+
+Each day structure:
+{
+  "label": "Session A — Push",
+  "phases": [
+    {
+      "tag": "warmup",
+      "name": "🔥 Warm-up",
+      "exercises": [{ "name": "...", "setsReps": "1 x 5 min", "tempo": "", "cue": "..." }]
+    },
+    {
+      "tag": "strength",
+      "name": "💪 Main Lifts",
+      "exercises": [{ "name": "...", "setsReps": "4 x 6", "tempo": "3-1-2", "cue": "Week 1-2: 75% 1RM. Week 3-4: 80% 1RM." }]
+    },
+    {
+      "tag": "accessories",
+      "name": "⚡ Accessories",
+      "exercises": [{ "name": "...", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "..." }]
+    }
+  ]
+}
+
+RULES:
+- Warm-up: 3-4 exercises
+- Main Lifts: 3-5 compound exercises
+- Accessories: 3-5 isolation exercises
+- Embed 4-week progression in "cue" field
+- Vary session focus logically across days
+- Do NOT add any text outside the JSON`;
+
+    // ── Call Groq ─────────────────────────────────────────────────────────────
+    const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 6000,
+      temperature: 0.35,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    let raw = completion.choices[0].message.content.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    const program = JSON.parse(raw);
+    steps.push({ icon: "✅", text: "Hoàn thành!" });
+
+    console.log(`[pulseGenerate] ⚡ Pulse generated program for ${name} (${level}, ${goal}), ${styleExamples.length} style refs`);
+    return { program, steps, clientName: name };
   }
 );

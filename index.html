@@ -482,10 +482,101 @@ async function addClient() {
   openAIReviewModal(clientId, { name, level, goal, sessionsPerWeek, notes });
 }
 
-// ── AI PROGRAM GENERATION ──────────────────────────────
+// ── PULSE AI PROGRAM GENERATION ────────────────────────
 let _pendingAIClientId = null;
 let _pendingAIProgram  = null;
 
+// Pulse step animation helpers
+function _pulseResetModal(clientName) {
+  document.getElementById('pulse-steps-list').innerHTML = '';
+  document.getElementById('pulse-current-text').textContent = `Đang phân tích hồ sơ ${clientName || ''}...`;
+  document.getElementById('pulse-current-step').style.display = 'flex';
+  document.getElementById('pulse-subtitle').textContent = clientName ? `Đang tạo chương trình cho ${clientName}` : 'AI Program Generator';
+}
+
+function _pulseCompleteStep(icon, text) {
+  const list = document.getElementById('pulse-steps-list');
+  const el = document.createElement('div');
+  el.className = 'pulse-step-done';
+  el.innerHTML = `<span class="ps-icon">${icon}</span><span class="ps-text">${text}</span><span class="ps-check">✓</span>`;
+  list.appendChild(el);
+  list.scrollTop = list.scrollHeight;
+}
+
+function _pulseSetCurrent(text) {
+  const el = document.getElementById('pulse-current-text');
+  if (el) el.textContent = text;
+}
+
+// Launch Pulse for existing client (coach clicks ⚡ Pulse button)
+async function launchPulse() {
+  if (!activeClient) return;
+  if (userRole !== 'coach') return;
+
+  const modal   = document.getElementById('ai-review-modal');
+  const loading = document.getElementById('ai-review-loading');
+  const preview = document.getElementById('ai-review-preview');
+  const actions = document.getElementById('ai-review-actions');
+  const genBtn  = document.getElementById('pulse-gen-btn');
+
+  _pendingAIClientId = activeClient.id;
+  _pendingAIProgram  = null;
+
+  // Reset UI
+  _pulseResetModal(activeClient.name);
+  loading.style.display = 'flex';
+  preview.style.display = 'none';
+  actions.style.display = 'none';
+  preview.innerHTML = '';
+  modal.classList.add('open');
+  if (genBtn) genBtn.disabled = true;
+
+  try {
+    const fn = firebase.app().functions('asia-southeast1').httpsCallable('pulseGenerate');
+
+    // Animate fake steps while waiting (real steps returned after)
+    const fakeSteps = [
+      { icon:'📖', text:`Đọc hồ sơ ${activeClient.name}...` },
+      { icon:'📋', text:'Phân tích baseline assessment...' },
+      { icon:'📊', text:'Xem checkpoint & tiến độ...' },
+      { icon:'🏋️', text:'Phân tích lịch sử tập luyện...' },
+      { icon:'🎨', text:'Học phong cách coaching...' },
+    ];
+    let stepIdx = 0;
+    const stepInterval = setInterval(() => {
+      if (stepIdx < fakeSteps.length) {
+        if (stepIdx > 0) _pulseCompleteStep(fakeSteps[stepIdx-1].icon, fakeSteps[stepIdx-1].text);
+        _pulseSetCurrent(fakeSteps[stepIdx].text);
+        stepIdx++;
+      }
+    }, 1800);
+
+    const result = await fn({ clientId: activeClient.id });
+    clearInterval(stepInterval);
+
+    // Complete remaining steps
+    fakeSteps.forEach(s => _pulseCompleteStep(s.icon, s.text));
+    _pulseCompleteStep('⚡', 'Pulse đang generate chương trình...');
+    _pulseSetCurrent('Hoàn thành! ✨');
+
+    await new Promise(r => setTimeout(r, 700));
+
+    _pendingAIProgram = result.data.program;
+    renderAIProgramPreview(_pendingAIProgram, result.data.clientName);
+    actions.style.display = 'flex';
+  } catch (err) {
+    document.getElementById('pulse-current-step').innerHTML = `
+      <div style="text-align:center;width:100%;padding:8px 0;">
+        <div style="font-size:22px;margin-bottom:8px;">❌</div>
+        <div style="color:#ff6b6b;font-size:12px;margin-bottom:4px;">Pulse thất bại: ${err.message}</div>
+      </div>`;
+    actions.style.display = 'flex';
+  } finally {
+    if (genBtn) genBtn.disabled = false;
+  }
+}
+
+// Legacy: called when adding new client (uses generateProgram function)
 async function openAIReviewModal(clientId, clientData) {
   _pendingAIClientId = clientId;
   _pendingAIProgram  = null;
@@ -495,53 +586,77 @@ async function openAIReviewModal(clientId, clientData) {
   const preview = document.getElementById('ai-review-preview');
   const actions = document.getElementById('ai-review-actions');
 
+  _pulseResetModal(clientData.name);
   loading.style.display = 'flex';
   preview.style.display = 'none';
   actions.style.display = 'none';
   preview.innerHTML = '';
   modal.classList.add('open');
 
+  // Animate steps
+  const steps = [
+    { icon:'📖', text:`Đọc hồ sơ ${clientData.name}...` },
+    { icon:'🎯', text:`Goal: ${clientData.goal}` },
+    { icon:'⚡', text:'Pulse đang tạo chương trình...' },
+  ];
+  let si = 0;
+  const iv = setInterval(() => {
+    if (si > 0) _pulseCompleteStep(steps[si-1].icon, steps[si-1].text);
+    if (si < steps.length) { _pulseSetCurrent(steps[si].text); si++; }
+  }, 1500);
+
   try {
     const fn = firebase.app().functions('asia-southeast1').httpsCallable('generateProgram');
     const result = await fn(clientData);
+    clearInterval(iv);
+    steps.forEach(s => _pulseCompleteStep(s.icon, s.text));
+    await new Promise(r => setTimeout(r, 500));
     _pendingAIProgram = result.data.program;
-    renderAIProgramPreview(_pendingAIProgram);
+    renderAIProgramPreview(_pendingAIProgram, clientData.name);
     actions.style.display = 'flex';
   } catch (err) {
-    loading.innerHTML = `
-      <div style="text-align:center;padding:24px;">
-        <div style="font-size:28px;margin-bottom:12px;">❌</div>
-        <div style="color:#ff6b6b;font-size:13px;margin-bottom:8px;">Generate thất bại: ${err.message}</div>
-        <div style="color:#666;font-size:11px;">Bạn có thể thêm program thủ công sau trong app.</div>
+    clearInterval(iv);
+    document.getElementById('pulse-current-step').innerHTML = `
+      <div style="text-align:center;width:100%;padding:8px 0;">
+        <div style="font-size:22px;margin-bottom:8px;">❌</div>
+        <div style="color:#ff6b6b;font-size:12px;">Generate thất bại: ${err.message}</div>
       </div>`;
     actions.style.display = 'flex';
   }
 }
 
-function renderAIProgramPreview(program) {
+function renderAIProgramPreview(program, clientName) {
   const loading = document.getElementById('ai-review-loading');
   const preview = document.getElementById('ai-review-preview');
   loading.style.display = 'none';
 
-  const phaseColors = { warmup:'#e8a838', strength:'#5588ff', accessories:'#44cc88' };
-  let html = '';
-  for (const day of Object.keys(program)) {
+  const phaseColors = { warmup:'#e8a838', strength:'#7665ff', accessories:'#44cc88' };
+  const days = Object.keys(program);
+  const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
+
+  let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Chương trình được tạo bởi Pulse</div>
+    <div style="font-size:13px;font-weight:700;color:#fff;">${clientName || ''} — ${days.length} ngày · ${totalEx} bài tập</div>
+  </div>`;
+
+  for (const day of days) {
     const session = program[day];
-    html += `<div style="margin-bottom:18px;">
-      <div style="font-weight:700;font-size:12px;color:#fff;padding:7px 12px;background:#1e1e1e;border-radius:6px;margin-bottom:8px;letter-spacing:.5px;">
-        📅 ${day} — <span style="color:#aaa;font-weight:400;">${session.label || ''}</span>
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-weight:700;font-size:11px;color:#fff;padding:6px 12px;background:#111827;border-radius:6px;margin-bottom:8px;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>📅 ${day}</span>
+        <span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label || ''}</span>
       </div>`;
     for (const phase of (session.phases || [])) {
       const col = phaseColors[phase.tag] || '#aaa';
-      html += `<div style="margin-bottom:6px;padding-left:8px;border-left:2px solid ${col}30;">
-        <div style="font-size:10px;font-weight:600;color:${col};margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">${phase.name}</div>`;
+      html += `<div style="margin-bottom:8px;padding-left:10px;border-left:2px solid ${col}50;">
+        <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name}</div>`;
       for (const ex of (phase.exercises || [])) {
-        html += `<div style="display:grid;grid-template-columns:1fr 72px;gap:8px;padding:4px 0;border-bottom:1px solid #161616;align-items:start;">
+        html += `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #0d0d1a;align-items:start;">
           <div>
-            <span style="color:#e0e0e0;font-size:11px;">${ex.name}</span>
-            ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;">${ex.cue}</div>` : ''}
+            <span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
+            ${ex.cue ? `<div style="color:#444;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0,120)}${ex.cue.length>120?'…':''}</div>` : ''}
           </div>
-          <div style="color:#888;font-size:10px;text-align:right;white-space:nowrap;">${ex.setsReps}</div>
+          <div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
         </div>`;
       }
       html += '</div>';
@@ -2367,6 +2482,7 @@ window._logout = logout;
 window._switchClient = switchClient;
 window._addClient = addClient;
 window._approveGeneratedProgram = approveGeneratedProgram;
+window._launchPulse = launchPulse;
 window._openEditClientModal = openEditClientModal;
 window._saveClientInfo = saveClientInfo;
 window._showPage = showPage;
@@ -3076,6 +3192,22 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .add-day-btn{padding:6px 12px;border-radius:4px;border:1px solid #2a4e2a;background:transparent;color:#44cc66;font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;}
 .add-day-btn:hover{background:#0d2e0d;}
 
+/* PULSE */
+.pulse-gen-btn{padding:6px 12px;border-radius:4px;border:1px solid oklch(68% .16 295 / .5);background:oklch(68% .16 295 / .12);color:oklch(78% .14 295);font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;letter-spacing:.3px;transition:all .15s;}
+.pulse-gen-btn:hover{background:oklch(68% .16 295 / .22);border-color:oklch(68% .16 295 / .7);box-shadow:0 0 10px oklch(68% .16 295 / .2);}
+.pulse-gen-btn:disabled{opacity:.4;cursor:not-allowed;}
+.pulse-step-done{display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:9px;animation:pulse-step-in .3s ease;}
+.pulse-step-done .ps-icon{font-size:14px;flex-shrink:0;}
+.pulse-step-done .ps-text{color:rgba(255,255,255,.55);font-size:11px;font-weight:500;}
+.pulse-step-done .ps-check{margin-left:auto;color:#44cc88;font-size:12px;font-weight:700;}
+@keyframes pulse-step-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-dot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.pulse-dot-spinner{display:flex;gap:4px;flex-shrink:0;}
+.pulse-dot-spinner::before,.pulse-dot-spinner::after,.pulse-dot-spinner span{content:'';width:6px;height:6px;background:oklch(68% .16 295);border-radius:50%;animation:pulse-dot 1.2s infinite ease-in-out;}
+.pulse-dot-spinner::before{animation-delay:0s;}
+.pulse-dot-spinner span{animation-delay:.2s;}
+.pulse-dot-spinner::after{animation-delay:.4s;}
+
 /* NAV */
 .nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.12);justify-content:center;}
 .nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
@@ -3777,6 +3909,7 @@ window.showPage          = function(p){ _q('_showPage',[p]); };
 window.switchClient           = function(id){ _q('_switchClient',[id]); };
 window.addClient              = function() { _q('_addClient',[]); };
 window.approveGeneratedProgram = function() { _q('_approveGeneratedProgram',[]); };
+window.launchPulse             = function() { _q('_launchPulse',[]); };
 window.openEditClientModal    = function() { _q('_openEditClientModal',[]); };
 window.saveClientInfo         = function() { _q('_saveClientInfo',[]); };
 window.setDay            = function(d){ _q('_setDay',[d]); };
@@ -4038,6 +4171,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <span class="edit-mode-label">Edit Program</span>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="add-day-btn" onclick="document.getElementById('add-day-modal').classList.add('open')">+ Day</button>
+        <button class="pulse-gen-btn" id="pulse-gen-btn" onclick="launchPulse()" title="Generate next cycle with Pulse AI">⚡ Pulse</button>
         <div class="edit-toggle" onclick="toggleEditMode()">
           <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
           <span class="edit-mode-text" id="edit-mode-text">Off</span>
@@ -4288,25 +4422,37 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   </div>
 </div>
 
-<!-- AI REVIEW MODAL -->
+<!-- PULSE AI REVIEW MODAL -->
 <div class="modal-overlay" id="ai-review-modal">
-  <div class="modal" style="max-width:580px;max-height:82vh;display:flex;flex-direction:column;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <div class="modal-title" style="margin:0;">🤖 AI Generated Program</div>
+  <div class="modal" style="max-width:560px;max-height:86vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:16px;">
+
+    <!-- Pulse Header -->
+    <div style="background:linear-gradient(135deg,#0a0e1a 0%,#0d1526 100%);padding:20px 22px 16px;border-bottom:1px solid #1a2040;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;background:oklch(68% .16 295);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 14px oklch(68% .16 295 / .4);">⚡</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px;">Pulse</div>
+          <div id="pulse-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:.2px;">AI Program Generator</div>
+        </div>
+      </div>
     </div>
-    <div class="modal-sub" style="margin-bottom:12px;">Review chương trình AI tạo. Approve để lưu vào Firestore, hoặc Skip để thêm thủ công sau.</div>
-    <!-- Loading state -->
-    <div id="ai-review-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;gap:14px;">
-      <div class="ai-spinner"></div>
-      <div style="color:#aaa;font-size:13px;">Claude đang tạo program…</div>
-      <div style="color:#555;font-size:11px;">Khoảng 15–25 giây</div>
+
+    <!-- Loading: Pulse animated steps -->
+    <div id="ai-review-loading" style="display:flex;flex-direction:column;padding:18px 22px;gap:0;overflow-y:auto;">
+      <div id="pulse-steps-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+      <div id="pulse-current-step" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:oklch(68% .16 295 / .08);border:1px solid oklch(68% .16 295 / .25);border-radius:10px;">
+        <div class="pulse-dot-spinner"><span></span></div>
+        <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pulse-current-text">Khởi động Pulse...</div>
+      </div>
     </div>
-    <!-- Program preview -->
-    <div id="ai-review-preview" style="display:none;overflow-y:auto;flex:1;padding-right:4px;"></div>
+
+    <!-- Program preview (after generation) -->
+    <div id="ai-review-preview" style="display:none;overflow-y:auto;flex:1;padding:0 22px 4px;"></div>
+
     <!-- Actions -->
-    <div id="ai-review-actions" class="form-actions" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e;">
-      <button id="ai-approve-btn" class="btn-save" onclick="approveGeneratedProgram()">✅ Approve & Save</button>
-      <button class="btn-discard" onclick="closeModal('ai-review-modal')">⏭ Skip</button>
+    <div id="ai-review-actions" class="form-actions" style="display:none;margin:0;padding:14px 22px;border-top:1px solid #1a1a2e;flex-shrink:0;">
+      <button id="ai-approve-btn" class="btn-save" onclick="approveGeneratedProgram()">⚡ Apply Program</button>
+      <button class="btn-discard" onclick="closeModal('ai-review-modal')">Discard</button>
     </div>
   </div>
 </div>
