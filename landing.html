@@ -135,31 +135,30 @@
     /* Ghost / transparent variant */
     .btn-hero.ghost {
       background: transparent;
-      border: 1.5px solid oklch(68% .16 295 / .45);
-      color: oklch(75% .12 295);
-      backdrop-filter: blur(4px);
+      border: 1.5px solid rgba(140, 100, 220, 0.45);
+      color: rgba(180, 150, 240, 0.9);
     }
     .btn-hero.ghost:hover {
-      background: oklch(68% .16 295 / .12);
-      border-color: oklch(68% .16 295 / .75);
-      color: oklch(90% .12 295);
+      background: rgba(120, 80, 200, 0.12);
+      border-color: rgba(160, 120, 240, 0.75);
+      color: #d4b8ff;
       transform: translateY(-1px);
     }
 
     /* Shimmer / shiny CTA button */
     @keyframes shimmer-sweep {
-      0%   { transform: translateX(-120%) skewX(-15deg); }
-      100% { transform: translateX(220%) skewX(-15deg); }
+      0%   { left: -80%; }
+      100% { left: 130%; }
     }
     @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 18px 2px oklch(68% .22 295 / .45), 0 4px 24px oklch(68% .22 295 / .3); }
-      50%       { box-shadow: 0 0 32px 6px oklch(68% .22 295 / .7), 0 8px 36px oklch(68% .22 295 / .5); }
+      0%, 100% { box-shadow: 0 0 18px 3px rgba(120,60,220,0.5), 0 4px 24px rgba(100,40,200,0.35); }
+      50%       { box-shadow: 0 0 32px 8px rgba(140,80,240,0.75), 0 8px 36px rgba(120,60,220,0.55); }
     }
     .btn-shiny {
       position: relative;
       overflow: hidden;
-      background: linear-gradient(135deg, oklch(58% .25 295) 0%, oklch(52% .28 310) 50%, oklch(62% .22 280) 100%);
-      border: 1.5px solid oklch(72% .2 295 / .6);
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 45%, #8b5cf6 100%);
+      border: 1.5px solid rgba(167, 139, 250, 0.5);
       color: #fff;
       border-radius: 50px;
       padding: 15px 36px;
@@ -171,18 +170,24 @@
       cursor: pointer;
       animation: pulse-glow 2.4s ease-in-out infinite;
       transition: transform .22s ease, filter .22s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
     .btn-shiny::before {
       content: '';
       position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+      top: 0;
+      left: -80%;
       width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-15deg);
       animation: shimmer-sweep 2.2s ease-in-out infinite;
     }
     .btn-shiny:hover {
       transform: translateY(-2px) scale(1.03);
-      filter: brightness(1.15);
+      filter: brightness(1.18);
     }
 
     .nav-mobile-btn {
