@@ -152,11 +152,21 @@ function isHyroxGoal(goalStr, notesStr) {
 }
 
 function detectGoal(goalStr, notesStr) {
-  if (isHyroxGoal(goalStr, notesStr))              return GOAL_GUIDANCE.hyrox;
+  if (isHyroxGoal(goalStr, notesStr)) return GOAL_GUIDANCE.hyrox;
   const g = (goalStr || "").toLowerCase();
-  if (/fat|loss|lean|cut|recomp/i.test(g))         return GOAL_GUIDANCE.fatLoss;
-  if (/muscle|strength|gain|hypertrophy/i.test(g)) return GOAL_GUIDANCE.muscle;
-  if (/endurance|conditioning|cardio|run|stamina/i.test(g)) return GOAL_GUIDANCE.endurance;
+
+  // Muscle / strength — checked FIRST to avoid "lean muscle gain" matching fatLoss
+  if (/muscle|strength|gain|hypertrophy|tăng cơ|tăng cân|cơ bắp|khối cơ/i.test(g))
+    return GOAL_GUIDANCE.muscle;
+
+  // Fat loss — "lean" safe here because muscle is already handled above
+  if (/fat|loss|lean|cut|recomp|giảm|béo|mỡ/i.test(g))
+    return GOAL_GUIDANCE.fatLoss;
+
+  // Endurance / conditioning
+  if (/endurance|conditioning|cardio|run|stamina|sức bền|thể lực|chạy/i.test(g))
+    return GOAL_GUIDANCE.endurance;
+
   return GOAL_GUIDANCE.general;
 }
 
@@ -305,6 +315,8 @@ exports.generateProgram = onCall(
       3: ["Mon", "Wed", "Fri"],
       4: ["Mon", "Tue", "Thu", "Fri"],
       5: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      6: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      7: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     };
     const days = dayMaps[sessionsPerWeek] || dayMaps[3];
     const restDays = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].filter(
@@ -335,7 +347,8 @@ exports.generateProgram = onCall(
       .join(",\n");
 
     // ── Injury protocol ──────────────────────────────────────────────────────
-    const injurySection = notes && notes.trim() && notes.trim().toLowerCase() !== "none"
+    // Skip injury section if notes contain HYROX keywords (goal context, not injury)
+    const injurySection = notes && notes.trim() && notes.trim().toLowerCase() !== "none" && !isHyroxGoal("", notes)
       ? `
 INJURY & LIMITATION PROTOCOL — CRITICAL, DO NOT IGNORE
 Client has the following injuries/limitations: "${notes}"
@@ -1035,11 +1048,15 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
           .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
           .join("\n");
 
+        const hyroxExemption = isHyroxGoal(goal, "")
+          ? "\nHYROX EXEMPTION: The following HYROX station exercises are ALWAYS allowed regardless of the library above: SkiErg, Sled Push, Sled Pull, Burpee Broad Jump, Rowing (erg), Farmer Carry, Sandbag Lunge, Wall Ball."
+          : "";
+
         exerciseLibraryContext = `
 EXERCISE LIBRARY — you MUST only pick exercises from this list:
 ${lines}
-
-CRITICAL: Use ONLY the exact exercise names listed above. Do NOT invent exercises not in this list. Do NOT append equipment modifiers (e.g. "with Weighted Vest") to any name.`;
+${hyroxExemption}
+CRITICAL: Use ONLY the exact exercise names listed above (plus HYROX stations if applicable). Do NOT invent other exercises not in this list. Do NOT append equipment modifiers (e.g. "with Weighted Vest") to any name.`;
       } else {
         // Library empty — don't restrict, but still enforce clean naming
         console.warn("[pulseGenerateFree] Exercise library is empty in Firestore.");
