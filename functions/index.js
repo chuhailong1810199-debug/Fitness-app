@@ -526,7 +526,7 @@ exports.pulseGenerateFree = onCall(
     cors: true,
   },
   async (request) => {
-    const { name, email, goal, level, sessionsPerWeek, gender, weight } = request.data || {};
+    const { name, email, goal, level, sessionsPerWeek, gender, weight, height, age } = request.data || {};
 
     // Validate required fields
     if (!name || !email || !goal || !level || !sessionsPerWeek) {
@@ -546,7 +546,7 @@ exports.pulseGenerateFree = onCall(
         goal,
         source: "free_program",
         status: "new",
-        note: `Level: ${level} | Sessions/week: ${sessionsPerWeek}${gender ? ` | Gender: ${gender}` : ""}${weight ? ` | Weight: ${weight}kg` : ""}`,
+        note: `Level: ${level} | Sessions/week: ${sessionsPerWeek}${gender ? ` | Gender: ${gender}` : ""}${age ? ` | Age: ${age}` : ""}${weight ? ` | Weight: ${weight}kg` : ""}${height ? ` | Height: ${height}cm` : ""}`,
         createdAt: new Date().toISOString(),
       });
     } catch (e) {
@@ -591,6 +591,69 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       }
     } catch (e) {
       console.warn("[pulseGenerateFree] Could not load style examples:", e.message);
+    }
+
+    // ── Step 3b: BMI & age analysis ──────────────────────────────────────────
+    let bmiContext = "";
+    if (weight && height) {
+      const bmi = weight / Math.pow(height / 100, 2);
+      const bmiRounded = Math.round(bmi * 10) / 10;
+      let bmiCategory, bmiRule;
+      if (bmi < 18.5) {
+        bmiCategory = "Underweight";
+        bmiRule =
+          "Client is UNDERWEIGHT (BMI " + bmiRounded + "). " +
+          "OVERRIDE: Prioritise muscle gain and caloric output even if goal mentions fat loss. " +
+          "Avoid excessive cardio. Focus on compound strength movements and high-protein cues. " +
+          "Keep rest periods 90-120s to maximise muscle stimulus.";
+      } else if (bmi < 25) {
+        bmiCategory = "Normal weight";
+        bmiRule =
+          "Client is at NORMAL weight (BMI " + bmiRounded + "). " +
+          "Follow the stated goal without override. Standard periodisation applies.";
+      } else if (bmi < 30) {
+        bmiCategory = "Overweight";
+        bmiRule =
+          "Client is OVERWEIGHT (BMI " + bmiRounded + "). " +
+          "TUNE: Increase metabolic demand — more compound movements, shorter rest (45-60s), " +
+          "add conditioning finisher to every session. " +
+          "Even if goal is muscle gain, include 1 cardio/conditioning phase per session.";
+      } else {
+        bmiCategory = "Obese";
+        bmiRule =
+          "Client is in OBESE range (BMI " + bmiRounded + "). " +
+          "OVERRIDE: Fat loss is the primary objective regardless of stated goal. " +
+          "Use low-impact exercises (no jumping, avoid heavy spinal loading). " +
+          "Full-body circuits, moderate weights, 15-20 reps, 30-45s rest. " +
+          "Build cardiovascular base first. Include a low-intensity cardio phase every session.";
+      }
+      bmiContext += `\nBODY METRICS:\n- Weight: ${weight}kg | Height: ${height}cm | BMI: ${bmiRounded} (${bmiCategory})\n- ${bmiRule}`;
+    } else if (weight) {
+      bmiContext += `\nBODY METRICS:\n- Weight: ${weight}kg`;
+    }
+
+    let ageContext = "";
+    if (age) {
+      if (age < 25) {
+        ageContext =
+          `\nAGE (${age}): Young athlete — can handle high volume and frequency. ` +
+          "Fast recovery. Can include more intensity techniques (supersets, drop sets).";
+      } else if (age <= 40) {
+        ageContext =
+          `\nAGE (${age}): Standard adult — balanced volume and intensity. ` +
+          "Standard warm-up protocol.";
+      } else if (age <= 55) {
+        ageContext =
+          `\nAGE (${age}): 40+ athlete — extend warm-up to 10-12 min, include extra mobility work. ` +
+          "Reduce max-effort frequency. Add 30s extra rest between sets. " +
+          "Avoid high-impact plyometrics. Prioritise joint health cues in exercise notes.";
+      } else {
+        ageContext =
+          `\nAGE (${age}): 55+ athlete — CRITICAL: prioritise mobility, balance, and injury prevention. ` +
+          "Longer warm-up (12-15 min), lower intensity (RPE 6-7 max), avoid heavy axial loading. " +
+          "Include balance drills in warm-up. Rest 2-3 min between sets. " +
+          "Prefer machines and cables over free-weight barbells where possible.";
+      }
     }
 
     // ── Step 3b: Goal & level guidance ──────────────────────────────────────
@@ -680,8 +743,8 @@ CRITICAL: Use ONLY the exact exercise names listed above. Do NOT invent exercise
     // ── Step 5: Build prompt ─────────────────────────────────────────────────
     steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 1 tuần..." });
 
-    const physicalContext = (gender || weight)
-      ? `\nPHYSICAL INFO:${gender ? `\n- Gender: ${gender}` : ""}${weight ? `\n- Weight: ${weight}kg` : ""}`
+    const physicalContext = (gender || weight || height || age)
+      ? `\nPHYSICAL INFO:${gender ? `\n- Gender: ${gender}` : ""}${age ? `\n- Age: ${age}` : ""}${weight ? `\n- Weight: ${weight}kg` : ""}${height ? `\n- Height: ${height}cm` : ""}`
       : "";
 
     const daySkeletonLines = days
@@ -695,6 +758,7 @@ CLIENT INFO:
 - Level: ${level}
 - Goal: ${goal}
 - Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
+${bmiContext}${ageContext}
 
 GOAL APPROACH:
 ${goalGuidance}
