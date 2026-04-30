@@ -772,6 +772,11 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65 + i)} — [focus]", "phases": [...] }`)
       .join(",\n");
 
+    // ── Injury/notes section for pulseGenerate ────────────────────────────────
+    const pulseInjurySection = clientNotes && clientNotes.trim() && clientNotes.trim().toLowerCase() !== "none" && !isHyroxGoal("", clientNotes)
+      ? `\nINJURY & LIMITATIONS — CRITICAL: "${clientNotes}"\nAvoid contraindicated exercises. Substitute safe alternatives. Include 1-2 rehab/activation exercises in warm-up. Add "⚠️ Modify if pain >3/10" cue on relevant exercises.`
+      : "";
+
     const prompt = `You are Pulse, an elite AI personal trainer. Create a personalized next training cycle for this client.
 
 CLIENT PROFILE:
@@ -782,6 +787,7 @@ CLIENT PROFILE:
 ${assessContext}
 ${progressContext}
 ${volumeContext}
+${pulseInjurySection}
 ${hyroxBodyContext}
 
 GOAL APPROACH:
