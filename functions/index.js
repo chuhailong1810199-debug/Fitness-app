@@ -113,23 +113,29 @@ EXERCISE NAMING for HYROX sessions: use real station names where possible
 If stations not available, name the substitute clearly in the cue field.`,
 };
 
-function detectGoal(goalStr) {
+const HYROX_KEYWORDS = /hyrox|hybrid.?perform|hybrid.?athlet|hybrid.?train|functional.?race|race.?prep|sled.?push|wall.?ball|ski.?erg|skierg|farmer.?carry|sandbag|burpee.?broad/i;
+
+function isHyroxGoal(goalStr, notesStr) {
+  return HYROX_KEYWORDS.test(goalStr || "") || HYROX_KEYWORDS.test(notesStr || "");
+}
+
+function detectGoal(goalStr, notesStr) {
+  if (isHyroxGoal(goalStr, notesStr))              return GOAL_GUIDANCE.hyrox;
   const g = (goalStr || "").toLowerCase();
-  if (/hyrox|hybrid.?perform|hybrid.?athlet/i.test(g)) return GOAL_GUIDANCE.hyrox;
-  if (/fat|loss|lean|cut|recomp/i.test(g))             return GOAL_GUIDANCE.fatLoss;
-  if (/muscle|strength|gain|hypertrophy/i.test(g))     return GOAL_GUIDANCE.muscle;
+  if (/fat|loss|lean|cut|recomp/i.test(g))         return GOAL_GUIDANCE.fatLoss;
+  if (/muscle|strength|gain|hypertrophy/i.test(g)) return GOAL_GUIDANCE.muscle;
   if (/endurance|conditioning|cardio|run|stamina/i.test(g)) return GOAL_GUIDANCE.endurance;
   return GOAL_GUIDANCE.general;
 }
 
-function detectSplit(sessions, goalStr) {
-  const isHyrox = /hyrox|hybrid.?perform/i.test(goalStr || "");
-  if (isHyrox) {
+function detectSplit(sessions, goalStr, notesStr) {
+  if (isHyroxGoal(goalStr, notesStr)) {
     const hyroxSplits = {
       3: "HYROX 3-day: Day 1 Strength (HYROX stations) | Day 2 Zone 2 Run | Day 3 Brick Session",
       4: "HYROX 4-day: Day 1 Strength | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Brick Session",
       5: "HYROX 5-day: Day 1 Strength A | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Strength B | Day 5 Brick Session",
       6: "HYROX 6-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick | Day 6 Recovery/Mobility",
+      7: "HYROX 7-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick | Day 6 Zone 2 Easy | Day 7 Recovery/Mobility",
     };
     return hyroxSplits[sessions] || hyroxSplits[4];
   }
@@ -273,9 +279,9 @@ exports.generateProgram = onCall(
       (d) => !days.includes(d)
     );
 
-    // ── Goal & split guidance ─────────────────────────────────────────────────
-    const goalGuidance = detectGoal(goal);
-    const splitGuidance = detectSplit(sessionsPerWeek, goal);
+    // ── Goal & split guidance (checks goal + notes for HYROX keywords) ────────
+    const goalGuidance = detectGoal(goal, notes);
+    const splitGuidance = detectSplit(sessionsPerWeek, goal, notes);
 
     // ── Level guidance ───────────────────────────────────────────────────────
     const levelMap = {
@@ -864,9 +870,9 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
       }
     }
 
-    // ── Step 3b: Goal, level & split guidance ────────────────────────────────
-    const goalGuidance = detectGoal(goal);
-    const splitGuidance = detectSplit(sessions, goal);
+    // ── Step 3b: Goal, level & split guidance (checks goal for HYROX keywords) ─
+    const goalGuidance = detectGoal(goal, "");
+    const splitGuidance = detectSplit(sessions, goal, "");
 
     const levelGuidanceMap = {
       Beginner:
