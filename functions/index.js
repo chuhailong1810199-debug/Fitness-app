@@ -92,21 +92,53 @@ PROGRAM STRUCTURE — every week must include ALL of these session types:
    - Or: 6x800m intervals with 90s rest
    - Purpose: raise lactate threshold, improve race pace
 
-4. BRICK SESSION (1x/week) — simulate race conditions:
-   - Alternate short runs (400-800m) with HYROX stations back-to-back
+4. BRICK SESSION (1x/week, Weeks 1-2) — introduce race transitions:
+   - Alternate short runs (400-800m) with 2-3 HYROX stations back-to-back
    - Example: 800m run → Wall Balls 30 reps → 800m run → Farmer Carry 50m → 800m run
    - Keep rest minimal (30s max between movements)
-   - Cue: "Practice transitioning under fatigue — this is what race day feels like."
+   - Cue: "Practice transitioning under fatigue. Focus on form, not speed yet."
 
-5. RECOVERY / MOBILITY (1x/week if sessions allow):
+5. HYROX SIMULATION (progressive % each week) — scale station volume by percentage:
+   RACE STATION DISTANCES AT 100%:
+   - SkiErg: 1000m | Sled Push: 50m | Sled Pull: 50m | Burpee Broad Jump: 80m
+   - Rowing: 1000m | Farmer Carry: 200m | Sandbag Lunges: 100m | Wall Balls: 100 reps
+
+   SCALE BY PERCENTAGE (apply to all station distances/reps):
+   - 50% sim: SkiErg 500m, Sled Push 25m, Sled Pull 25m, Burpee BJ 40m, Row 500m, Farmer 100m, Lunge 50m, Wall Ball 50 reps
+   - 60% sim: SkiErg 600m, Sled Push 30m, Sled Pull 30m, Burpee BJ 48m, Row 600m, Farmer 120m, Lunge 60m, Wall Ball 60 reps
+   - 70% sim: SkiErg 700m, Sled Push 35m, Sled Pull 35m, Burpee BJ 56m, Row 700m, Farmer 140m, Lunge 70m, Wall Ball 70 reps
+   - 80% sim: SkiErg 800m, Sled Push 40m, Sled Pull 40m, Burpee BJ 64m, Row 800m, Farmer 160m, Lunge 80m, Wall Ball 80 reps
+   - 100% sim: Full race distances — only in Week 4 or final prep week
+
+   FORMAT: 8 rounds of (run + station). Run distance also scales:
+   - 50-60% sim: 600m run per round
+   - 70-80% sim: 800m run per round
+   - 100% sim: 1000m run per round
+
+   NO rest between stations — transition immediately.
+   Cue: always include target % and instruction to track total time as race progress benchmark.
+
+   SIMULATION RULES:
+   - If SkiErg unavailable → Row same distance
+   - If Sled unavailable → Heavy Sled substituted with Prowler / Weighted Sled push
+   - Always note equipment substitutions in the cue field
+
+   DISTANCE-BASED EXERCISES — use meters in setsReps field, NOT reps:
+   - Farmer Carry → "3 x 40m" NOT "3 x 12"
+   - Sandbag Lunge → "3 x 30m" NOT "3 x 20 reps"
+   - Sled Push / Sled Pull → "3 x 20m" NOT "3 x 10 reps"
+   - Burpee Broad Jump → "3 x 20m" NOT "3 x 10 reps"
+   - Any loaded carry or locomotion exercise → always meters
+
+6. RECOVERY / MOBILITY (1x/week if sessions allow):
    - Hip flexor stretch, thoracic rotation, ankle mobility
    - Light row or bike 20 min zone 1
 
 PROGRESSION ACROSS 4 WEEKS:
-- Week 1: Base volume, moderate intensity, focus on movement quality
-- Week 2: Add load or reps (+5-10%)
-- Week 3: Peak volume and intensity — most demanding week
-- Week 4: Deload — reduce volume 40%, maintain intensity, full recovery
+- Week 1: Base — Brick Session 2-3 stations only, NO simulation. Focus on movement quality and pacing.
+- Week 2: Build — Brick Session 4-5 stations. Introduce 50% HYROX Simulation (4 rounds only, scaled distances).
+- Week 3: Peak — 70% HYROX Simulation (all 8 rounds, 70% distances). Full strength volume.
+- Week 4: Race Prep — 80-100% Full Simulation (all 8 rounds). Reduce strength volume 40%. Prioritise recovery.
 
 EXERCISE NAMING for HYROX sessions: use real station names where possible
 (SkiErg, Sled Push, Wall Ball, Farmer Carry, Sandbag Lunge, Burpee Broad Jump, Rowing).
@@ -131,11 +163,11 @@ function detectGoal(goalStr, notesStr) {
 function detectSplit(sessions, goalStr, notesStr) {
   if (isHyroxGoal(goalStr, notesStr)) {
     const hyroxSplits = {
-      3: "HYROX 3-day: Day 1 Strength (HYROX stations) | Day 2 Zone 2 Run | Day 3 Brick Session",
-      4: "HYROX 4-day: Day 1 Strength | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Brick Session",
-      5: "HYROX 5-day: Day 1 Strength A | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Strength B | Day 5 Brick Session",
-      6: "HYROX 6-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick | Day 6 Recovery/Mobility",
-      7: "HYROX 7-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick | Day 6 Zone 2 Easy | Day 7 Recovery/Mobility",
+      3: "HYROX 3-day: Day 1 Strength (HYROX stations) | Day 2 Zone 2 Run | Day 3 Brick (Wk1-2) / HYROX Simulation (Wk3-4)",
+      4: "HYROX 4-day: Day 1 Strength | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Brick (Wk1-2) / HYROX Simulation (Wk3-4)",
+      5: "HYROX 5-day: Day 1 Strength A | Day 2 Zone 2 Run | Day 3 Tempo Run | Day 4 Strength B | Day 5 Brick (Wk1-2) / HYROX Simulation (Wk3-4)",
+      6: "HYROX 6-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick (Wk1-2) / HYROX Simulation (Wk3-4) | Day 6 Recovery/Mobility",
+      7: "HYROX 7-day: Day 1 Strength A | Day 2 Zone 2 | Day 3 Tempo | Day 4 Strength B | Day 5 Brick (Wk1-2) / HYROX Simulation (Wk3-4) | Day 6 Zone 2 Easy | Day 7 Recovery/Mobility",
     };
     return hyroxSplits[sessions] || hyroxSplits[4];
   }
@@ -340,6 +372,9 @@ ${goalGuidance}
 VOLUME & INTENSITY
 ${levelGuidance}
 
+SPLIT STRUCTURE
+${splitGuidance}
+
 OUTPUT FORMAT
 Return ONLY raw JSON — no markdown, no code fences, no explanation.
 Root keys are the training days: ${days.join(", ")}.
@@ -487,6 +522,23 @@ exports.pulseGenerate = onCall(
     };
     const days = dayMaps[sessionsPerWeek] || dayMaps[3];
 
+    // ── Goal, level & split guidance ─────────────────────────────────────────
+    const clientNotes = client.notes || "";
+    const goalGuidance = detectGoal(goal, clientNotes);
+    const splitGuidance = detectSplit(sessionsPerWeek, goal, clientNotes);
+    const levelGuidanceMap = {
+      Beginner:
+        "Beginner: 2-3 sets per exercise, fundamental movement patterns, " +
+        "emphasis on technique. Longer warm-up, more mobility work.",
+      Intermediate:
+        "Intermediate: 3-4 sets, compound + accessory split, moderate complexity, " +
+        "introduce periodisation.",
+      Advanced:
+        "Advanced: 4-5 sets, complex periodisation, higher volume, " +
+        "advanced techniques (tempo, pause reps, drop sets where appropriate).",
+    };
+    const levelGuidance = levelGuidanceMap[level] || levelGuidanceMap["Intermediate"];
+
     // ── Body composition deep analysis ───────────────────────────────────────
     let assessContext = "";
     if (assessment) {
@@ -633,6 +685,76 @@ ${JSON.stringify(ex.sampleSession, null, 2).substring(0, 800)}
 IMPORTANT: Mirror this coaching style — same phase structure, similar exercise selection philosophy, same cue/note format.`;
     }
 
+    // ── HYROX × Body Assessment integration ──────────────────────────────────
+    let hyroxBodyContext = "";
+    if (isHyroxGoal(goal, clientNotes) && assessment) {
+      const w   = parseFloat(assessment.weight) || null;
+      const h   = parseFloat(assessment.height) || null;
+      const a   = parseInt(assessment.age)      || null;
+      const pbf = parseFloat(assessment.pbf)    || null;
+      const smm = parseFloat(assessment.smm)    || null;
+      const g   = (assessment.gender || "").toLowerCase();
+      const rules = [];
+
+      // BMI → adjust run volume & simulation start %
+      if (w && h) {
+        const bmi = w / Math.pow(h / 100, 2);
+        if (bmi >= 30) {
+          rules.push("BMI obese: START simulation at 40% (not 50%). Reduce run distance to 400m per round in Weeks 1-2. Prioritise strength base and station technique before adding running volume. Low-impact warm-up mandatory.");
+        } else if (bmi >= 25) {
+          rules.push("BMI overweight: Start simulation at 50%. Keep run pace conversational (zone 2) for first 2 weeks. Progress to 60% Week 2, 70% Week 3.");
+        }
+      }
+
+      // Body fat % → running capacity & station endurance
+      if (pbf !== null) {
+        const isFemale = g === "female" || g === "nữ";
+        const highFat = isFemale ? pbf > 30 : pbf > 22;
+        const lowFat  = isFemale ? pbf < 18 : pbf < 10;
+        if (highFat) {
+          rules.push(`Body fat ${pbf}% (elevated): Running will be harder — keep all runs at zone 2 until Week 3. Simulation progression: 40% → 60% → 70% → 80%. Add extra rest (60s) between brick transitions in Week 1.`);
+        } else if (lowFat) {
+          rules.push(`Body fat ${pbf}% (very lean): High running capacity. Can progress simulation faster: 60% → 70% → 80% → 100%. Prioritise station strength — lean athletes often lack loaded carry endurance.`);
+        }
+      }
+
+      // SMM → station strength capacity
+      if (smm !== null && w !== null) {
+        const smmRatio = (smm / w) * 100;
+        const isFemale = g === "female" || g === "nữ";
+        if (smmRatio < (isFemale ? 27 : 33)) {
+          rules.push(`Low muscle mass (SMM ${smm}kg, ${Math.round(smmRatio)}% BW): Station work will be limiting factor. Add 1 extra strength session in Week 1-2 before introducing simulation. Prioritise: Sled Push, Farmer Carry, Wall Ball strength base.`);
+        }
+      }
+
+      // Age → warm-up, recovery, simulation %
+      if (a) {
+        if (a >= 45) {
+          rules.push(`Age ${a}: Extend pre-run warm-up to 15 min including hip flexor, ankle, and thoracic mobility. Reduce simulation intensity by 10% vs standard (e.g. Week 3 = 60% instead of 70%). Add 90s rest after each simulation round in Week 1-2.`);
+        } else if (a >= 35) {
+          rules.push(`Age ${a}: 10-min warm-up before all running sessions. Allow 48h between simulation and next hard session.`);
+        }
+      }
+
+      // Progress trend × HYROX
+      if (checkpoints.length > 0) {
+        const latest = checkpoints[0];
+        const oldest = checkpoints[checkpoints.length - 1];
+        const dSMM = (latest.smm || 0) - (oldest.smm || 0);
+        const dPBF = (latest.pbf || 0) - (oldest.pbf || 0);
+        if (dSMM < -0.5) {
+          rules.push("TREND — muscle loss detected: Reduce running volume by 20% this cycle. Add 1 extra strength station session. Protein intake cue in every session note.");
+        }
+        if (dPBF > 1.5) {
+          rules.push("TREND — body fat increasing: Add conditioning finisher (200m row or 500m ski) after each strength session. Progress simulation % aggressively: don't reduce from standard.");
+        }
+      }
+
+      if (rules.length > 0) {
+        hyroxBodyContext = `\nHYROX × BODY ASSESSMENT — THESE RULES OVERRIDE STANDARD SIMULATION PROGRESSION:\n${rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}`;
+      }
+    }
+
     const daySkeletonLines = days
       .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65 + i)} — [focus]", "phases": [...] }`)
       .join(",\n");
@@ -647,6 +769,7 @@ CLIENT PROFILE:
 ${assessContext}
 ${progressContext}
 ${volumeContext}
+${hyroxBodyContext}
 
 GOAL APPROACH:
 ${goalGuidance}
