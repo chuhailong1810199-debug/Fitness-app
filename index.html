@@ -2483,6 +2483,153 @@ window._switchClient = switchClient;
 window._addClient = addClient;
 window._approveGeneratedProgram = approveGeneratedProgram;
 window._launchPulse = launchPulse;
+
+// ── PULSE FREE — Public landing page program generator ──────────────────────
+function openPulseFreeModal() {
+  const modal = document.getElementById('pulse-free-modal');
+  document.getElementById('pfm-form-phase').style.display = 'block';
+  document.getElementById('pfm-loading-phase').style.display = 'none';
+  document.getElementById('pfm-result-phase').style.display = 'none';
+  document.getElementById('pfm-form-error').style.display = 'none';
+  document.getElementById('pfm-subtitle').textContent = 'Nhận chương trình 1 tuần miễn phí';
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePulseFreeModal() {
+  document.getElementById('pulse-free-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function _pfmCompleteStep(icon, text) {
+  const list = document.getElementById('pfm-steps-list');
+  const el = document.createElement('div');
+  el.className = 'pulse-step-done';
+  el.innerHTML = `<span class="ps-icon">${icon}</span><span class="ps-text">${text}</span><span class="ps-check">✓</span>`;
+  list.appendChild(el);
+  list.scrollTop = list.scrollHeight;
+}
+
+function _pfmSetCurrent(text) {
+  const el = document.getElementById('pfm-current-text');
+  if (el) el.textContent = text;
+}
+
+async function submitPulseFreeForm() {
+  const name       = (document.getElementById('pfm-name').value || '').trim();
+  const email      = (document.getElementById('pfm-email').value || '').trim();
+  const goal       = document.getElementById('pfm-goal').value;
+  const level      = document.getElementById('pfm-level').value;
+  const sessions   = document.getElementById('pfm-sessions').value;
+  const gender     = document.getElementById('pfm-gender').value;
+  const weight     = document.getElementById('pfm-weight').value;
+
+  const errEl = document.getElementById('pfm-form-error');
+
+  // Validate
+  if (!name) { errEl.textContent = 'Vui lòng nhập tên của bạn.'; errEl.style.display='block'; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Vui lòng nhập email hợp lệ.'; errEl.style.display='block'; return; }
+  if (!goal) { errEl.textContent = 'Vui lòng chọn mục tiêu tập luyện.'; errEl.style.display='block'; return; }
+  if (!level) { errEl.textContent = 'Vui lòng chọn trình độ.'; errEl.style.display='block'; return; }
+  if (!sessions) { errEl.textContent = 'Vui lòng chọn số buổi tập mỗi tuần.'; errEl.style.display='block'; return; }
+  errEl.style.display = 'none';
+
+  // Switch to loading phase
+  document.getElementById('pfm-form-phase').style.display = 'none';
+  document.getElementById('pfm-loading-phase').style.display = 'block';
+  document.getElementById('pfm-steps-list').innerHTML = '';
+  document.getElementById('pfm-subtitle').textContent = `Đang tạo chương trình cho ${name}...`;
+  _pfmSetCurrent('Khởi động Pulse...');
+
+  // Animate fake steps while waiting
+  const fakeSteps = [
+    { icon:'📝', text:`Lưu thông tin ${name}...` },
+    { icon:'🎯', text:`Phân tích mục tiêu: ${goal.split('—')[0].trim()}` },
+    { icon:'🎨', text:'Học phong cách coaching...' },
+    { icon:'⚡', text:'Pulse đang tạo chương trình 1 tuần...' },
+  ];
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    if (stepIdx > 0 && stepIdx <= fakeSteps.length) {
+      _pfmCompleteStep(fakeSteps[stepIdx-1].icon, fakeSteps[stepIdx-1].text);
+    }
+    if (stepIdx < fakeSteps.length) {
+      _pfmSetCurrent(fakeSteps[stepIdx].text);
+    }
+    stepIdx++;
+  }, 1800);
+
+  try {
+    const fn = firebase.app().functions('asia-southeast1').httpsCallable('pulseGenerateFree');
+    const result = await fn({ name, email, goal, level, sessionsPerWeek: parseInt(sessions), gender, weight: weight ? parseFloat(weight) : null });
+
+    clearInterval(stepInterval);
+    fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
+    _pfmCompleteStep('✅', 'Chương trình của bạn đã sẵn sàng!');
+    _pfmSetCurrent('Hoàn thành! ✨');
+
+    await new Promise(r => setTimeout(r, 700));
+
+    // Show result
+    document.getElementById('pfm-result-title').textContent = `Chương trình 1 tuần của ${name} đã sẵn sàng!`;
+    renderFreeProgramPreview(result.data.program);
+    document.getElementById('pfm-loading-phase').style.display = 'none';
+    document.getElementById('pfm-result-phase').style.display = 'block';
+    document.getElementById('pfm-subtitle').textContent = 'Chương trình cá nhân hoá bởi Pulse AI';
+
+  } catch (err) {
+    clearInterval(stepInterval);
+    document.getElementById('pfm-current-step').innerHTML = `
+      <div style="text-align:center;width:100%;padding:12px 0;">
+        <div style="font-size:28px;margin-bottom:8px;">❌</div>
+        <div style="color:#ff6b6b;font-size:13px;font-weight:600;margin-bottom:6px;">Pulse gặp lỗi</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:11px;">${err.message}</div>
+        <button onclick="openPulseFreeModal()" style="margin-top:14px;padding:8px 18px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;">← Thử lại</button>
+      </div>`;
+  }
+}
+
+function renderFreeProgramPreview(program) {
+  const preview = document.getElementById('pfm-program-preview');
+  const phaseColors = { warmup:'#e8a838', strength:'#7665ff', accessories:'#44cc88' };
+  const days = Object.keys(program);
+  const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
+
+  let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} ngày tập · ${totalEx} bài tập</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Chương trình cá nhân hoá bởi ⚡ Pulse AI</div>
+  </div>`;
+
+  for (const day of days) {
+    const session = program[day];
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-weight:700;font-size:11px;color:#fff;padding:7px 12px;background:#111827;border-radius:7px;margin-bottom:8px;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>📅 ${day}</span>
+        <span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label || ''}</span>
+      </div>`;
+    for (const phase of (session.phases || [])) {
+      const col = phaseColors[phase.tag] || '#aaa';
+      html += `<div style="margin-bottom:8px;padding-left:10px;border-left:2px solid ${col}50;">
+        <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name}</div>`;
+      for (const ex of (phase.exercises || [])) {
+        html += `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #0d0d1a;align-items:start;">
+          <div>
+            <span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
+            ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0,100)}${ex.cue.length>100?'…':''}</div>` : ''}
+          </div>
+          <div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
+        </div>`;
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  preview.innerHTML = html;
+}
+
+window.openPulseFreeModal  = openPulseFreeModal;
+window.closePulseFreeModal = closePulseFreeModal;
+window.submitPulseFreeForm = submitPulseFreeForm;
 window._openEditClientModal = openEditClientModal;
 window._saveClientInfo = saveClientInfo;
 window._showPage = showPage;
@@ -3191,6 +3338,30 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 @keyframes ai-spin{to{transform:rotate(360deg);}}
 .add-day-btn{padding:6px 12px;border-radius:4px;border:1px solid #2a4e2a;background:transparent;color:#44cc66;font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;}
 .add-day-btn:hover{background:#0d2e0d;}
+
+/* PULSE FREE — slide button */
+.slide-try-free{margin-top:10px;width:100%;padding:14px;border-radius:8px;background:transparent;border:1px solid oklch(68% .16 295 / .5);color:oklch(78% .14 295);font-family:'Figtree',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.slide-try-free:hover{background:oklch(68% .16 295 / .15);border-color:oklch(68% .16 295 / .8);}
+
+/* PULSE FREE MODAL */
+.pfm-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);overflow-y:auto;}
+.pfm-sheet{width:100%;max-width:480px;background:#0a0e1a;border-radius:20px;overflow:hidden;margin:auto;}
+.pfm-header{background:linear-gradient(135deg,#0a0e1a 0%,#0d1526 100%);padding:20px 22px 16px;border-bottom:1px solid #1a2040;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.pfm-close-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:4px 8px;line-height:1;border-radius:6px;transition:color .15s;}
+.pfm-close-btn:hover{color:#fff;}
+.pfm-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.45);margin-bottom:6px;display:block;}
+.pfm-input,.pfm-select{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:#fff;font-family:'Figtree',sans-serif;font-size:14px;box-sizing:border-box;transition:border-color .15s;outline:none;-webkit-appearance:none;}
+.pfm-input:focus,.pfm-select:focus{border-color:oklch(68% .16 295 / .7);background:rgba(255,255,255,0.08);}
+.pfm-select option{background:#0d1526;}
+.pfm-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pfm-submit{width:100%;padding:15px;border-radius:10px;background:oklch(68% .16 295);color:#fff;border:none;font-family:'Figtree',sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 0 20px oklch(68% .16 295 / .3);margin-top:4px;}
+.pfm-submit:hover{background:oklch(74% .18 295);box-shadow:0 0 28px oklch(68% .16 295 / .5);}
+.pfm-submit:disabled{opacity:.5;cursor:not-allowed;}
+.pfm-cta-primary{display:block;width:100%;padding:15px;border-radius:10px;background:linear-gradient(135deg,#1e90ff,#7665ff);color:#fff;border:none;font-family:'Figtree',sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-decoration:none;text-align:center;box-sizing:border-box;transition:opacity .2s;}
+.pfm-cta-primary:hover{opacity:.88;}
+.pfm-cta-secondary{display:block;width:100%;padding:13px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.55);font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.pfm-cta-secondary:hover{border-color:rgba(255,255,255,0.3);color:#fff;}
+.pfm-success-badge{background:rgba(68,204,136,.12);border:1px solid rgba(68,204,136,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
 
 /* PULSE */
 .pulse-gen-btn{padding:6px 12px;border-radius:4px;border:1px solid oklch(68% .16 295 / .5);background:oklch(68% .16 295 / .12);color:oklch(78% .14 295);font-family:'Figtree',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;letter-spacing:.3px;transition:all .15s;}
@@ -4007,6 +4178,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div class="slide-dot"></div>
       </div>
       <button class="slide-next" onclick="nextSlide()">TIẾP THEO →</button>
+      <button class="slide-try-free" onclick="openPulseFreeModal()">⚡ Nhận 1 tuần tập miễn phí</button>
     </div>
   </div>
 
@@ -4044,6 +4216,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div class="slide-dot on"></div>
       </div>
       <button class="slide-next" onclick="skipSlides()">BẮT ĐẦU →</button>
+      <button class="slide-try-free" onclick="openPulseFreeModal()">⚡ Nhận 1 tuần tập miễn phí</button>
     </div>
   </div>
 
@@ -4114,6 +4287,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <a class="signup-cta" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank">
         Đăng Ký Ngay →
       </a>
+      <button onclick="openPulseFreeModal()" style="width:100%;padding:14px;border-radius:8px;background:transparent;border:1px solid oklch(68% .16 295 / .5);color:oklch(78% .14 295);font-family:'Figtree',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='oklch(68% .16 295 / .1)'" onmouseout="this.style.background='transparent'">
+        ⚡ Thử 1 tuần free
+      </button>
       <div id="no-client-debug"></div>
       <button class="signup-logout" onclick="logout()">Đăng xuất</button>
     </div>
@@ -4453,6 +4629,143 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div id="ai-review-actions" class="form-actions" style="display:none;margin:0;padding:14px 22px;border-top:1px solid #1a1a2e;flex-shrink:0;">
       <button id="ai-approve-btn" class="btn-save" onclick="approveGeneratedProgram()">⚡ Apply Program</button>
       <button class="btn-discard" onclick="closeModal('ai-review-modal')">Discard</button>
+    </div>
+  </div>
+</div>
+
+<!-- PULSE FREE MODAL — public, no auth required -->
+<div id="pulse-free-modal" class="pfm-overlay" onclick="if(event.target===this)closePulseFreeModal()">
+  <div style="min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;">
+    <div class="pfm-sheet">
+
+      <!-- Header -->
+      <div class="pfm-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;background:oklch(68% .16 295);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px oklch(68% .16 295 / .45);">⚡</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px;">Pulse Free</div>
+            <div id="pfm-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);">Nhận chương trình 1 tuần miễn phí</div>
+          </div>
+        </div>
+        <button class="pfm-close-btn" onclick="closePulseFreeModal()">×</button>
+      </div>
+
+      <!-- PHASE 1: Form -->
+      <div id="pfm-form-phase" style="padding:22px;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px;">
+          Điền thông tin bên dưới — Pulse sẽ tạo <strong style="color:#fff;">chương trình tập 1 tuần</strong> cá nhân hoá hoàn toàn miễn phí.
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label class="pfm-label">Tên của bạn *</label>
+            <input class="pfm-input" id="pfm-name" type="text" placeholder="Ví dụ: Nguyễn Văn A">
+          </div>
+          <div>
+            <label class="pfm-label">Email *</label>
+            <input class="pfm-input" id="pfm-email" type="email" placeholder="email@gmail.com">
+          </div>
+          <div>
+            <label class="pfm-label">Mục tiêu *</label>
+            <select class="pfm-select" id="pfm-goal">
+              <option value="">— Chọn mục tiêu —</option>
+              <option value="Giảm mỡ, cải thiện vóc dáng">🔥 Giảm mỡ, cải thiện vóc dáng</option>
+              <option value="Tăng cơ, tăng sức mạnh">💪 Tăng cơ, tăng sức mạnh</option>
+              <option value="Duy trì thể lực, tăng độ bền">🏃 Duy trì thể lực, tăng độ bền</option>
+              <option value="Cải thiện tư thế, phục hồi">🧘 Cải thiện tư thế, phục hồi</option>
+              <option value="Tổng quát — cân bằng sức khoẻ">⚖️ Tổng quát — cân bằng sức khoẻ</option>
+            </select>
+          </div>
+          <div class="pfm-row">
+            <div>
+              <label class="pfm-label">Trình độ *</label>
+              <select class="pfm-select" id="pfm-level">
+                <option value="">— Chọn —</option>
+                <option value="Beginner">🌱 Mới bắt đầu</option>
+                <option value="Intermediate">🔥 Trung cấp</option>
+                <option value="Advanced">⚡ Nâng cao</option>
+              </select>
+            </div>
+            <div>
+              <label class="pfm-label">Số buổi/tuần *</label>
+              <select class="pfm-select" id="pfm-sessions">
+                <option value="">—</option>
+                <option value="3">3 buổi</option>
+                <option value="4">4 buổi</option>
+                <option value="5">5 buổi</option>
+                <option value="6">6 buổi</option>
+              </select>
+            </div>
+          </div>
+          <div class="pfm-row">
+            <div>
+              <label class="pfm-label">Giới tính</label>
+              <select class="pfm-select" id="pfm-gender">
+                <option value="">— Không bắt buộc —</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+            <div>
+              <label class="pfm-label">Cân nặng (kg)</label>
+              <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="Ví dụ: 68">
+            </div>
+          </div>
+        </div>
+
+        <div id="pfm-form-error" style="display:none;color:#ff6b6b;font-size:12px;margin-top:12px;padding:10px 14px;background:rgba(255,107,107,.08);border-radius:8px;border:1px solid rgba(255,107,107,.2);"></div>
+
+        <button class="pfm-submit" id="pfm-submit-btn" onclick="submitPulseFreeForm()" style="margin-top:20px;">
+          ⚡ Generate chương trình
+        </button>
+
+        <div style="font-size:11px;color:rgba(255,255,255,0.28);text-align:center;margin-top:12px;line-height:1.6;">
+          Thông tin của bạn được bảo mật.<br>Coach Long Chu có thể liên hệ để tư vấn thêm.
+        </div>
+      </div>
+
+      <!-- PHASE 2: Pulse Generating -->
+      <div id="pfm-loading-phase" style="display:none;padding:22px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Pulse đang phân tích và tạo chương trình cho bạn...</div>
+        <div id="pfm-steps-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+        <div id="pfm-current-step" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:oklch(68% .16 295 / .08);border:1px solid oklch(68% .16 295 / .25);border-radius:10px;">
+          <div class="pulse-dot-spinner"><span></span></div>
+          <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pfm-current-text">Khởi động Pulse...</div>
+        </div>
+      </div>
+
+      <!-- PHASE 3: Result -->
+      <div id="pfm-result-phase" style="display:none;">
+        <!-- Success badge -->
+        <div style="padding:16px 22px 0;">
+          <div class="pfm-success-badge">
+            <div style="font-size:22px;">✅</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Chương trình của bạn đã sẵn sàng!</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1 tuần tập luyện — được tạo bởi Pulse AI</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Program preview -->
+        <div id="pfm-program-preview" style="padding:0 22px;max-height:55vh;overflow-y:auto;"></div>
+
+        <!-- CTA -->
+        <div style="padding:16px 22px 22px;border-top:1px solid #1a1a2e;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">Muốn có full 4-week program tối ưu riêng?</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Đăng ký để coach Long Chu thiết kế chương trình chuyên sâu, theo dõi sát sao tiến trình của bạn.</div>
+          </div>
+          <a class="pfm-cta-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank">
+            📋 Đăng ký Full Program →
+          </a>
+          <a class="pfm-cta-primary" href="https://zalo.me/0902787150" target="_blank" style="background:linear-gradient(135deg,#0068ff,#00a6ff);">
+            💬 Chat với coach ngay
+          </a>
+          <button class="pfm-cta-secondary" onclick="closePulseFreeModal()">Đóng</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

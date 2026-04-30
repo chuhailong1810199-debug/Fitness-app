@@ -510,3 +510,164 @@ RULES:
     return { program, steps, clientName: name };
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pulseGenerateFree — Public Pulse AI, no auth required
+// Generates a FREE 1-week program for landing page visitors
+// Saves visitor info as a lead in Firestore automatically
+// ─────────────────────────────────────────────────────────────────────────────
+exports.pulseGenerateFree = onCall(
+  {
+    secrets: [GROQ_API_KEY],
+    region: "asia-southeast1",
+    timeoutSeconds: 120,
+    memory: "512MiB",
+    cors: true,
+  },
+  async (request) => {
+    const { name, email, goal, level, sessionsPerWeek, gender, weight } = request.data || {};
+
+    // Validate required fields
+    if (!name || !email || !goal || !level || !sessionsPerWeek) {
+      throw new Error("Thiếu thông tin: name, email, goal, level, sessionsPerWeek là bắt buộc.");
+    }
+
+    const db = getFirestore();
+    const steps = [];
+
+    // ── Step 1: Save as lead ─────────────────────────────────────────────────
+    steps.push({ icon: "📝", text: "Lưu thông tin..." });
+    try {
+      const leadRef = db.collection("leads").doc();
+      await leadRef.set({
+        name,
+        email,
+        goal,
+        source: "free_program",
+        status: "new",
+        note: `Level: ${level} | Sessions/week: ${sessionsPerWeek}${gender ? ` | Gender: ${gender}` : ""}${weight ? ` | Weight: ${weight}kg` : ""}`,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.warn("[pulseGenerateFree] Could not save lead:", e.message);
+    }
+
+    // ── Step 2: Build context ─────────────────────────────────────────────────
+    steps.push({ icon: "🎯", text: "Phân tích mục tiêu của bạn..." });
+
+    const sessions = parseInt(sessionsPerWeek) || 3;
+    const dayMaps = {
+      3: ["Mon", "Wed", "Fri"],
+      4: ["Mon", "Tue", "Thu", "Fri"],
+      5: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      6: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      7: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    };
+    const days = dayMaps[sessions] || dayMaps[3];
+
+    // ── Step 3: Read coach style samples ────────────────────────────────────
+    steps.push({ icon: "🎨", text: "Học phong cách coaching..." });
+    let styleContext = "";
+    try {
+      const allClientsSnap = await db.collection("clients").get();
+      const styleExamples = [];
+      for (const doc of allClientsSnap.docs) {
+        const data = doc.data();
+        if (!data.program) continue;
+        const dayKeys = Object.keys(data.program);
+        if (dayKeys.length === 0) continue;
+        const sampleDay = data.program[dayKeys[0]];
+        styleExamples.push({ clientLevel: data.level, clientGoal: data.goal, sampleSession: sampleDay });
+      }
+      if (styleExamples.length > 0) {
+        styleContext = `
+COACH'S TRAINING STYLE (learned from ${styleExamples.length} real programs):
+${styleExamples.slice(0, 2).map((ex, i) => `
+Example ${i + 1} — ${ex.clientLevel} client, goal: ${ex.clientGoal}:
+${JSON.stringify(ex.sampleSession, null, 2).substring(0, 600)}
+`).join("")}
+IMPORTANT: Mirror this coaching style — same phase structure, similar exercise selection, same cue/note format.`;
+      }
+    } catch (e) {
+      console.warn("[pulseGenerateFree] Could not load style examples:", e.message);
+    }
+
+    // ── Step 4: Build prompt ─────────────────────────────────────────────────
+    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 1 tuần..." });
+
+    const physicalContext = (gender || weight)
+      ? `\nPHYSICAL INFO:${gender ? `\n- Gender: ${gender}` : ""}${weight ? `\n- Weight: ${weight}kg` : ""}`
+      : "";
+
+    const daySkeletonLines = days
+      .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65 + i)} — [focus]", "phases": [...] }`)
+      .join(",\n");
+
+    const prompt = `You are Pulse, an elite AI personal trainer. Create a FREE 1-week personalized training program for this person.
+
+CLIENT INFO:
+- Name: ${name}
+- Level: ${level}
+- Goal: ${goal}
+- Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
+${styleContext}
+
+TASK: Generate a complete 1-week training program that:
+1. Is appropriate for their level and goal
+2. Matches the coaching style shown above
+3. Includes proper warm-up, main work, and accessories
+4. Has progression cues embedded in exercise notes
+5. Is immediately actionable — no fluff
+
+OUTPUT FORMAT — Return ONLY raw JSON, no markdown:
+{
+${daySkeletonLines}
+}
+
+Each day structure:
+{
+  "label": "Session A — Push",
+  "phases": [
+    {
+      "tag": "warmup",
+      "name": "🔥 Warm-up",
+      "exercises": [{ "name": "...", "setsReps": "1 x 5 min", "tempo": "", "cue": "..." }]
+    },
+    {
+      "tag": "strength",
+      "name": "💪 Main Lifts",
+      "exercises": [{ "name": "...", "setsReps": "4 x 6", "tempo": "3-1-2", "cue": "Start at 70% effort. Add 2.5kg if all reps clean." }]
+    },
+    {
+      "tag": "accessories",
+      "name": "⚡ Accessories",
+      "exercises": [{ "name": "...", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "..." }]
+    }
+  ]
+}
+
+RULES:
+- Warm-up: 3-4 exercises
+- Main Lifts: 3-5 compound exercises
+- Accessories: 3-5 isolation exercises
+- Do NOT add any text outside the JSON`;
+
+    // ── Step 5: Call Groq ─────────────────────────────────────────────────────
+    const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 4000,
+      temperature: 0.4,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    let raw = completion.choices[0].message.content.trim();
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    const program = JSON.parse(raw);
+    steps.push({ icon: "✅", text: "Chương trình của bạn đã sẵn sàng!" });
+
+    console.log(`[pulseGenerateFree] ⚡ Free program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
+    return { program, steps, clientName: name };
+  }
+);
