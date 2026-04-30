@@ -813,27 +813,12 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
 
     // ── Step 4: Load exercise library ───────────────────────────────────────
     steps.push({ icon: "📚", text: "Loading exercise library..." });
-    const FALLBACK_EXERCISES = {
-      "Chest":      ["Barbell Bench Press", "Dumbbell Bench Press", "Incline Dumbbell Press", "Cable Fly", "Push-Up", "Dips"],
-      "Back":       ["Barbell Row", "Dumbbell Row", "Pull-Up", "Lat Pulldown", "Seated Cable Row", "Deadlift", "Romanian Deadlift"],
-      "Shoulders":  ["Dumbbell Shoulder Press", "Lateral Raise", "Front Raise", "Face Pull", "Arnold Press"],
-      "Biceps":     ["Barbell Curl", "Dumbbell Curl", "Hammer Curl", "Incline Curl", "Cable Curl"],
-      "Triceps":    ["Tricep Pushdown", "Skull Crusher", "Overhead Tricep Extension", "Close-Grip Bench Press", "Dips"],
-      "Quads":      ["Barbell Back Squat", "Leg Press", "Leg Extension", "Hack Squat", "Bulgarian Split Squat", "Lunge"],
-      "Hamstrings": ["Romanian Deadlift", "Leg Curl", "Nordic Curl", "Good Morning", "Glute-Ham Raise"],
-      "Glutes":     ["Hip Thrust", "Glute Bridge", "Cable Kickback", "Sumo Deadlift", "Step-Up"],
-      "Calves":     ["Standing Calf Raise", "Seated Calf Raise", "Donkey Calf Raise"],
-      "Core":       ["Plank", "Ab Wheel Rollout", "Hanging Knee Raise", "Cable Crunch", "Russian Twist", "Dead Bug"],
-      "Cardio":     ["Jump Rope", "Rowing Machine", "Assault Bike", "Treadmill Run", "Stair Climber"],
-      "Warm-up":    ["Hip Circle", "World's Greatest Stretch", "Band Pull-Apart", "Thoracic Rotation", "Leg Swing", "Arm Circle", "Glute Activation Walk"],
-    };
-
     let exerciseLibraryContext = "";
     try {
       const exSnap = await db.collection("exercises").get();
-      const byMuscle = {};
-
       if (!exSnap.empty) {
+        // Group by primary muscle
+        const byMuscle = {};
         exSnap.docs.forEach((doc) => {
           const d = doc.data();
           if (!d.name) return;
@@ -845,31 +830,27 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
           if (!byMuscle[muscle]) byMuscle[muscle] = [];
           byMuscle[muscle].push(d.name);
         });
-      } else {
-        // Firestore library empty — use fallback
-        console.warn("[pulseGenerateFree] Exercise library empty, using fallback list.");
-        Object.assign(byMuscle, FALLBACK_EXERCISES);
-      }
 
-      const lines = Object.entries(byMuscle)
-        .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
-        .join("\n");
+        const lines = Object.entries(byMuscle)
+          .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
+          .join("\n");
 
-      exerciseLibraryContext = `
+        exerciseLibraryContext = `
 EXERCISE LIBRARY — you MUST only pick exercises from this list:
 ${lines}
 
 CRITICAL: Use ONLY the exact exercise names listed above. Do NOT invent exercises not in this list. Do NOT append equipment modifiers (e.g. "with Weighted Vest") to any name.`;
+      } else {
+        // Library empty — don't restrict, but still enforce clean naming
+        console.warn("[pulseGenerateFree] Exercise library is empty in Firestore.");
+        exerciseLibraryContext = `
+EXERCISE NAMING RULE: Use standard, clean exercise names only (e.g. "Romanian Deadlift", "Lat Pulldown"). Do NOT append equipment modifiers like "with Weighted Vest" to any exercise name.`;
+      }
     } catch (e) {
+      // On error — don't restrict, just enforce clean naming
       console.warn("[pulseGenerateFree] Could not load exercise library:", e.message);
-      // Even on error, inject fallback so AI doesn't hallucinate
-      const lines = Object.entries(FALLBACK_EXERCISES)
-        .map(([m, names]) => `  ${m}: ${names.join(", ")}`)
-        .join("\n");
       exerciseLibraryContext = `
-EXERCISE LIBRARY — use exercises from this list:
-${lines}
-Do NOT append equipment modifiers to exercise names.`;
+EXERCISE NAMING RULE: Use standard, clean exercise names only. Do NOT append equipment modifiers to exercise names.`;
     }
 
     // ── Step 5: Build prompt ─────────────────────────────────────────────────
