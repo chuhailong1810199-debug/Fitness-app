@@ -1302,6 +1302,10 @@ Use the periodisation rules above to make each phase genuinely different (differ
         throw new HttpsError("internal", "AI timed out — please try again in a moment. (" + (groqErr.message||'') + ")");
       }
 
+      if (!hyroxCompletion.choices || !hyroxCompletion.choices[0] || !hyroxCompletion.choices[0].message) {
+        console.error("[pulseGenerateFree] HYROX: Groq returned empty choices. Response:", JSON.stringify(hyroxCompletion).substring(0, 300));
+        throw new HttpsError("internal", "AI returned an empty response — please try again.");
+      }
       let hyroxRaw = hyroxCompletion.choices[0].message.content.trim();
       // Robust JSON extraction: strip markdown fences, then find first { to last }
       hyroxRaw = hyroxRaw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
@@ -1473,7 +1477,8 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
 - Use the split: ${splitGuidance}
 - Vary sessions by muscle group / movement pattern — never repeat same muscle group two days in a row
 - Each phase must be distinctly different in volume/load/rest per the periodisation rules
-- Warmup: 2-3 exercises. Main: 3-4 compounds. Accessories: 2-3 isolation
+- Warmup: exactly 2 exercises. Main: exactly 3 compounds. Accessories: exactly 2 isolation. Total = 7 exercises per day MAX.
+- Cues: MAXIMUM 8 words each — be concise (e.g. "Brace core, drive knees out." not a full paragraph)
 - Exercise names: clean standard names only, no equipment qualifiers
 - Do NOT add any text outside the JSON`;
 
@@ -1483,7 +1488,7 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
     try {
       completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 4000,
+        max_tokens: 6000,
         temperature: 0.35,
         messages: [{ role: "user", content: prompt }],
       });
@@ -1492,6 +1497,10 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
       throw new HttpsError("internal", "AI timed out — please try again. (" + (groqErr.message||'') + ")");
     }
 
+    if (!completion.choices || !completion.choices[0] || !completion.choices[0].message) {
+      console.error("[pulseGenerateFree] General: Groq returned empty choices. Response:", JSON.stringify(completion).substring(0, 300));
+      throw new HttpsError("internal", "AI returned an empty response — please try again.");
+    }
     let raw = completion.choices[0].message.content.trim();
     raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
     // Robust extraction: find first { to last }
