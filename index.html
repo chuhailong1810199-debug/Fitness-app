@@ -98,6 +98,15 @@ function parseSetsCount(setsReps) {
   const m = setsReps.match(/^(\d+)\s*[×x]/i);
   return m ? Math.min(parseInt(m[1]), 6) : 3; // cap at 6 sets
 }
+// Split "4 × 8" → { sets:'4', reps:'8' } for table columns
+function parseSetsRepsSplit(setsReps) {
+  if (!setsReps) return { sets: '—', reps: '—' };
+  const m = setsReps.match(/(\d+)\s*[x×]\s*([\d\-–]+\+?)/i);
+  if (m) return { sets: m[1], reps: m[2] };
+  const amrap = setsReps.match(/(\d+)\s*[x×]\s*(AMRAP|Max)/i);
+  if (amrap) return { sets: amrap[1], reps: amrap[2] };
+  return { sets: '—', reps: setsReps.replace(/sets?/i,'').trim() || '—' };
+}
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MUSCLE_WEIGHTS = {P:1.0, S:0.5, T:0.333, Q:0.25};
@@ -1571,9 +1580,122 @@ function renderExercises() {
   const list = document.getElementById('exercise-list');
   if (!day) { list.innerHTML = '<div class="loading">Rest day 💤</div>'; updateProgress(); return; }
 
-  let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
+  // Phase dot colors by tag
+  const PT_DOT_COLORS = {
+    warmup: '#f97316', strength: '#1e90ff', accessories: '#7665ff',
+    core: '#22d3ee', circuit: '#44cc88',
+  };
+  const PT_SUB_COLORS = ['#7665ff','#44cc88','#f43f5e','#f97316','#22d3ee','#a855f7'];
+
   const vKeys = [];
   const sortedPhases = sortPhases(day.phases);
+
+  if (!editMode) {
+    // ── TABLE VIEW (new design) ───────────────────────────────────────────
+    const dayLabel = day.label || activeDay;
+    let tbl = `<div class="program-table-wrap">
+      <div class="pt-day-title">${dayLabel}</div>
+      <table class="program-table">
+        <thead><tr>
+          <th style="width:44%">Exercise</th>
+          <th>Sets</th>
+          <th>Reps</th>
+          <th>Tempo</th>
+          <th>Load</th>
+          <th class="pt-th-notes">Notes</th>
+        </tr></thead>
+        <tbody>`;
+
+    sortedPhases.forEach((phase) => {
+      const pi = day.phases.indexOf(phase);
+      const dotColor = PT_DOT_COLORS[phase.tag] || '#6b7280';
+
+      // Phase group header row
+      const phaseIcon = phase.tag === 'warmup' ? '↑' :
+                        phase.tag === 'strength' ? '◆' :
+                        phase.tag === 'accessories' ? '↻' :
+                        phase.tag === 'core' ? '✦' : '↻';
+      const phaseMeta = phase.note ? phase.note : '';
+      tbl += `<tr class="pt-phase-row">
+        <td class="pt-phase-cell" colspan="5">
+          <div class="pt-phase-icon">${phaseIcon}</div>
+          <span class="pt-phase-name">${phase.name}</span>
+        </td>
+        <td><span class="pt-phase-meta">${phaseMeta}</span></td>
+      </tr>`;
+
+      phase.exercises.forEach((ex, ei) => {
+        const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
+        const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
+        vKeys.push(vKey);
+
+        const { sets, reps } = parseSetsRepsSplit(ex.setsReps);
+        const tempo = ex.tempo || '—';
+        const notes = ex.cue || ex.note || '';
+        const isSubStyle = phase.tag === 'accessories' || phase.tag === 'circuit';
+        const exDotColor = isSubStyle ? (PT_SUB_COLORS[ei % PT_SUB_COLORS.length]) : dotColor;
+
+        // Strength history badge
+        const hist = strengthHistory[key];
+        let histBadge = '';
+        if (hist && hist.length > 0) {
+          const latest = hist[0].kg;
+          const prev = hist.length > 1 ? hist[1].kg : null;
+          if (prev !== null) {
+            const delta = +(latest - prev).toFixed(1);
+            if (delta > 0) histBadge = `<span class="pt-badge-inline pt-badge-up">↑ ${latest}kg</span>`;
+            else if (delta < 0) histBadge = `<span class="pt-badge-inline pt-badge-dn">↓ ${latest}kg</span>`;
+            else histBadge = `<span class="pt-badge-inline pt-badge-same">→ ${latest}kg</span>`;
+          }
+        }
+
+        const loadVal = getSetLoad(key, 0) || getExerciseLoadValue(key) || '';
+
+        tbl += `<tr class="pt-ex-row${isSubStyle?' pt-ex-sub':''}${done?' pt-done':''}" id="card_${key}">
+          <td>
+            <div class="pt-name-cell">
+              <div class="pt-check${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
+              <span class="pt-dot ${isSubStyle?'pt-dot-sub':'pt-dot-main'}" style="background:${exDotColor}"></span>
+              <span class="pt-ex-name" onclick="openModal(${pi},${ei})">${ex.name}</span>
+              ${histBadge}
+            </div>
+          </td>
+          <td>${sets}</td>
+          <td>${reps}</td>
+          <td>${tempo}</td>
+          <td>
+            <input class="pt-load-input" type="number" min="0" step="0.5" placeholder="—"
+              value="${loadVal}"
+              oninput="setSetLoad('${key}',0,this.value);setExerciseLoad('${key}',this.value)">
+          </td>
+          <td><span class="pt-notes" title="${escHtml(notes)}">${escHtml(notes) || '—'}</span></td>
+        </tr>`;
+      });
+    });
+
+    tbl += `</tbody></table></div>`;
+
+    // Done strip
+    const doneKeys = Object.entries(exerciseState[activeClient.id] || {}).filter(([,v])=>v).map(([k])=>k);
+    const dayDoneKeys = doneKeys.filter(k => k.startsWith(activeClient.id+'_'+activeDay+'_'));
+    if (dayDoneKeys.length > 0 && !showDoneExercises) {
+      const strip = `<div class="done-strip" onclick="toggleDoneExercises()">
+        <span class="done-strip-label">✓ Đã hoàn thành</span>
+        <span class="done-strip-count">${dayDoneKeys.length} bài ↓ xem lại</span>
+      </div>`;
+      list.innerHTML = strip + tbl;
+    } else {
+      list.innerHTML = tbl;
+    }
+    updateProgress();
+    refreshVideoSlotsFromFirestore(vKeys);
+    return;
+  }
+
+  // ── EDIT MODE (original layout preserved) ────────────────────────────────
+  let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
+
   sortedPhases.forEach((phase) => {
     const pi = day.phases.indexOf(phase); // always use original Firestore index
     html += `<div class="phase-header">`;
@@ -1594,7 +1716,7 @@ function renderExercises() {
     }
     html += phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${phase.note}</div></div></div>` : '';
     if (!editMode) {
-      // ── Node-based horizontal flow (view / workout mode) ─────────────────
+      // (unreachable in edit mode — kept for safety)
       html += `<div class="exercise-flow">`;
       phase.exercises.forEach((ex, ei) => {
         const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
@@ -1999,8 +2121,8 @@ function toggleExercise(key) {
   }
 }
 function updateProgress() {
-  const cards = document.querySelectorAll('.exercise-card, .exercise-node');
-  const done  = document.querySelectorAll('.exercise-card.done-card, .exercise-node.done-node').length;
+  const cards = document.querySelectorAll('.exercise-card, .exercise-node, .pt-ex-row');
+  const done  = document.querySelectorAll('.exercise-card.done-card, .exercise-node.done-node, .pt-ex-row.pt-done').length;
   const total = cards.length, pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('progress').style.width        = pct + '%';
   document.getElementById('progress-label').textContent  = pct + '% complete';
@@ -3446,7 +3568,48 @@ h1 span{color:#1e90ff;}
 .exercise-name.done{color:rgba(255,255,255,0.35);text-decoration:line-through;}
 .info-btn{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,0.16);background:transparent;color:rgba(255,255,255,0.60);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .info-btn:hover{border-color:#1e90ff;color:#1e90ff;}
-/* ── Exercise node flow (horizontal) ── */
+/* ── Program Table (redesigned view) ── */
+.program-table-wrap{margin-top:.25rem;}
+.pt-day-title{font-size:15px;font-weight:700;color:#fff;padding-bottom:12px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.program-table{width:100%;border-collapse:collapse;table-layout:auto;}
+.program-table thead th{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:1.4px;padding:0 10px 10px;white-space:nowrap;}
+.program-table thead th:first-child{text-align:left;padding-left:0;}
+.program-table thead th:not(:first-child):not(.pt-th-notes){text-align:center;}
+.pt-th-notes{text-align:left;}
+/* Phase group header row */
+.pt-phase-row td{padding:16px 10px 6px;border-bottom:none;}
+.pt-phase-row:first-child td{padding-top:12px;}
+.pt-phase-cell{display:flex;align-items:center;gap:8px;}
+.pt-phase-icon{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.40);flex-shrink:0;line-height:1;}
+.pt-phase-name{font-size:11px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1.2px;}
+.pt-phase-meta{font-size:11px;color:rgba(255,255,255,0.25);font-style:italic;white-space:nowrap;}
+/* Exercise rows */
+.pt-ex-row{border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background .15s;}
+.pt-ex-row:hover{background:rgba(255,255,255,0.025);}
+.pt-ex-row td{padding:10px 10px;font-size:13px;color:rgba(255,255,255,0.82);vertical-align:middle;}
+.pt-ex-row td:first-child{padding-left:0;}
+.pt-ex-row td:not(:first-child):not(:last-child){text-align:center;color:rgba(255,255,255,0.75);font-weight:600;font-size:12px;}
+.pt-name-cell{display:flex;align-items:center;gap:9px;}
+.pt-dot{border-radius:50%;flex-shrink:0;transition:opacity .2s;}
+.pt-dot-main{width:8px;height:8px;}
+.pt-dot-sub{width:6px;height:6px;margin-left:1px;}
+.pt-ex-name{font-size:13px;font-weight:600;color:#fff;line-height:1.3;}
+.pt-ex-sub .pt-ex-name{font-weight:500;color:rgba(255,255,255,0.80);}
+.pt-ex-row.pt-done .pt-ex-name{text-decoration:line-through;color:rgba(255,255,255,0.28);}
+.pt-ex-row.pt-done .pt-dot{opacity:.35;}
+.pt-ex-row.pt-done td:not(:first-child){color:rgba(255,255,255,0.25);}
+.pt-check{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:transparent;transition:all .15s;flex-shrink:0;}
+.pt-check.done{background:#1e90ff;border-color:#1e90ff;color:#fff;}
+.pt-load-input{width:50px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:4px 0;text-align:center;color:#fff;font-size:12px;font-weight:600;font-family:'Figtree',sans-serif;outline:none;transition:border-color .15s,background .15s;}
+.pt-load-input:focus{border-color:rgba(255,255,255,0.28);background:rgba(255,255,255,0.08);}
+.pt-load-input::placeholder{color:rgba(255,255,255,0.18);}
+.pt-load-unit{font-size:9px;color:rgba(255,255,255,0.25);font-weight:700;text-transform:uppercase;margin-left:1px;}
+.pt-notes{font-size:11px;color:rgba(255,255,255,0.35);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;display:block;}
+.pt-badge-inline{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;}
+.pt-badge-up{background:rgba(68,204,136,0.12);color:#44cc88;}
+.pt-badge-dn{background:rgba(244,63,94,0.12);color:#f43f5e;}
+.pt-badge-same{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.40);}
+/* Legacy node flow (horizontal) — kept for edit mode if needed */
 .exercise-flow{display:flex;align-items:stretch;overflow-x:auto;padding:4px 2px 12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;margin-bottom:6px;gap:0;}
 .exercise-flow::-webkit-scrollbar{height:3px;}
 .exercise-flow::-webkit-scrollbar-track{background:transparent;}
