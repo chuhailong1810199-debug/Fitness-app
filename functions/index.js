@@ -18,7 +18,7 @@
  */
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { onCall }             = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret }       = require("firebase-functions/params");
 const { initializeApp }      = require("firebase-admin/app");
 const { getFirestore }       = require("firebase-admin/firestore");
@@ -882,11 +882,11 @@ exports.pulseGenerateFree = onCall(
 
     // Validate required fields
     if (!name || !email || !goal || !level || !sessionsPerWeek) {
-      throw new Error("Thiếu thông tin: name, email, goal, level, sessionsPerWeek là bắt buộc.");
+      throw new HttpsError("invalid-argument", "Thiếu thông tin: name, email, goal, level, sessionsPerWeek là bắt buộc.");
     }
     const sessionsParsed = parseInt(sessionsPerWeek);
     if (isNaN(sessionsParsed) || sessionsParsed < 3 || sessionsParsed > 7) {
-      throw new Error("Sessions per week must be between 3 and 7.");
+      throw new HttpsError("invalid-argument", "Sessions per week must be between 3 and 7.");
     }
 
     const db = getFirestore();
@@ -1293,13 +1293,13 @@ Use the periodisation rules above to make each phase genuinely different (differ
       try {
         hyroxCompletion = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
-          max_tokens: 7000,
+          max_tokens: 4000,
           temperature: 0.3,
           messages: [{ role: "user", content: hyroxPrompt }],
         });
       } catch (groqErr) {
         console.error("[pulseGenerateFree] Groq API error (HYROX):", groqErr.message);
-        throw new Error("AI service error. Please try again in a moment.");
+        throw new HttpsError("internal", "AI timed out — please try again in a moment. (" + (groqErr.message||'') + ")");
       }
 
       let hyroxRaw = hyroxCompletion.choices[0].message.content.trim();
@@ -1308,8 +1308,8 @@ Use the periodisation rules above to make each phase genuinely different (differ
       const hyroxStart = hyroxRaw.indexOf("{");
       const hyroxEnd   = hyroxRaw.lastIndexOf("}");
       if (hyroxStart === -1 || hyroxEnd === -1) {
-        console.error("[pulseGenerateFree] HYROX: No JSON object found in response. Raw (first 300):", hyroxRaw.substring(0, 300));
-        throw new Error("Could not generate HYROX plan. Please try again.");
+        console.error("[pulseGenerateFree] HYROX: No JSON object found. Raw (first 300):", hyroxRaw.substring(0, 300));
+        throw new HttpsError("internal", "HYROX plan generation failed — AI returned unexpected format. Please try again.");
       }
       hyroxRaw = hyroxRaw.substring(hyroxStart, hyroxEnd + 1);
 
@@ -1318,7 +1318,7 @@ Use the periodisation rules above to make each phase genuinely different (differ
         hyroxProgram = JSON.parse(hyroxRaw);
       } catch (parseErr) {
         console.error("[pulseGenerateFree] HYROX JSON parse error:", parseErr.message, "| Raw (first 500):", hyroxRaw.substring(0, 500));
-        throw new Error("Plan generation failed — response format error. Please try again.");
+        throw new HttpsError("internal", "HYROX plan: AI response format error. Please try again.");
       }
 
       steps.push({ icon: "✅", text: "Your 6-week HYROX plan is ready!" });
@@ -1483,13 +1483,13 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
     try {
       completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 7000,
+        max_tokens: 4000,
         temperature: 0.35,
         messages: [{ role: "user", content: prompt }],
       });
     } catch (groqErr) {
       console.error("[pulseGenerateFree] Groq API error (general):", groqErr.message);
-      throw new Error("AI service error. Please try again in a moment.");
+      throw new HttpsError("internal", "AI timed out — please try again. (" + (groqErr.message||'') + ")");
     }
 
     let raw = completion.choices[0].message.content.trim();
@@ -1504,7 +1504,7 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
       program = JSON.parse(raw);
     } catch (parseErr) {
       console.error("[pulseGenerateFree] General JSON parse error:", parseErr.message, "| Raw (first 400):", raw.substring(0, 400));
-      throw new Error("Plan generation failed — please try again.");
+      throw new HttpsError("internal", "Plan format error — please try again.");
     }
     steps.push({ icon: "✅", text: "Chương trình 6 tuần của bạn đã sẵn sàng!" });
 
