@@ -39,83 +39,36 @@ const APP_NAME = "Striveo";
 // ─────────────────────────────────────────────────────────────────────────────
 const GOAL_GUIDANCE = {
   fatLoss:
-    `Fat Loss + Body Recomposition Program. CORE PRINCIPLE: fat loss training = strength-focused + preserve muscle + smart cardio. NOT light weight + high reps — that wastes sessions.
+    `Fat Loss + Recomposition. PRINCIPLE: strength-focused to preserve muscle + smart cardio. NOT light weight + high reps.
 
-EXERCISE SELECTION:
-- Compounds (main lifts): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Barbell Row, Pull-Up — foundation of every session
-- Accessories (isolation): Leg Curl, Lateral Raise, Face Pull, Tricep Pushdown, Bicep Curl, Cable Row, Chest Fly / Cable Fly — 2–3 per session
-- Unilateral + Core (1 per session): Bulgarian Split Squat, Reverse Lunge, Single-Leg RDL, Pallof Press, Ab Wheel
-- Conditioning Finisher (MANDATORY every session): 10–15 min HIIT or metcon circuit at end — rowing intervals, sled push, bike sprint, jump rope, kettlebell swing
+EXERCISES: Compounds (Squat, RDL, Bench, OHP, Row, Pull-Up) + Accessories (Leg Curl, Lateral Raise, Face Pull, Tricep, Bicep, Cable Fly) + 1 unilateral/core per session + Conditioning Finisher MANDATORY.
 
-INTENSITY — USE TWO TIERS every session, NOT uniform reps:
-- Heavy top set (1st compound): 4–6 reps at 80–85% 1RM, RPE 8–9 — strength stimulus to preserve CNS drive
-- Back-off / hypertrophy sets (remaining compounds): 8–12 reps at 70–75% 1RM, RPE 7–8
-- Accessories: 10–15 reps, RPE 7–8
-- NEVER programme all exercises at the same rep range (e.g. all 3x10 = wrong)
+INTENSITY — TWO TIERS per session (never uniform reps):
+- 1st compound (top set): 4–6 reps, 80–85% 1RM, RPE 8–9, 2–3 min rest
+- 2nd–3rd compound (back-off): 8–10 reps, 70–75% 1RM, RPE 7–8, 90s rest
+- Accessories: 10–15 reps, RPE 7–8, 60–90s rest
 
-PROGRESSIVE OVERLOAD — embed in cue for every main lift:
-- Top set: when client hits top of rep range for 2 sessions → add +2.5kg next session ("top set: add weight when 6 clean reps hit")
-- Back-off: progress reps before adding load
-- Maintenance rule: strength maintained = muscle preserved — never drop below starting load
+PROGRESSIVE OVERLOAD in cue: "+2.5kg when 6 clean reps × 2 sessions (top set)". Back-off: reps first then load. Strength maintained = muscle preserved.
 
-VOLUME (per muscle group per week): 10–15 working sets total.
-- 1st compound (heavy): 4–5 sets
-- 2nd–3rd compound (back-off): 3 sets each
-- Accessories: 2–3 sets each
+ANTI-REDUNDANCY RULES:
+- PUSH: Bench + OHP + 1 chest isolation (Cable Fly). Max 2 presses. No Close Grip Bench as 3rd press.
+- PULL: 1 vertical (Pull-Up OR Lat Pulldown, not both) + 1 row + 1 rear delt (Face Pull).
+- LEGS: Squat heavy (4–6 reps) + hinge (8–10 reps) + unilateral (2–3 sets only).
 
-REST PERIODS:
-- Heavy top set (4–6 reps): 2–3 min
-- Back-off sets (8–12 reps): 90s–2 min
-- Accessories: 60–90s
-- Conditioning finisher: 20–40s work / 15–30s rest
-
-SESSION-SPECIFIC EXERCISE RULES (anti-redundancy):
-- LEG day: 1 primary squat pattern (heavy, 4–6 reps) + 1 hinge (8–10 reps) + 1 unilateral (2–3 sets only, no fatigue stacking). NOT 3 leg exercises all at 3x10.
-- PUSH day: 1 horizontal press (Bench) + 1 vertical/overhead press (OHP) + 1 chest ISOLATION (Cable Fly or DB Fly). Do NOT add a 3rd pressing movement (e.g. Close Grip Bench = redundant on push day — put it on a dedicated arm/accessory slot instead).
-- PULL day: 1 vertical pull (Pull-Up OR Lat Pulldown — NOT both) + 1 horizontal row (Barbell Row or Cable Row) + 1 upper back/rear delt (Face Pull or Rear Delt Fly). Avoid stacking 2 vertical pulls.
-
-CARDIO / CONDITIONING:
-- Conditioning Finisher (MANDATORY after every strength session): 10–15 min. Choose from: rowing intervals (500m x 4), bike sprint (30s on/30s off x 8), sled push circuit, jump rope AMRAP, kettlebell swing + burpee circuit
-- LISS Zone 2: 2–3x/week separate from strength sessions, 30–45 min — primary fat oxidation tool
-- NEAT: mention "target 8,000–10,000 steps/day" in at least 1 cue per session
-- Cardio always AFTER lifting, never before
-
-FATIGUE MANAGEMENT:
-- Conditioning finisher should be LIGHTER on heavy compound days (RPE 6–7 finisher) and HARDER on moderate-load days (RPE 8–9 finisher)
-- If sessions ≥ 4/week: reduce accessory volume, keep compound intensity
-- Deload every 4–6 weeks: reduce load 30–40%, keep movement`,
+CARDIO: Zone 2 LISS on dedicated cardio days (35–45 min, conversational pace, 60–70% max HR). Conditioning finisher 10–15 min MANDATORY after every strength session (heavier finisher on moderate days, lighter on max-effort days). NEAT: 8,000–10,000 steps/day.`,
 
   muscle:
-    `Muscle Hypertrophy + Strength Program. Dual goal: build muscle mass AND increase maximal strength.
+    `Muscle Hypertrophy + Strength. Dual goal: build muscle AND increase strength.
 
-EXERCISE SELECTION:
-- Compounds (main lifts, 3–5 sets): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Pull-Up / Weighted Pull-Up, Barbell Row — rotate based on session focus
-- Accessories (isolation, 2–4 sets): Leg Curl, Leg Extension, Lateral Raise, Face Pull, Bicep Curl, Tricep Pushdown, Chest Fly, Cable Row
-- Unilateral + Core (1 per session minimum): Bulgarian Split Squat, Single-Leg RDL, Pallof Press, Ab Wheel — for balance and stability
+EXERCISES: Compounds (Squat, RDL, Bench, OHP, Pull-Up, Row) 3–5 sets. Accessories (Leg Curl, Lateral Raise, Face Pull, Bicep Curl, Tricep, Chest Fly) 2–4 sets. 1 unilateral/core per session (Bulgarian Split Squat, Single-Leg RDL, Ab Wheel).
 
-VOLUME TARGETS (per muscle group per week): 10–20 total working sets across all sessions.
-- Compounds: 3–5 sets per exercise
-- Accessories: 2–4 sets per exercise
+INTENSITY — both zones every session:
+- Strength: 3–6 reps, 75–90% 1RM, RIR 1–2, 2–4 min rest
+- Hypertrophy: 6–12 reps, 60–75% 1RM, RIR 2–3, 60–90s rest
 
-INTENSITY ZONES — include BOTH in every session:
-- Strength block: 3–6 reps at 75–90% 1RM — RIR 1–2 (1-2 reps left in reserve)
-- Hypertrophy block: 6–12 reps at 60–75% 1RM — RIR 2–3 (2-3 reps left)
-
-PROGRESSIVE OVERLOAD (embed in cue field):
-- Double progression: increase reps to top of range first, then add weight (+2.5kg next session)
-- Linear progression on main compounds: add small weight each week (2.5–5kg)
-
-REST PERIODS:
-- Strength sets (3–6 reps): 2–4 min
-- Hypertrophy sets (6–12 reps): 60–90s
-
-TEMPO — slow eccentric is mandatory for muscle growth:
-- Compounds: 3-1-2 (3s lower, 1s pause, 2s lift)
-- Accessories: 2-0-2 minimum (2s lower, 0s pause, 2s lift)
-
-PERIODIZATION:
-- Phase 1 (Week 1–2): Volume / Hypertrophy — 8–12 reps, 65–70% 1RM, 3–4 sets, 60–90s rest, RIR 3. Build work capacity and mind-muscle connection.
-- Phase 2 (Week 3–4): Intensity / Strength — 3–6 reps, 75–85% 1RM, 4–5 sets, 2–4 min rest, RIR 1–2. Push near-max effort on main lifts.`,
+OVERLOAD in cue: double progression (reps to top of range → +2.5kg). Compounds: +2.5–5kg/week linear.
+TEMPO: compounds 3-1-2, accessories 2-0-2 (slow eccentric mandatory).
+PERIODIZATION: Phase 1 (Wk 1–2) = volume, 8–12 reps, 65–70% 1RM, RIR 3. Phase 2 (Wk 3–4) = intensity, 3–6 reps, 75–85% 1RM, RIR 1–2.`,
 
   endurance:
     "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
@@ -215,6 +168,26 @@ If stations not available, name the substitute clearly in the cue field.`,
 };
 
 const HYROX_KEYWORDS = /hyrox|hybrid.?perform|hybrid.?athlet|hybrid.?train|functional.?race|race.?prep|sled.?push|wall.?ball|ski.?erg|skierg|farmer.?carry|sandbag|burpee.?broad/i;
+
+// ── Groq error → friendly user message ───────────────────────────────────────
+function groqErrorMessage(err) {
+  const msg = (err.message || "").toLowerCase();
+  const status = err.status || err.statusCode || (err.error && err.error.status);
+  const isRateLimit = status === 429 || msg.includes("rate_limit") || msg.includes("rate limit");
+  const isDailyLimit = msg.includes("tokens per day") || msg.includes("tpd") || msg.includes("day (tpd)");
+  const isTimeout   = msg.includes("timeout") || msg.includes("timed out") || status === 504;
+  const isOverload  = msg.includes("overloaded") || msg.includes("503") || status === 503;
+
+  if (isRateLimit && isDailyLimit)
+    return "Pulse has reached its limit for today — please try again tomorrow or come back in a few hours.";
+  if (isRateLimit)
+    return "Pulse is busy right now — please wait a moment and try again.";
+  if (isTimeout)
+    return "Pulse took too long to respond — please try again.";
+  if (isOverload)
+    return "Pulse servers are overloaded — please try again in a few minutes.";
+  return "Something went wrong — please try again.";
+}
 
 function isHyroxGoal(goalStr, notesStr) {
   return HYROX_KEYWORDS.test(goalStr || "") || HYROX_KEYWORDS.test(notesStr || "");
@@ -493,47 +466,20 @@ INJURIES / LIMITATIONS: None reported. Train normally.`;
 
     // ── Fat Loss specific rules (injected only when goal = fatLoss) ──────────
     const fatLossSpecificRules = goalGuidance === GOAL_GUIDANCE.fatLoss ? `
-FAT LOSS PROGRAM RULES (CRITICAL — OVERRIDE all generic defaults):
-
-INTENSITY STRUCTURE — NEVER uniform reps across all exercises:
-- 1st compound (primary): 4–5 sets × 4–6 reps at 80–85% 1RM, RPE 8–9, rest 2–3 min → this is the HEAVY top set
-- 2nd–3rd compound (back-off): 3 sets × 8–10 reps at 70–75% 1RM, RPE 7–8, rest 90s
-- Accessories: 2–3 sets × 10–15 reps, RPE 7–8, rest 60–90s
-- Example: Squat 4x5 (heavy) → RDL 3x8 (moderate) → Lunge 2x10 (lighter, lower fatigue) ✅
-
-PROGRESSIVE OVERLOAD (embed in EVERY main lift cue):
-- Top set rule: "Add +2.5kg when 6 clean reps achieved for 2 consecutive sessions"
-- Back-off rule: "Progress reps first (8→10→12), then add load"
-- Minimum: maintain current weight every session — drop in load = muscle loss signal
-
-SESSION PATTERN RULES (anti-redundancy — ENFORCE STRICTLY):
-- PUSH day: Bench Press (horizontal) + Overhead Press (vertical) + 1 chest ISOLATION (Cable Fly or DB Fly). Maximum 2 pressing movements per session. Do NOT add Close Grip Bench as 3rd press — it belongs in accessory slot on a different day.
-- PULL day: Choose ONE vertical pull (Pull-Up OR Lat Pulldown, not both) + ONE horizontal row (Barbell Row or Cable Row) + ONE rear delt/upper back (Face Pull or Rear Delt Fly). Max 1 vertical + 1 horizontal per session.
-- LEG day: 1 primary squat-pattern (4–6 reps heavy) + 1 hinge (8–10 reps) + 1 unilateral (2–3 sets, NOT 3 sets — leg fatigue is high). Add leg isolation as accessory (Leg Curl or Leg Extension).
-
-CONDITIONING FINISHER (MANDATORY on all STRENGTH days — no exceptions):
-- Add as a separate phase: tag "accessories", name "🔥 Conditioning Finisher"
-- Duration: 10–15 min, placed AFTER all strength work
-- On heavy compound days (high CNS load): lighter finisher RPE 6–7 — e.g. 500m row × 3, or 20 min bike zone 2
-- On moderate days: harder finisher RPE 8–9 — e.g. 30s row sprint / 30s rest × 8, or kettlebell swing + burpee AMRAP 10 min
-- Cue for finisher: always include work/rest format + RPE target + "10,000 steps/day on top of this"
-
-ZONE 2 CARDIO DAY STRUCTURE (if the split includes a dedicated Zone 2 day):
-- That day has ONLY cardio — NO strength exercises, NO heavy compound
-- Session structure: { label: "Zone 2 Cardio", phases: [ { tag: "warmup", exercises: [5 min easy walk or dynamic stretch] }, { tag: "strength", name: "🏃 Zone 2 Cardio", exercises: [main cardio block] }, { tag: "accessories", name: "🧘 Cool-down", exercises: [stretching, breathing] } ] }
-- Main cardio: 35–45 min at conversational pace (RPE 5–6, "can hold a full sentence"). Choose: outdoor run, treadmill, stationary bike, or rowing machine.
-- Cue: include heart rate target (60–70% max HR), duration, and NEAT reminder ("on top of daily 10,000 steps")
-- For 3-session programs (no dedicated Zone 2 day): add to at least 1 warm-up cue: "ZONE 2 RECOMMENDATION: Do 35 min easy run or bike on your rest days (Tue/Thu). Conversational pace. This is your primary fat burning tool."` : '';
+FAT LOSS RULES (override defaults):
+INTENSITY: Never uniform reps. 1st compound = top set (4–6 reps, 80–85% 1RM, RPE 8–9, 2–3 min rest). 2nd–3rd = back-off (8–10 reps, 70–75% 1RM, 90s). Accessories: 10–15 reps, 60–90s.
+OVERLOAD in cue: "+2.5kg when 6 clean reps × 2 sessions". Back-off: reps first then load. Strength stable = muscle preserved.
+ANTI-REDUNDANCY: PUSH = Bench + OHP + 1 chest isolation (Cable Fly). No 3rd press. PULL = 1 vertical (Pull-Up OR Lat Pulldown, not both) + 1 row + 1 rear delt. LEGS = heavy squat (4–6) + hinge (8–10) + unilateral 2–3 sets only.
+FINISHER (MANDATORY every strength day, tag:"accessories", name:"🔥 Conditioning Finisher"): 10–15 min after lifting. Heavy day → light finisher RPE 6–7 (row 500m ×3). Moderate day → hard finisher RPE 8–9 (30s sprint/20s rest ×8). Cue: work/rest format + RPE + "10,000 steps/day".
+ZONE 2 DAY (if split has dedicated cardio day): ONLY cardio, no strength. Label "Zone 2 Cardio". 35–45 min run/bike/row, conversational pace, RPE 5–6, 60–70% max HR. Cue: duration + HR target + "primary fat oxidation tool". For 3-session programs: note in 1 cue "Zone 2 on rest days (Tue/Thu), 35 min easy run — your #1 fat loss tool".` : '';
 
     // ── Muscle/Strength specific rules (injected only when goal = muscle) ────
     const muscleSpecificRules = goalGuidance === GOAL_GUIDANCE.muscle ? `
-MUSCLE + STRENGTH PROGRAM RULES (APPLY THESE — OVERRIDE generic defaults):
-- Main Lifts phase: 2–3 compound exercises (squat, deadlift, bench, OHP, pull-up variants). 3–5 sets. Week 1-2: 8–10 reps at 65–70% 1RM, RIR 3. Week 3-4: 4–6 reps at 75–85% 1RM, RIR 1–2. Rest: 2–4 min. Tempo: 3-1-2.
-- Accessories phase: 3–4 isolation exercises (lateral raise, leg curl, bicep curl, tricep pushdown, face pull, chest fly). 2–4 sets. 8–15 reps. 60–90s rest. Tempo: 2-0-2.
-- Include at least 1 unilateral exercise per session (Bulgarian Split Squat, Single-Leg RDL, Single-Arm DB Row).
-- Cue field for every main lift MUST contain: (a) % 1RM for each phase, (b) RIR target, (c) progression instruction e.g. "+2.5kg when top of rep range is reached".
-- Total volume per session: 10–20 working sets across all phases.
-- Session structure: Strength compound first (heavy, low reps) → Hypertrophy compounds second (moderate load, higher reps) → Isolation accessories last (pump, high rep).` : '';
+MUSCLE RULES (override defaults):
+Main Lifts: 2–3 compounds. Wk 1–2: 8–10 reps, 65–70% 1RM, RIR 3, 90s rest, tempo 3-1-2. Wk 3–4: 4–6 reps, 75–85% 1RM, RIR 1–2, 2–4 min rest.
+Accessories: 3–4 isolations, 2–4 sets, 8–15 reps, 60–90s, tempo 2-0-2. Include 1 unilateral (Bulgarian Split Squat, Single-Leg RDL).
+Cue for every main lift: % 1RM + RIR target + "+2.5kg when top of rep range reached".
+Order: heavy compounds first → moderate compounds → isolations last.` : '';
 
     // ── Prompt ───────────────────────────────────────────────────────────────
     const prompt = `You are an elite personal trainer and sports rehab specialist. Create a 4-week progressive training program.
@@ -1412,8 +1358,8 @@ Cues: max 6 words each. Use the periodisation rules to make phases genuinely dif
           messages: [{ role: "user", content: hyroxPrompt }],
         });
       } catch (groqErr) {
-        console.error("[pulseGenerateFree] Groq API error (HYROX):", groqErr.message);
-        throw new HttpsError("internal", "AI timed out — please try again in a moment. (" + (groqErr.message||'') + ")");
+        console.error("[pulseGenerateFree] Groq API error (HYROX):", groqErr.status || "", groqErr.message);
+        throw new HttpsError("internal", groqErrorMessage(groqErr));
       }
 
       if (!hyroxCompletion.choices || !hyroxCompletion.choices[0] || !hyroxCompletion.choices[0].message) {
@@ -1579,8 +1525,8 @@ ${cueRule}
         messages: [{ role: "user", content: prompt }],
       });
     } catch (groqErr) {
-      console.error("[pulseGenerateFree] Groq API error (general):", groqErr.message);
-      throw new HttpsError("internal", "AI timed out — please try again. (" + (groqErr.message||'') + ")");
+      console.error("[pulseGenerateFree] Groq API error (general):", groqErr.status || "", groqErr.message);
+      throw new HttpsError("internal", groqErrorMessage(groqErr));
     }
 
     if (!completion.choices || !completion.choices[0] || !completion.choices[0].message) {
