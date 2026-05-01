@@ -1971,14 +1971,14 @@
       <!-- PHASE 1: Form -->
       <div id="pfm-form-phase" class="pfm-phase" style="padding:22px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px;">
-          Fill in your details — Pulse will build a <strong style="color:#fff;">personalised 1-week program</strong> for you, completely free.
+          Fill in your details — Pulse will build a <strong style="color:#fff;">personalised 6-week program</strong> for you, completely free.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div><label class="pfm-label">Your name *</label><input class="pfm-input" id="pfm-name" type="text" placeholder="e.g. Alex Johnson"></div>
           <div><label class="pfm-label">Email *</label><input class="pfm-input" id="pfm-email" type="email" placeholder="you@email.com"></div>
           <div>
             <label class="pfm-label">Goal *</label>
-            <select class="pfm-select" id="pfm-goal">
+            <select class="pfm-select" id="pfm-goal" onchange="pfmToggleHyrox(this.value)">
               <option value="">— Select your goal —</option>
               <option value="HYROX & hybrid performance">HYROX & hybrid performance</option>
               <option value="Fat loss & body recomposition">Fat loss & body recomposition</option>
@@ -1986,6 +1986,63 @@
               <option value="Endurance & conditioning">Endurance & conditioning</option>
               <option value="General fitness & health">General fitness & health</option>
             </select>
+          </div>
+
+          <!-- HYROX-specific fields — shown only when HYROX goal selected -->
+          <div id="pfm-hyrox-section" style="display:none;border:1px solid rgba(124,58,237,0.3);border-radius:10px;padding:14px;background:rgba(124,58,237,0.06);display:none;flex-direction:column;gap:12px;">
+            <div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">🏆 HYROX Details</div>
+
+            <div>
+              <label class="pfm-label">Race target *</label>
+              <select class="pfm-select" id="pfm-hyrox-goal">
+                <option value="">— Select your goal —</option>
+                <option value="First race - just finish">First race — just want to finish</option>
+                <option value="Sub-1:30">Sub 1:30</option>
+                <option value="Sub-1:15">Sub 1:15</option>
+                <option value="Sub-1:00">Sub 1:00</option>
+                <option value="Already raced - PR">Already raced — aiming for a PR</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="pfm-label">Current 1km run pace</label>
+              <select class="pfm-select" id="pfm-run-pace">
+                <option value="">— Select pace —</option>
+                <option value=">7:00/km">Slow — over 7:00/km</option>
+                <option value="6:00-7:00/km">Moderate — 6:00–7:00/km</option>
+                <option value="5:00-6:00/km">Solid — 5:00–6:00/km</option>
+                <option value="<5:00/km">Fast — under 5:00/km</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="pfm-label">Training experience</label>
+              <select class="pfm-select" id="pfm-training-age">
+                <option value="">— Select —</option>
+                <option value="< 6 months">Less than 6 months</option>
+                <option value="6-12 months">6–12 months</option>
+                <option value="1-3 years">1–3 years</option>
+                <option value="3+ years">3+ years</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="pfm-label" style="margin-bottom:8px;">Injury history <span style="font-weight:400;opacity:.5">(tick all that apply)</span></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.7);background:#111827;padding:8px 10px;border-radius:7px;border:1px solid #1e2a3a;">
+                  <input type="checkbox" id="pfm-inj-knee" value="knee" style="accent-color:#7c3aed;"> Knee
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.7);background:#111827;padding:8px 10px;border-radius:7px;border:1px solid #1e2a3a;">
+                  <input type="checkbox" id="pfm-inj-back" value="lower-back" style="accent-color:#7c3aed;"> Lower back
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.7);background:#111827;padding:8px 10px;border-radius:7px;border:1px solid #1e2a3a;">
+                  <input type="checkbox" id="pfm-inj-ankle" value="ankle" style="accent-color:#7c3aed;"> Ankle
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.7);background:#111827;padding:8px 10px;border-radius:7px;border:1px solid #1e2a3a;">
+                  <input type="checkbox" id="pfm-inj-shoulder" value="shoulder" style="accent-color:#7c3aed;"> Shoulder
+                </label>
+              </div>
+            </div>
           </div>
           <div class="pfm-row">
             <div>
@@ -2055,7 +2112,7 @@
             <div style="font-size:22px;">✅</div>
             <div>
               <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Your program is ready!</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1-week training plan — built by ⚡ Pulse AI</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;" id="pfm-result-subtitle">1-week training plan — built by ⚡ Pulse AI</div>
             </div>
           </div>
         </div>
@@ -2128,6 +2185,14 @@
     list.appendChild(el);
   }
 
+  function pfmToggleHyrox(val) {
+    const isHyrox = val.toLowerCase().includes('hyrox');
+    const sec = document.getElementById('pfm-hyrox-section');
+    sec.style.display = isHyrox ? 'flex' : 'none';
+    const btn = document.getElementById('pfm-submit-btn');
+    btn.textContent = isHyrox ? '🏆 Generate My 6-Week HYROX Plan' : '⚡ Generate My Program';
+  }
+
   async function submitPulseFreeForm() {
     const name     = (document.getElementById('pfm-name').value || '').trim();
     const email    = (document.getElementById('pfm-email').value || '').trim();
@@ -2140,11 +2205,22 @@
     const height   = document.getElementById('pfm-height').value;
     const errEl    = document.getElementById('pfm-form-error');
 
+    // HYROX-specific fields
+    const isHyrox      = goal.toLowerCase().includes('hyrox');
+    const hyroxGoal    = isHyrox ? document.getElementById('pfm-hyrox-goal').value    : '';
+    const runPace      = isHyrox ? document.getElementById('pfm-run-pace').value      : '';
+    const trainingAge  = isHyrox ? document.getElementById('pfm-training-age').value  : '';
+    const injuryBoxes  = isHyrox ? ['pfm-inj-knee','pfm-inj-back','pfm-inj-ankle','pfm-inj-shoulder']
+                                    .filter(id => document.getElementById(id).checked)
+                                    .map(id => document.getElementById(id).value) : [];
+    const injuries     = injuryBoxes.length ? injuryBoxes.join(',') : 'none';
+
     if (!name)                       { errEl.textContent = 'Please enter your name.'; errEl.style.display = 'block'; return; }
     if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = 'block'; return; }
     if (!goal)                       { errEl.textContent = 'Please select a goal.'; errEl.style.display = 'block'; return; }
     if (!level)                      { errEl.textContent = 'Please select your level.'; errEl.style.display = 'block'; return; }
     if (!sessions)                   { errEl.textContent = 'Please select sessions per week.'; errEl.style.display = 'block'; return; }
+    if (isHyrox && !hyroxGoal)       { errEl.textContent = 'Please select your HYROX race target.'; errEl.style.display = 'block'; return; }
     errEl.style.display = 'none';
 
     document.getElementById('pfm-steps-list').innerHTML = '';
@@ -2152,18 +2228,23 @@
     document.getElementById('pfm-subtitle').textContent = `Building your program, ${name}…`;
     _pfmTransitionTo('loading');
 
-    const fakeSteps = [
+    const fakeSteps = isHyrox ? [
+      { icon: '📝', text: 'Saving your HYROX profile…' },
+      { icon: '🎯', text: 'Analysing running fitness & race goal…' },
+      { icon: '🏋️', text: 'Building 6-week periodisation…' },
+      { icon: '🏆', text: 'Pulse is writing your HYROX plan…' },
+    ] : [
       { icon: '📝', text: `Saving your profile…` },
       { icon: '🎯', text: `Analysing your goal: ${goal.split('&')[0].trim()}` },
       { icon: '🎨', text: 'Loading coaching style…' },
-      { icon: '⚡', text: 'Pulse is writing your 1-week plan…' },
+      { icon: '⚡', text: 'Pulse is writing your 6-week plan…' },
     ];
     let stepIdx = 0;
     const stepInterval = setInterval(() => {
       if (stepIdx > 0 && stepIdx <= fakeSteps.length) _pfmCompleteStep(fakeSteps[stepIdx - 1].icon, fakeSteps[stepIdx - 1].text);
       if (stepIdx < fakeSteps.length) document.getElementById('pfm-current-text').textContent = fakeSteps[stepIdx].text;
       stepIdx++;
-    }, 1800);
+    }, isHyrox ? 2500 : 1800);
 
     try {
       const fn = firebase.app().functions('asia-southeast1').httpsCallable('pulseGenerateFree');
@@ -2171,19 +2252,28 @@
         name, email, goal, level,
         sessionsPerWeek: parseInt(sessions),
         gender,
-        age:    age    ? parseInt(age)      : null,
-        weight: weight ? parseFloat(weight) : null,
-        height: height ? parseFloat(height) : null,
+        age:          age    ? parseInt(age)      : null,
+        weight:       weight ? parseFloat(weight) : null,
+        height:       height ? parseFloat(height) : null,
+        hyroxGoal, runPace, trainingAge, injuries,
       });
       clearInterval(stepInterval);
       fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
-      _pfmCompleteStep('✅', 'Your program is ready!');
+      _pfmCompleteStep('✅', isHyrox ? '6-week HYROX plan ready!' : 'Your program is ready!');
       document.getElementById('pfm-current-text').textContent = 'Done ✨';
       await new Promise(r => setTimeout(r, 800));
 
-      document.getElementById('pfm-result-title').textContent = `${name}'s 1-week program is ready!`;
-      _renderFreeProgram(result.data.program);
-      document.getElementById('pfm-subtitle').textContent = 'Personalised by Pulse AI';
+      const prog = result.data.program;
+      const is6Week = prog && (prog._type === 'hyrox6week' || prog._type === 'general6week');
+      const isHyrox6Week = prog && prog._type === 'hyrox6week';
+      document.getElementById('pfm-result-title').textContent = isHyrox6Week
+        ? `${name}'s 6-Week HYROX Plan is ready! 🏆`
+        : `${name}'s 6-Week Program is ready! ✅`;
+      document.getElementById('pfm-result-subtitle').textContent = is6Week
+        ? '6-week periodised plan — built by ⚡ Pulse AI'
+        : '6-week training plan — built by ⚡ Pulse AI';
+      _renderFreeProgram(prog);
+      document.getElementById('pfm-subtitle').textContent = isHyrox6Week ? 'Your 6-Week HYROX Plan' : 'Your 6-Week Program';
       _pfmTransitionTo('result');
     } catch (err) {
       clearInterval(stepInterval);
@@ -2197,30 +2287,30 @@
     }
   }
 
-  function _renderFreeProgram(program) {
-    const preview = document.getElementById('pfm-program-preview');
-    const phaseColors = { warmup: '#e8a838', strength: '#7665ff', accessories: '#44cc88' };
-    const days = Object.keys(program);
-    const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
-    let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} training days · ${totalEx} exercises</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Personalised by ⚡ Pulse AI</div>
-    </div>`;
+  const _pfmPhaseColors = {
+    warmup: '#e8a838', strength: '#7665ff', accessories: '#44cc88',
+    run: '#22d3ee', brick: '#f43f5e', tempo: '#f97316', simulation: '#a855f7', recovery: '#6b7280',
+  };
+
+  function _renderSessionDays(sessions) {
+    const days = Object.keys(sessions).filter(k => k !== 'label');
+    let html = '';
     for (const day of days) {
-      const session = program[day];
+      const session = sessions[day];
+      if (!session || !session.phases) continue;
       html += `<div style="margin-bottom:20px;">
         <div style="font-weight:700;font-size:11px;color:#fff;padding:7px 12px;background:#111827;border-radius:7px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
           <span>📅 ${day}</span><span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label || ''}</span>
         </div>`;
       for (const phase of (session.phases || [])) {
-        const col = phaseColors[phase.tag] || '#aaa';
+        const col = _pfmPhaseColors[phase.tag] || '#aaa';
         html += `<div style="margin-bottom:8px;padding-left:10px;border-left:2px solid ${col}50;">
-          <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name}</div>`;
+          <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name || ''}</div>`;
         for (const ex of (phase.exercises || [])) {
           html += `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #0d0d1a;align-items:start;">
             <div>
               <span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
-              ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0, 100)}${ex.cue.length > 100 ? '…' : ''}</div>` : ''}
+              ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0, 120)}${ex.cue.length > 120 ? '…' : ''}</div>` : ''}
             </div>
             <div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
           </div>`;
@@ -2229,6 +2319,65 @@
       }
       html += '</div>';
     }
+    return html;
+  }
+
+  function _renderFreeProgram(program) {
+    const preview = document.getElementById('pfm-program-preview');
+
+    // ── 6-week plan (HYROX or General) — 3-phase tab UI ────────────────────
+    if (program.phase1) {
+      const isHyrox  = program._type === 'hyrox6week';
+      const headerLabel = isHyrox ? '🏆 6-Week HYROX Program' : '⚡ 6-Week Training Program';
+      const phaseColors = { phase1: '#22d3ee', phase2: '#7665ff', phase3: '#f43f5e' };
+      const phaseTabLabels = {
+        phase1: isHyrox ? ['Base','Wk 1–2']    : ['Foundation','Wk 1–2'],
+        phase2: isHyrox ? ['Build','Wk 3–4']   : ['Progressive','Wk 3–4'],
+        phase3: isHyrox ? ['Peak','Wk 5–6']    : ['Peak','Wk 5–6'],
+      };
+
+      let _activePhase = 'phase1';
+
+      function _renderPhaseView(active) {
+        const phaseData  = program[active] || {};
+        const phaseLabel = phaseData.label || '';
+        const tabs = ['phase1','phase2','phase3'].map(p => {
+          const [top, bot] = phaseTabLabels[p];
+          const isActive = p === active;
+          return `<button onclick="_pfmSwitchPhaseTab('${p}')"
+            style="flex:1;padding:8px 4px;font-size:10px;font-weight:700;border:none;cursor:pointer;border-radius:6px;line-height:1.4;transition:all .2s;
+              background:${isActive ? phaseColors[p] : 'rgba(255,255,255,0.05)'};
+              color:${isActive ? '#fff' : 'rgba(255,255,255,0.35)'};">
+            ${top}<br><span style="font-weight:400;font-size:9px;">${bot}</span>
+          </button>`;
+        }).join('');
+
+        return `
+          <div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;">${headerLabel}</div>
+            <div style="display:flex;gap:5px;background:rgba(255,255,255,0.04);border-radius:8px;padding:4px;">${tabs}</div>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:12px;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid ${phaseColors[active]};">${phaseLabel}</div>
+          <div>${_renderSessionDays(phaseData)}</div>`;
+      }
+
+      window._pfmSwitchPhaseTab = function(phase) {
+        _activePhase = phase;
+        preview.innerHTML = _renderPhaseView(phase);
+      };
+
+      preview.innerHTML = _renderPhaseView(_activePhase);
+      return;
+    }
+
+    // ── Fallback: legacy flat weekly plan ──────────────────────────────────
+    const days = Object.keys(program).filter(k => k !== '_type');
+    const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
+    let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} training days · ${totalEx} exercises</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Personalised by ⚡ Pulse AI</div>
+    </div>`;
+    html += _renderSessionDays(program);
     preview.innerHTML = html;
   }
 </script>

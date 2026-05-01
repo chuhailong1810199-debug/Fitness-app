@@ -1076,18 +1076,192 @@ EXERCISE NAMING RULE: Use standard, clean exercise names only (e.g. "Romanian De
 EXERCISE NAMING RULE: Use standard, clean exercise names only. Do NOT append equipment modifiers to exercise names.`;
     }
 
-    // ── Step 5: Build prompt ─────────────────────────────────────────────────
-    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 1 tuần..." });
+    // ── HYROX 6-WEEK PATH — branches here when HYROX goal detected ───────────
+    if (isHyroxGoal(goal, "")) {
+      steps.push({ icon: "🏆", text: "Building your 6-week HYROX prep plan..." });
+
+      const hyroxGoalInput  = request.data.hyroxGoal   || "";
+      const runPace         = request.data.runPace      || "";
+      const injuries        = request.data.injuries     || ""; // comma-separated
+      const trainingAge     = request.data.trainingAge  || "";
+
+      // ── Session type map per day ────────────────────────────────────────────
+      const hyroxDayTypes = {
+        3: { Mon: "Strength — HYROX Stations", Wed: "Zone 2 Run", Fri: "Brick Session / Simulation" },
+        4: { Mon: "Strength — HYROX Stations", Tue: "Zone 2 Run", Thu: "Tempo Run / Intervals", Fri: "Brick Session / Simulation" },
+        5: { Mon: "Strength A — HYROX Stations", Tue: "Zone 2 Run", Wed: "Tempo Run / Intervals", Thu: "Strength B — Supporting", Fri: "Brick Session / Simulation" },
+        6: { Mon: "Strength A — HYROX Stations", Tue: "Zone 2 Run", Wed: "Tempo Run / Intervals", Thu: "Strength B — Supporting", Fri: "Brick Session / Simulation", Sat: "Recovery / Mobility" },
+      };
+      const sessionDays = hyroxDayTypes[sessions] || hyroxDayTypes[4];
+
+      // ── Run pace interpretation ─────────────────────────────────────────────
+      const runPaceNote = {
+        ">7:00/km":   "Running is a major limiter. Prioritise Zone 2 volume and form drills. Keep brick run distances at 400m. No tempo until Week 3.",
+        "6:00-7:00/km": "Moderate runner. Build aerobic base, introduce 800m brick runs from Week 3. Tempo starts conservatively.",
+        "5:00-6:00/km": "Solid runner. Focus on compromised running (run after stations). Push simulation distances. Pacing strategy cues in every session.",
+        "<5:00/km":   "Strong runner. Running won't limit you. Focus on station endurance (Farmer Carry, Sled, Wall Ball). Risk: going out too fast — every session includes pacing cues.",
+      }[runPace] || "";
+
+      // ── Injury modifications ────────────────────────────────────────────────
+      let injuryNote = "";
+      if (injuries && !injuries.toLowerCase().includes("none") && injuries.trim()) {
+        const iList = injuries.split(",").map(s => s.trim().toLowerCase());
+        const mods = [];
+        if (iList.includes("knee"))        mods.push("Knee: reduce lunge depth under fatigue. Sub Leg Press / Box Step-up for Sandbag Lunge when needed. Ankle stability drills in warm-up.");
+        if (iList.includes("lower-back"))  mods.push("Lower back: replace heavy deadlifts with Hip Thrust and Cable Pull-Through. Core bracing cue on every posterior chain exercise.");
+        if (iList.includes("ankle"))       mods.push("Ankle: add ankle circles + single-leg balance to every warm-up. Reduce impact in Wk1-2 (treadmill/track over road). Burpee BJ → step instead of jump.");
+        if (iList.includes("shoulder"))    mods.push("Shoulder: sub SkiErg with Rowing same distance. No heavy overhead pressing. Include band pull-apart + shoulder CARs in warm-up.");
+        if (mods.length > 0) injuryNote = "\nMANDATORY INJURY MODIFICATIONS:\n" + mods.map((m, i) => `${i + 1}. ${m}`).join("\n");
+      }
+
+      // ── Training age context ────────────────────────────────────────────────
+      const experienceNote = {
+        "< 6 months":  "Novice: movement quality over intensity. No simulation until Week 4. Brick = 2 stations max. Technique cues on every compound exercise.",
+        "6-12 months": "Developing: introduce brick in Week 2. Simulation from Week 3 at 40%. Technique still important but can push intensity.",
+        "1-3 years":   "Trained athlete: standard HYROX periodisation. Can push intensity from Week 2. Focus on pacing and transitions.",
+        "3+ years":    "Experienced: accelerate loading. Simulation from Week 2. Emphasis on race strategy, lactate threshold, and mental pacing.",
+      }[trainingAge] || "";
+
+      // ── Race goal context ───────────────────────────────────────────────────
+      const raceGoalNote = {
+        "First race - just finish":  "GOAL: Finish safely. Conservative pacing (RPE 6-7 on runs). Master transitions. Never all-out on stations.",
+        "Sub-1:30":                  "GOAL: Sub 1:30 — requires ~5:30/km run pace. Simulation target: complete all 8 stations in under 35 min total.",
+        "Sub-1:15":                  "GOAL: Sub 1:15 — requires ~4:40/km run pace + strong stations. Lactate threshold is critical. Push tempo sessions.",
+        "Sub-1:00":                  "GOAL: Sub 1:00 — elite target. ~4:00-4:15/km pace. Full simulation by Week 4. Maximum training stimulus.",
+        "Already raced - PR":        "GOAL: PR — identify limiter (run vs stations) and bias training toward it. Aggressive taper Week 6.",
+      }[hyroxGoalInput] || `GOAL: ${hyroxGoalInput || "Complete the race"}`;
+
+      const daySchedule = Object.entries(sessionDays)
+        .map(([d, type]) => `- ${d}: ${type}`).join("\n");
+
+      const hyroxPrompt = `You are an expert HYROX coach. Generate a complete 6-week HYROX prep program as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
+
+ATHLETE:
+- Name: ${name} | Level: ${level} | Gender: ${gender || "N/A"} | Age: ${age || "N/A"}
+- Sessions/week: ${sessions} (${Object.keys(sessionDays).join(", ")})
+- Training experience: ${trainingAge || "Not specified"}
+${bmiContext}${ageContext}
+
+RUNNING FITNESS (1km pace: ${runPace || "not specified"}):
+${runPaceNote}
+
+RACE TARGET:
+${raceGoalNote}
+${injuryNote}
+${experienceNote ? `\nEXPERIENCE NOTE: ${experienceNote}` : ""}
+
+WEEKLY SESSION SCHEDULE:
+${daySchedule}
+
+6-WEEK PERIODISATION RULES:
+PHASE 1 (Week 1-2) — BASE:
+- Zone 2 only (no tempo). Brick = 2-3 stations, NO simulation. Run per leg: 400-800m.
+- Station volume: 40% of race. Focus: technique + pacing + movement quality.
+
+PHASE 2 (Week 3-4) — BUILD:
+- Tempo run introduced. Brick = 4-5 stations. Simulation at 50-60% (4-6 rounds).
+- Compromised running: run immediately after station (zero rest between run and station).
+- Station volume: 60-70%.
+
+PHASE 3 (Week 5-6) — PEAK & TAPER:
+- Week 5: 70-80% simulation (all 8 rounds). Full station volume.
+- Week 6: Taper — cut total volume 40%, keep intensity. Race strategy cues in every session. Final simulation ≤ 50% volume.
+
+HYROX SIMULATION SCALE (100% = SkiErg 1000m, Sled Push 50m, Sled Pull 50m, Burpee BJ 80m, Row 1000m, Farmer 200m, Lunge 100m, Wall Ball 100 reps):
+- 40%: Ski 400m, Sled Push 20m, Row 400m, Farmer 80m, Lunge 40m, Wall Ball 40 reps
+- 50%: Ski 500m, Sled Push 25m, Row 500m, Farmer 100m, Lunge 50m, Wall Ball 50 reps
+- 60%: Ski 600m, Sled Push 30m, Row 600m, Farmer 120m, Lunge 60m, Wall Ball 60 reps
+- 70%: Ski 700m, Sled Push 35m, Row 700m, Farmer 140m, Lunge 70m, Wall Ball 70 reps
+- 80%: Ski 800m, Sled Push 40m, Row 800m, Farmer 160m, Lunge 80m, Wall Ball 80 reps
+Run per round: 50%→600m, 60-70%→800m, 80%→1000m
+${exerciseLibraryContext}
+
+DISTANCE RULE: Farmer Carry / Sandbag Lunge / Sled Push / Sled Pull → setsReps in METERS (e.g. "3 x 40m"), never reps.
+
+OUTPUT: Return ONLY raw JSON. No markdown. No text outside JSON.
+
+{
+  "_type": "hyrox6week",
+  "phase1": {
+    "label": "Phase 1 — Base Building (Week 1–2)",
+    "Mon": { "label": "Strength — HYROX Stations", "phases": [...] },
+    "Wed": { "label": "Zone 2 Run", "phases": [...] }
+  },
+  "phase2": {
+    "label": "Phase 2 — Build (Week 3–4)",
+    "Mon": { "label": "Strength — HYROX Stations", "phases": [...] },
+    "Wed": { "label": "Zone 2 Run + Compromised Running", "phases": [...] }
+  },
+  "phase3": {
+    "label": "Phase 3 — Peak & Taper (Week 5–6)",
+    "Mon": { ... },
+    ...
+  }
+}
+
+Session phase structure:
+Strength sessions: warmup (3-4 exercises) + strength (4-6 HYROX-specific exercises)
+Run sessions: warmup (2-3 activation) + run (the run workout as 1-2 exercises)
+Brick/Simulation: warmup (2-3 activation) + brick (the full sequence as 2-4 exercises with detailed round/distance cues)
+
+Each exercise: { "name": "...", "setsReps": "...", "tempo": "", "cue": "Phase 1: ... | Phase 2: ... | Phase 3: ..." }
+Cues MUST show how the exercise changes across phases (volume, intensity, distance scaling).
+Simulation exercises MUST state the target % and "track total time as race benchmark".`;
+
+      const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
+      const hyroxCompletion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 8000,
+        temperature: 0.3,
+        messages: [{ role: "user", content: hyroxPrompt }],
+      });
+
+      let hyroxRaw = hyroxCompletion.choices[0].message.content.trim();
+      hyroxRaw = hyroxRaw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      const hyroxProgram = JSON.parse(hyroxRaw);
+
+      steps.push({ icon: "✅", text: "Your 6-week HYROX plan is ready!" });
+      console.log(`[pulseGenerateFree] 🏆 6-week HYROX plan generated for ${name} (${sessions} days/week, goal: ${hyroxGoalInput})`);
+      return { program: hyroxProgram, steps, clientName: name };
+    }
+    // ── END HYROX 6-WEEK PATH ─────────────────────────────────────────────────
+
+    // ── Step 5: Build 6-week 3-phase prompt ─────────────────────────────────
+    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 6 tuần..." });
 
     const physicalContext = (gender || weight || height || age)
       ? `\nPHYSICAL INFO:${gender ? `\n- Gender: ${gender}` : ""}${age ? `\n- Age: ${age}` : ""}${weight ? `\n- Weight: ${weight}kg` : ""}${height ? `\n- Height: ${height}cm` : ""}`
       : "";
 
-    const daySkeletonLines = days
-      .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65 + i)} — [focus]", "phases": [...] }`)
+    // ── Phase guidelines per goal ────────────────────────────────────────────
+    const phaseGuidanceMap = {
+      [GOAL_GUIDANCE.fatLoss]:
+        `PHASE 1 — Foundation (Week 1–2): Establish movement patterns. 12-15 reps, 60s rest, 65% effort. Circuit-style superset introduction. Low-impact options if BMI elevated.
+PHASE 2 — Fat Burning (Week 3–4): Increase volume. 12-15 reps, 45s rest. Add HIIT finisher (10 min) to every session. Shorten rest by 15s vs Phase 1.
+PHASE 3 — Peak Conditioning (Week 5–6): Week 5 max metabolic demand — full circuits, HIIT finishers, 30s rest. Week 6 maintain intensity, vary exercises to avoid adaptation.`,
+
+      [GOAL_GUIDANCE.muscle]:
+        `PHASE 1 — Hypertrophy Base (Week 1–2): Technique + volume base. 8-10 reps, 90s rest, 65-70% 1RM. Establish mind-muscle connection. 3 sets per exercise.
+PHASE 2 — Progressive Overload (Week 3–4): Add load each session (+2.5kg). 6-8 reps, 2 min rest, 75-80% 1RM. 4 sets. Introduce tempo (3-1-2 on compounds).
+PHASE 3 — Intensification (Week 5–6): Week 5 peak — 5-6 reps, 80-85% 1RM, 4-5 sets. Week 6 — introduce drop sets or paused reps on 1 main lift per session.`,
+
+      [GOAL_GUIDANCE.endurance]:
+        `PHASE 1 — Aerobic Base (Week 1–2): High rep (15-20), minimal rest (30-45s). Zone 2 effort throughout. Introduce supersets. Build work capacity.
+PHASE 2 — Threshold Development (Week 3–4): Add intervals or tempo sets. 15 reps, 30s rest. Push sustainable pace on cardio elements. Circuit density increases.
+PHASE 3 — Peak Endurance (Week 5–6): Week 5 — continuous circuits, max work capacity. Week 6 — maintain density, add 1 AMRAP set per session.`,
+
+      [GOAL_GUIDANCE.general]:
+        `PHASE 1 — Foundation (Week 1–2): Full-body compound focus. 3 sets, 10-12 reps, 60-90s rest. Technique emphasis. Build base movement quality.
+PHASE 2 — Progressive Development (Week 3–4): Add 1 set per exercise. 4 sets, 10 reps, 60s rest. Increase load by 5% vs Phase 1. Introduce accessory supersets.
+PHASE 3 — Peak (Week 5–6): Week 5 — 4-5 sets, increase intensity across the board. Week 6 — vary rep ranges (8 / 12 / 15) within same session for full-spectrum stimulus.`,
+    };
+    const phaseGuidance = phaseGuidanceMap[goalGuidance] || phaseGuidanceMap[GOAL_GUIDANCE.general];
+
+    const daySkeleton = days
+      .map(d => `        "${d}": { "label": "...", "phases": [...] }`)
       .join(",\n");
 
-    const prompt = `You are Pulse, an elite AI personal trainer. Create a FREE 1-week personalized training program for this person.
+    const prompt = `You are Pulse, an elite AI personal trainer. Create a FREE 6-week progressive training program structured as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
 
 CLIENT INFO:
 - Name: ${name}
@@ -1102,53 +1276,56 @@ ${goalGuidance}
 LEVEL GUIDANCE:
 ${levelGuidance}
 
-SPLIT STRUCTURE:
+SPLIT STRUCTURE (same across all 3 phases):
 ${splitGuidance}
-${exerciseLibraryContext}
-${styleContext}
+${exerciseLibraryContext}${styleContext}
 
-OUTPUT FORMAT — Return ONLY raw JSON, no markdown:
+6-WEEK PERIODISATION:
+${phaseGuidance}
+
+OUTPUT FORMAT — Return ONLY raw JSON, no markdown, no text outside JSON:
 {
-${daySkeletonLines}
+  "_type": "general6week",
+  "phase1": {
+    "label": "Phase 1 — [goal-appropriate name] (Week 1–2)",
+${daySkeleton}
+  },
+  "phase2": {
+    "label": "Phase 2 — [goal-appropriate name] (Week 3–4)",
+${daySkeleton}
+  },
+  "phase3": {
+    "label": "Phase 3 — [goal-appropriate name] (Week 5–6)",
+${daySkeleton}
+  }
 }
 
 Each day structure:
 {
   "label": "Session A — Push",
   "phases": [
-    {
-      "tag": "warmup",
-      "name": "🔥 Warm-up",
-      "exercises": [{ "name": "...", "setsReps": "1 x 5 min", "tempo": "", "cue": "..." }]
-    },
-    {
-      "tag": "strength",
-      "name": "💪 Main Lifts",
-      "exercises": [{ "name": "...", "setsReps": "4 x 6", "tempo": "3-1-2", "cue": "Start at 70% effort. Add 2.5kg if all reps clean." }]
-    },
-    {
-      "tag": "accessories",
-      "name": "⚡ Accessories",
-      "exercises": [{ "name": "...", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "..." }]
-    }
+    { "tag": "warmup",     "name": "🔥 Warm-up",    "exercises": [{ "name": "...", "setsReps": "...", "tempo": "", "cue": "Phase 1: ... | Phase 2: ... | Phase 3: ..." }] },
+    { "tag": "strength",   "name": "💪 Main Lifts",  "exercises": [{ "name": "...", "setsReps": "4 x 8", "tempo": "3-1-2", "cue": "Phase 1: 65% 1RM. Phase 2: +2.5kg. Phase 3: 80% 1RM, add drop set." }] },
+    { "tag": "accessories","name": "⚡ Accessories", "exercises": [{ "name": "...", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "..." }] }
   ]
 }
 
 RULES:
-- Warm-up: 3-4 exercises (mobility, activation — not heavy)
+- Warm-up: 3-4 exercises (mobility + activation)
 - Main Lifts: 3-5 compound exercises matching the split focus
 - Accessories: 3-5 isolation / support exercises
-- Sets/reps must match the level and goal guidance above
-- Vary session focus logically across the week — do NOT repeat the same muscle group two days in a row
-- Exercise names must be clean standard names — NEVER append equipment qualifiers to the name
+- The SAME exercises can appear across phases — the cue field shows how load/volume/rest changes each phase
+- Vary session focus logically — do NOT repeat the same muscle group two days in a row
+- BODY COMPOSITION RULES override goal if they conflict (BMI context above takes priority)
+- Exercise names must be clean standard names — NEVER append equipment qualifiers
 - Do NOT add any text outside the JSON`;
 
     // ── Step 5: Call Groq ─────────────────────────────────────────────────────
     const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 4000,
-      temperature: 0.4,
+      max_tokens: 6000,
+      temperature: 0.35,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -1156,9 +1333,9 @@ RULES:
     raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
 
     const program = JSON.parse(raw);
-    steps.push({ icon: "✅", text: "Chương trình của bạn đã sẵn sàng!" });
+    steps.push({ icon: "✅", text: "Chương trình 6 tuần của bạn đã sẵn sàng!" });
 
-    console.log(`[pulseGenerateFree] ⚡ Free program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
+    console.log(`[pulseGenerateFree] ⚡ 6-week program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
     return { program, steps, clientName: name };
   }
 );
