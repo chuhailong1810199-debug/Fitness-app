@@ -44,9 +44,36 @@ const GOAL_GUIDANCE = {
     "Keep sessions intense and time-efficient.",
 
   muscle:
-    "Muscle hypertrophy & strength. Prioritise compound lifts with " +
-    "progressive overload, 6-10 reps, 2-3 min rest. Periodise load across weeks " +
-    "(e.g. Week 1-2 at 70%, Week 3-4 at 75-80% 1RM). Add isolation accessories.",
+    `Muscle Hypertrophy + Strength Program. Dual goal: build muscle mass AND increase maximal strength.
+
+EXERCISE SELECTION:
+- Compounds (main lifts, 3–5 sets): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Pull-Up / Weighted Pull-Up, Barbell Row — rotate based on session focus
+- Accessories (isolation, 2–4 sets): Leg Curl, Leg Extension, Lateral Raise, Face Pull, Bicep Curl, Tricep Pushdown, Chest Fly, Cable Row
+- Unilateral + Core (1 per session minimum): Bulgarian Split Squat, Single-Leg RDL, Pallof Press, Ab Wheel — for balance and stability
+
+VOLUME TARGETS (per muscle group per week): 10–20 total working sets across all sessions.
+- Compounds: 3–5 sets per exercise
+- Accessories: 2–4 sets per exercise
+
+INTENSITY ZONES — include BOTH in every session:
+- Strength block: 3–6 reps at 75–90% 1RM — RIR 1–2 (1-2 reps left in reserve)
+- Hypertrophy block: 6–12 reps at 60–75% 1RM — RIR 2–3 (2-3 reps left)
+
+PROGRESSIVE OVERLOAD (embed in cue field):
+- Double progression: increase reps to top of range first, then add weight (+2.5kg next session)
+- Linear progression on main compounds: add small weight each week (2.5–5kg)
+
+REST PERIODS:
+- Strength sets (3–6 reps): 2–4 min
+- Hypertrophy sets (6–12 reps): 60–90s
+
+TEMPO — slow eccentric is mandatory for muscle growth:
+- Compounds: 3-1-2 (3s lower, 1s pause, 2s lift)
+- Accessories: 2-0-2 minimum (2s lower, 0s pause, 2s lift)
+
+PERIODIZATION:
+- Phase 1 (Week 1–2): Volume / Hypertrophy — 8–12 reps, 65–70% 1RM, 3–4 sets, 60–90s rest, RIR 3. Build work capacity and mind-muscle connection.
+- Phase 2 (Week 3–4): Intensity / Strength — 3–6 reps, 75–85% 1RM, 4–5 sets, 2–4 min rest, RIR 1–2. Push near-max effort on main lifts.`,
 
   endurance:
     "Cardiovascular endurance & functional fitness. Include zone-2 cardio, " +
@@ -368,6 +395,16 @@ You MUST follow ALL of these rules:
       : `
 INJURIES / LIMITATIONS: None reported. Train normally.`;
 
+    // ── Muscle/Strength specific rules (injected only when goal = muscle) ────
+    const muscleSpecificRules = goalGuidance === GOAL_GUIDANCE.muscle ? `
+MUSCLE + STRENGTH PROGRAM RULES (APPLY THESE — OVERRIDE generic defaults):
+- Main Lifts phase: 2–3 compound exercises (squat, deadlift, bench, OHP, pull-up variants). 3–5 sets. Week 1-2: 8–10 reps at 65–70% 1RM, RIR 3. Week 3-4: 4–6 reps at 75–85% 1RM, RIR 1–2. Rest: 2–4 min. Tempo: 3-1-2.
+- Accessories phase: 3–4 isolation exercises (lateral raise, leg curl, bicep curl, tricep pushdown, face pull, chest fly). 2–4 sets. 8–15 reps. 60–90s rest. Tempo: 2-0-2.
+- Include at least 1 unilateral exercise per session (Bulgarian Split Squat, Single-Leg RDL, Single-Arm DB Row).
+- Cue field for every main lift MUST contain: (a) % 1RM for each phase, (b) RIR target, (c) progression instruction e.g. "+2.5kg when top of rep range is reached".
+- Total volume per session: 10–20 working sets across all phases.
+- Session structure: Strength compound first (heavy, low reps) → Hypertrophy compounds second (moderate load, higher reps) → Isolation accessories last (pump, high rep).` : '';
+
     // ── Prompt ───────────────────────────────────────────────────────────────
     const prompt = `You are an elite personal trainer and sports rehab specialist. Create a 4-week progressive training program.
 
@@ -424,6 +461,7 @@ Each day must follow this EXACT structure:
   ]
 }
 
+${muscleSpecificRules}
 RULES
 - Warm-up: 3-4 exercises (5-10 min total). If client has injury, include rehab/activation exercises here.
 - Main Lifts: 3-5 compound exercises
@@ -1290,8 +1328,8 @@ Cues: max 6 words each. Use the periodisation rules to make phases genuinely dif
 PHASE 2 — Fat Burning (Week 3–4): Increase volume. 12-15 reps, 45s rest. Add HIIT finisher (10 min) to every session. Shorten rest by 15s vs Phase 1. Push metabolic demand — full circuits, 30s rest.`,
 
       [GOAL_GUIDANCE.muscle]:
-        `PHASE 1 — Hypertrophy Base (Week 1–2): Technique + volume base. 8-10 reps, 90s rest, 65-70% 1RM. Establish mind-muscle connection. 3 sets per exercise.
-PHASE 2 — Progressive Overload (Week 3–4): Add load each session (+2.5kg). 6-8 reps, 2 min rest, 75-80% 1RM. 4 sets. Introduce tempo (3-1-2 on compounds). Push to 80-85% 1RM by Week 4.`,
+        `PHASE 1 — Hypertrophy Base (Week 1–2): HIGH VOLUME, moderate load. Compounds: 3–4 sets × 8–12 reps at 65–70% 1RM, 60–90s rest, RIR 3. Slow eccentric mandatory (3-1-2 tempo). Accessories: 3 sets × 10–15 reps, 60s rest, 2-0-2 tempo. Focus: build work capacity, establish mind-muscle connection, perfect technique.
+PHASE 2 — Strength Peak (Week 3–4): HIGH INTENSITY, heavy load. Compounds: 4–5 sets × 3–6 reps at 75–85% 1RM, 2–4 min rest, RIR 1–2. Push near-maximal effort on all main lifts. Accessories: maintain 6–10 reps, 75% 1RM, 60–90s rest. Cue MUST include: current % 1RM + "+2.5kg next session when top of rep range is hit".`,
 
       [GOAL_GUIDANCE.endurance]:
         `PHASE 1 — Aerobic Base (Week 1–2): High rep (15-20), minimal rest (30-45s). Zone 2 effort throughout. Introduce supersets. Build work capacity.
@@ -1302,6 +1340,12 @@ PHASE 2 — Threshold Development (Week 3–4): Add intervals or tempo sets. 15 
 PHASE 2 — Progressive Development (Week 3–4): Add 1 set per exercise. 4 sets, 10 reps, 60s rest. Increase load by 5% vs Phase 1. Introduce accessory supersets. Vary rep ranges (8/12/15) by Week 4.`,
     };
     const phaseGuidance = phaseGuidanceMap[goalGuidance] || phaseGuidanceMap[GOAL_GUIDANCE.general];
+
+    // Cue length rule — muscle plans need % 1RM + RIR embedded; others stay short
+    const cueRule = goalGuidance === GOAL_GUIDANCE.muscle
+      ? `- Main lift cues: include phase % 1RM, RIR target, progression note (e.g. "70% 1RM, RIR 3, +2.5kg top range"). Max 15 words.
+- Accessory cues: max 6 words each.`
+      : `- Cues: MAXIMUM 6 words each`;
 
     const prompt = `You are Pulse, an elite AI personal trainer. Generate a 4-week progressive training program as 2 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4).
 
@@ -1389,7 +1433,7 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
 - Vary sessions by muscle group — never repeat same muscle group two days in a row
 - Each phase must be distinctly different in volume/load/rest
 - Warmup: exactly 2 exercises. Main: exactly 3 compounds. Accessories: exactly 2 isolation. Total = 7 exercises per day MAX.
-- Cues: MAXIMUM 6 words each
+${cueRule}
 - Exercise names: clean standard names only
 - Do NOT add any text outside the JSON`;
 
