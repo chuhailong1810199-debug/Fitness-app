@@ -1925,6 +1925,31 @@
 .pfm-phase{transition:opacity .25s ease,transform .25s ease;}
 .pfm-phase.pfm-out{opacity:0;transform:translateY(8px);pointer-events:none;}
 .pfm-phase.pfm-hidden{display:none;}
+/* ── Program preview table ─── */
+.pfm-tabs-hdr{padding:14px 0 10px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:10px;position:sticky;top:0;background:#0a0e1a;z-index:2;}
+.pfm-prog-label{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:9px;}
+.pfm-tabs-row{display:flex;gap:5px;background:rgba(255,255,255,0.05);border-radius:10px;padding:4px;}
+.pfm-tab-btn{flex:1;padding:9px 4px;font-size:10.5px;font-weight:700;border:none;cursor:pointer;border-radius:7px;line-height:1.35;transition:background .22s,color .22s;font-family:"Figtree",sans-serif;}
+.pfm-phase-banner{font-size:10px;margin:0 0 10px;padding:7px 12px;background:rgba(255,255,255,0.03);border-radius:6px;color:rgba(255,255,255,0.42);}
+.pfm-day-wrap{margin-bottom:22px;}
+.pfm-day-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;}
+.pfm-day-name{font-size:12px;font-weight:700;color:#fff;}
+.pfm-day-type{font-size:10px;color:rgba(255,255,255,0.38);font-weight:500;text-align:right;max-width:55%;}
+.pfm-ex-table{width:100%;border-collapse:collapse;}
+.pfm-ex-table th{font-size:8.5px;font-weight:700;color:rgba(255,255,255,0.20);text-transform:uppercase;letter-spacing:1.3px;padding:0 6px 8px;white-space:nowrap;}
+.pfm-ex-table th:first-child{text-align:left;padding-left:2px;}
+.pfm-ex-table th.pfm-th-c{text-align:center;}
+.pfm-ex-table th.pfm-th-l{text-align:left;}
+.pfm-grp-row td{padding:11px 0 4px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.32);text-transform:uppercase;letter-spacing:1.1px;border-bottom:none;}
+.pfm-ex-row td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top;}
+.pfm-ex-row td:first-child{padding-left:2px;}
+.pfm-ex-row td.pfm-td-c{text-align:center;font-weight:700;color:rgba(255,255,255,0.72);font-size:11px;white-space:nowrap;vertical-align:middle;}
+.pfm-ex-name-cell{display:flex;align-items:flex-start;gap:8px;}
+.pfm-pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.pfm-ex-name{font-size:12px;font-weight:600;color:#fff;line-height:1.35;}
+.pfm-ex-cue{font-size:9.5px;color:rgba(255,255,255,0.30);font-style:italic;line-height:1.4;margin-top:3px;}
+@keyframes pfmIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.pfm-phase-content{animation:pfmIn .22s ease forwards;}
 
 .pfm-close-btn{background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;border-radius:6px;transition:color .15s;font-family:inherit;}
 .pfm-close-btn:hover{color:#fff;}
@@ -2292,32 +2317,75 @@
     run: '#22d3ee', brick: '#f43f5e', tempo: '#f97316', simulation: '#a855f7', recovery: '#6b7280',
   };
 
-  function _renderSessionDays(sessions) {
+  // Parse "Phase 1: X | Phase 2: Y | Phase 3: Z" → return segment for phaseIdx (0/1/2)
+  function _extractPhaseCue(cue, phaseIdx) {
+    if (!cue) return '';
+    const n = phaseIdx + 1;
+    const re = new RegExp('Phase\\s*' + n + '[:\\-\\s]+(.+?)(?:\\s*\\|\\s*Phase\\s*\\d|$)', 'i');
+    const m = cue.match(re);
+    if (m) return m[1].trim();
+    // fallback: split by pipe and pick nth
+    const parts = cue.split(/\s*\|\s*/);
+    if (parts.length > phaseIdx) return parts[phaseIdx].replace(/^Phase\s*\d+[:\-\s]*/i,'').trim();
+    return cue.substring(0, 90);
+  }
+
+  function _parseSR(sr) {
+    if (!sr) return { sets: '—', reps: '—' };
+    const m = sr.match(/(\d+)\s*[x×]\s*([\d\-–]+\+?(?:m|s)?)/i);
+    if (m) return { sets: m[1], reps: m[2] };
+    return { sets: '—', reps: sr.length < 12 ? sr : '—' };
+  }
+
+  function _renderSessionDays(sessions, phaseIdx) {
+    const pi = typeof phaseIdx === 'number' ? phaseIdx : 0;
+    const DOT = { warmup:'#f97316', strength:'#1e90ff', accessories:'#7665ff',
+                  core:'#22d3ee', circuit:'#44cc88', run:'#22d3ee',
+                  brick:'#f43f5e', tempo:'#f97316', simulation:'#a855f7', recovery:'#6b7280' };
+    const SUB = ['#7665ff','#44cc88','#f43f5e','#f97316','#22d3ee','#a855f7'];
     const days = Object.keys(sessions).filter(k => k !== 'label');
     let html = '';
     for (const day of days) {
       const session = sessions[day];
       if (!session || !session.phases) continue;
-      html += `<div style="margin-bottom:20px;">
-        <div style="font-weight:700;font-size:11px;color:#fff;padding:7px 12px;background:#111827;border-radius:7px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-          <span>📅 ${day}</span><span style="color:rgba(255,255,255,.4);font-weight:400;font-size:10px;">${session.label || ''}</span>
-        </div>`;
+      html += `<div class="pfm-day-wrap">
+        <div class="pfm-day-hdr">
+          <span class="pfm-day-name">📅 ${day}</span>
+          <span class="pfm-day-type">${session.label || ''}</span>
+        </div>
+        <table class="pfm-ex-table">
+          <thead><tr>
+            <th style="width:44%">Exercise</th>
+            <th class="pfm-th-c">Sets</th>
+            <th class="pfm-th-c">Reps</th>
+            <th class="pfm-th-l">Notes</th>
+          </tr></thead><tbody>`;
+
       for (const phase of (session.phases || [])) {
-        const col = _pfmPhaseColors[phase.tag] || '#aaa';
-        html += `<div style="margin-bottom:8px;padding-left:10px;border-left:2px solid ${col}50;">
-          <div style="font-size:9px;font-weight:700;color:${col};margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;">${phase.name || ''}</div>`;
-        for (const ex of (phase.exercises || [])) {
-          html += `<div style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid #0d0d1a;align-items:start;">
-            <div>
-              <span style="color:#e0e0e0;font-size:11px;font-weight:500;">${ex.name}</span>
-              ${ex.cue ? `<div style="color:#555;font-size:9px;margin-top:2px;line-height:1.4;">${ex.cue.substring(0, 120)}${ex.cue.length > 120 ? '…' : ''}</div>` : ''}
-            </div>
-            <div style="color:#666;font-size:10px;text-align:right;white-space:nowrap;font-weight:600;">${ex.setsReps}</div>
-          </div>`;
-        }
-        html += '</div>';
+        const baseColor = DOT[phase.tag] || '#7665ff';
+        const isSub = phase.tag === 'accessories' || phase.tag === 'circuit';
+        html += `<tr class="pfm-grp-row"><td colspan="4" style="border-left:2px solid ${baseColor}40;padding-left:9px;">${phase.name || ''}</td></tr>`;
+        (phase.exercises || []).forEach((ex, ei) => {
+          const dot = isSub ? SUB[ei % SUB.length] : baseColor;
+          const { sets, reps } = _parseSR(ex.setsReps);
+          const cue = _extractPhaseCue(ex.cue, pi);
+          html += `<tr class="pfm-ex-row">
+            <td>
+              <div class="pfm-ex-name-cell">
+                <span class="pfm-pdot" style="background:${dot}"></span>
+                <div>
+                  <div class="pfm-ex-name">${ex.name}</div>
+                  ${cue ? `<div class="pfm-ex-cue">${cue.substring(0,100)}${cue.length>100?'…':''}</div>` : ''}
+                </div>
+              </div>
+            </td>
+            <td class="pfm-td-c">${sets}</td>
+            <td class="pfm-td-c">${reps}</td>
+            <td style="font-size:10px;color:rgba(255,255,255,0.25);font-style:italic;vertical-align:middle;">${ex.tempo||''}</td>
+          </tr>`;
+        });
       }
-      html += '</div>';
+      html += `</tbody></table></div>`;
     }
     return html;
   }
@@ -2327,58 +2395,89 @@
 
     // ── 6-week plan (HYROX or General) — 3-phase tab UI ────────────────────
     if (program.phase1) {
-      const isHyrox  = program._type === 'hyrox6week';
+      const isHyrox = program._type === 'hyrox6week';
       const headerLabel = isHyrox ? '🏆 6-Week HYROX Program' : '⚡ 6-Week Training Program';
+      const headerColor = isHyrox ? '#f43f5e' : '#7665ff';
       const phaseColors = { phase1: '#22d3ee', phase2: '#7665ff', phase3: '#f43f5e' };
+      const phaseIdxMap = { phase1: 0, phase2: 1, phase3: 2 };
       const phaseTabLabels = {
-        phase1: isHyrox ? ['Base','Wk 1–2']    : ['Foundation','Wk 1–2'],
-        phase2: isHyrox ? ['Build','Wk 3–4']   : ['Progressive','Wk 3–4'],
-        phase3: isHyrox ? ['Peak','Wk 5–6']    : ['Peak','Wk 5–6'],
+        phase1: isHyrox ? ['Base','Wk 1–2']   : ['Foundation','Wk 1–2'],
+        phase2: isHyrox ? ['Build','Wk 3–4']  : ['Progressive','Wk 3–4'],
+        phase3: isHyrox ? ['Peak','Wk 5–6']   : ['Peak','Wk 5–6'],
       };
 
       let _activePhase = 'phase1';
 
+      function _buildTabs(active) {
+        return ['phase1','phase2','phase3'].map(p => {
+          const [top, bot] = phaseTabLabels[p];
+          const isAct = p === active;
+          const col = phaseColors[p];
+          return `<button class="pfm-tab-btn${isAct?' active':''}" onclick="_pfmSwitchPhaseTab('${p}')"
+            style="background:${isAct ? col : 'transparent'};color:${isAct ? '#fff' : 'rgba(255,255,255,0.28)'};">
+            ${top}<br><span style="font-weight:400;font-size:9px;opacity:.75;">${bot}</span>
+          </button>`;
+        }).join('');
+      }
+
       function _renderPhaseView(active) {
         const phaseData  = program[active] || {};
         const phaseLabel = phaseData.label || '';
-        const tabs = ['phase1','phase2','phase3'].map(p => {
-          const [top, bot] = phaseTabLabels[p];
-          const isActive = p === active;
-          return `<button onclick="_pfmSwitchPhaseTab('${p}')"
-            style="flex:1;padding:8px 4px;font-size:10px;font-weight:700;border:none;cursor:pointer;border-radius:6px;line-height:1.4;transition:all .2s;
-              background:${isActive ? phaseColors[p] : 'rgba(255,255,255,0.05)'};
-              color:${isActive ? '#fff' : 'rgba(255,255,255,0.35)'};">
-            ${top}<br><span style="font-weight:400;font-size:9px;">${bot}</span>
-          </button>`;
-        }).join('');
-
+        const col = phaseColors[active];
+        const pi  = phaseIdxMap[active];
         return `
-          <div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:12px;">
-            <div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;">${headerLabel}</div>
-            <div style="display:flex;gap:5px;background:rgba(255,255,255,0.04);border-radius:8px;padding:4px;">${tabs}</div>
+          <div class="pfm-tabs-hdr">
+            <div class="pfm-prog-label" style="color:${headerColor};">${headerLabel}</div>
+            <div class="pfm-tabs-row">${_buildTabs(active)}</div>
           </div>
-          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:12px;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid ${phaseColors[active]};">${phaseLabel}</div>
-          <div>${_renderSessionDays(phaseData)}</div>`;
+          <div class="pfm-phase-content">
+            <div class="pfm-phase-banner" style="border-left:3px solid ${col};">${phaseLabel}</div>
+            ${_renderSessionDays(phaseData, pi)}
+          </div>`;
       }
 
       window._pfmSwitchPhaseTab = function(phase) {
         _activePhase = phase;
-        preview.innerHTML = _renderPhaseView(phase);
+        // Fade out content, swap, fade in
+        const content = preview.querySelector('.pfm-phase-content');
+        if (content) {
+          content.style.transition = 'opacity .15s ease,transform .15s ease';
+          content.style.opacity = '0';
+          content.style.transform = 'translateY(5px)';
+          setTimeout(() => {
+            const phaseData  = program[phase] || {};
+            const phaseLabel = phaseData.label || '';
+            const col = phaseColors[phase];
+            const pi  = phaseIdxMap[phase];
+            // Update tabs
+            preview.querySelectorAll('.pfm-tab-btn').forEach((btn, i) => {
+              const p = ['phase1','phase2','phase3'][i];
+              const isAct = p === phase;
+              btn.className = 'pfm-tab-btn' + (isAct ? ' active' : '');
+              btn.style.background = isAct ? phaseColors[p] : 'transparent';
+              btn.style.color = isAct ? '#fff' : 'rgba(255,255,255,0.28)';
+            });
+            // Update banner
+            const banner = preview.querySelector('.pfm-phase-banner');
+            if (banner) { banner.style.borderLeft = `3px solid ${col}`; banner.textContent = phaseLabel; }
+            // Replace content
+            content.innerHTML = _renderSessionDays(phaseData, pi);
+            content.style.transition = '';
+            content.style.opacity = '1';
+            content.style.transform = 'translateY(0)';
+            content.style.animation = 'pfmIn .22s ease forwards';
+          }, 160);
+        } else {
+          preview.innerHTML = _renderPhaseView(phase);
+        }
       };
 
       preview.innerHTML = _renderPhaseView(_activePhase);
       return;
     }
 
-    // ── Fallback: legacy flat weekly plan ──────────────────────────────────
-    const days = Object.keys(program).filter(k => k !== '_type');
-    const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
-    let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} training days · ${totalEx} exercises</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Personalised by ⚡ Pulse AI</div>
-    </div>`;
-    html += _renderSessionDays(program);
-    preview.innerHTML = html;
+    // ── Fallback: legacy flat plan ─────────────────────────────────────────
+    preview.innerHTML = _renderSessionDays(program, 0);
   }
 </script>
 
