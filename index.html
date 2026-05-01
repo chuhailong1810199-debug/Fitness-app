@@ -99,13 +99,12 @@ function parseSetsCount(setsReps) {
   return m ? Math.min(parseInt(m[1]), 6) : 3; // cap at 6 sets
 }
 // Split "4 × 8" → { sets:'4', reps:'8' } for table columns
+// Handles: "3 x 10", "4 × 8-12", "1 x 45s", "2 x 5 min", "3 x AMRAP", "3 x 10+"
 function parseSetsRepsSplit(setsReps) {
   if (!setsReps) return { sets: '—', reps: '—' };
-  const m = setsReps.match(/(\d+)\s*[x×]\s*([\d\-–]+\+?)/i);
-  if (m) return { sets: m[1], reps: m[2] };
-  const amrap = setsReps.match(/(\d+)\s*[x×]\s*(AMRAP|Max)/i);
-  if (amrap) return { sets: amrap[1], reps: amrap[2] };
-  return { sets: '—', reps: setsReps.replace(/sets?/i,'').trim() || '—' };
+  const m = setsReps.match(/^(\d+)\s*[x×]\s*(.+)/i);
+  if (m) return { sets: m[1], reps: m[2].trim() };
+  return { sets: '—', reps: setsReps.trim() || '—' };
 }
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -1600,7 +1599,7 @@ function renderExercises() {
           <th style="width:44%">Exercise</th>
           <th>Sets</th>
           <th>Reps</th>
-          <th>Tempo</th>
+          <th class="pt-th-tempo">Tempo</th>
           <th>Load</th>
           <th class="pt-th-notes">Notes</th>
         </tr></thead>
@@ -1663,7 +1662,7 @@ function renderExercises() {
           </td>
           <td>${sets}</td>
           <td>${reps}</td>
-          <td>${tempo}</td>
+          <td class="pt-col-tempo">${tempo}</td>
           <td>
             <input class="pt-load-input" type="number" min="0" step="0.5" placeholder="—"
               value="${loadVal}"
@@ -3569,13 +3568,21 @@ h1 span{color:#1e90ff;}
 .info-btn{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,0.16);background:transparent;color:rgba(255,255,255,0.60);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
 .info-btn:hover{border-color:#1e90ff;color:#1e90ff;}
 /* ── Program Table (redesigned view) ── */
-.program-table-wrap{margin-top:.25rem;}
+.program-table-wrap{margin-top:.25rem;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .pt-day-title{font-size:15px;font-weight:700;color:#fff;padding-bottom:12px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.07);}
-.program-table{width:100%;border-collapse:collapse;table-layout:auto;}
-.program-table thead th{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:1.4px;padding:0 10px 10px;white-space:nowrap;}
+.program-table{width:100%;border-collapse:collapse;table-layout:auto;min-width:340px;}
+.program-table thead th{font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:1.4px;padding:0 8px 10px;white-space:nowrap;}
 .program-table thead th:first-child{text-align:left;padding-left:0;}
 .program-table thead th:not(:first-child):not(.pt-th-notes){text-align:center;}
 .pt-th-notes{text-align:left;}
+/* Compact cells + hide Tempo on very small screens */
+@media(max-width:400px){
+  .pt-col-tempo,.pt-th-tempo{display:none;}
+  .pt-ex-row td{padding:8px 5px;}
+  .pt-load-input{width:42px;font-size:11px;}
+  .pt-notes{max-width:90px;}
+  .pt-ex-name{font-size:12px;}
+}
 /* Phase group header row */
 .pt-phase-row td{padding:16px 10px 6px;border-bottom:none;}
 .pt-phase-row:first-child td{padding-top:12px;}
