@@ -2366,15 +2366,17 @@
         const isSub = phase.tag === 'accessories' || phase.tag === 'circuit';
         html += `<tr class="pfm-grp-row"><td colspan="4" style="border-left:2px solid ${baseColor}40;padding-left:9px;">${phase.name || ''}</td></tr>`;
         (phase.exercises || []).forEach((ex, ei) => {
+          if (!ex || typeof ex !== 'object') return; // skip malformed
           const dot = isSub ? SUB[ei % SUB.length] : baseColor;
-          const { sets, reps } = _parseSR(ex.setsReps);
-          const cue = _extractPhaseCue(ex.cue, pi);
+          const { sets, reps } = _parseSR(ex.setsReps || ex.sets_reps || '');
+          const rawCue = ex.cue || ex.note || ex.coaching_note || '';
+          const cue = _extractPhaseCue(rawCue, pi);
           html += `<tr class="pfm-ex-row">
             <td>
               <div class="pfm-ex-name-cell">
                 <span class="pfm-pdot" style="background:${dot}"></span>
                 <div>
-                  <div class="pfm-ex-name">${ex.name}</div>
+                  <div class="pfm-ex-name">${ex.name || ex.exercise || '—'}</div>
                   ${cue ? `<div class="pfm-ex-cue">${cue.substring(0,100)}${cue.length>100?'…':''}</div>` : ''}
                 </div>
               </div>

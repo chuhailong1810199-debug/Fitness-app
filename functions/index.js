@@ -1179,42 +1179,121 @@ ALLOWED EXERCISES (strength sessions): SkiErg, Sled Push, Sled Pull, Burpee Broa
 
 DISTANCE RULE: Farmer Carry / Sandbag Lunge / Sled Push / Sled Pull → setsReps in METERS (e.g. "3 x 40m"), never reps.
 
-OUTPUT: Return ONLY raw JSON. No markdown. No text outside JSON.
+OUTPUT: Return ONLY raw JSON — no markdown, no text outside JSON.
+
+CRITICAL JSON FORMAT — follow this EXACT structure. Each day has a "phases" array. Each phase has a "tag", "name", and "exercises" array. Each exercise has "name", "setsReps", "tempo", and "cue":
 
 {
   "_type": "hyrox6week",
   "phase1": {
     "label": "Phase 1 — Base Building (Week 1–2)",
-    "Mon": { "label": "Strength — HYROX Stations", "phases": [...] },
-    "Wed": { "label": "Zone 2 Run", "phases": [...] }
+    "Mon": {
+      "label": "Strength — HYROX Stations",
+      "phases": [
+        {
+          "tag": "warmup",
+          "name": "🔥 Warm-up",
+          "exercises": [
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s each", "tempo": "", "cue": "Open hips before sled work. Breathe deep." },
+            { "name": "Ankle Circles", "setsReps": "2 x 20 reps", "tempo": "", "cue": "Loosen ankles for running + lunge positions." },
+            { "name": "Dead Bug", "setsReps": "2 x 10", "tempo": "slow", "cue": "Brace core — key for farmer carry posture." }
+          ]
+        },
+        {
+          "tag": "strength",
+          "name": "💪 HYROX Strength",
+          "exercises": [
+            { "name": "SkiErg", "setsReps": "4 x 200m", "tempo": "", "cue": "Drive hips back, arms pull to hip. Moderate pace — build aerobic base." },
+            { "name": "Wall Ball", "setsReps": "4 x 15", "tempo": "", "cue": "Full squat depth, throw to target height. Rest 90s." },
+            { "name": "Farmer Carry", "setsReps": "4 x 30m", "tempo": "", "cue": "Shoulders back, neutral spine. Walk controlled pace." },
+            { "name": "Rowing", "setsReps": "3 x 250m", "tempo": "", "cue": "Drive legs first. Target consistent split time per 500m." }
+          ]
+        }
+      ]
+    },
+    "Wed": {
+      "label": "Zone 2 Run",
+      "phases": [
+        {
+          "tag": "warmup",
+          "name": "🔥 Activation",
+          "exercises": [
+            { "name": "Leg Swing", "setsReps": "2 x 15 each", "tempo": "", "cue": "Dynamic warm-up before run. Front and lateral swings." },
+            { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Mobilise hip flexors." }
+          ]
+        },
+        {
+          "tag": "run",
+          "name": "🏃 Zone 2 Run",
+          "exercises": [
+            { "name": "Zone 2 Run", "setsReps": "1 x 30 min", "tempo": "", "cue": "RPE 4-5 — conversational pace. Focus on nasal breathing. Flat terrain preferred." }
+          ]
+        }
+      ]
+    }
   },
   "phase2": {
     "label": "Phase 2 — Build (Week 3–4)",
-    "Mon": { "label": "Strength — HYROX Stations", "phases": [...] },
-    "Wed": { "label": "Zone 2 Run + Compromised Running", "phases": [...] }
+    "Mon": {
+      "label": "Strength — HYROX Stations",
+      "phases": [
+        {
+          "tag": "warmup",
+          "name": "🔥 Warm-up",
+          "exercises": [
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s", "tempo": "", "cue": "Same warm-up, now moving faster to prepare for higher intensity." }
+          ]
+        },
+        {
+          "tag": "strength",
+          "name": "💪 HYROX Strength — Build",
+          "exercises": [
+            { "name": "SkiErg", "setsReps": "5 x 300m", "tempo": "", "cue": "Increase distance vs Phase 1. Push for consistent splits." },
+            { "name": "Wall Ball", "setsReps": "5 x 20", "tempo": "", "cue": "Add reps. Reduce rest to 60s. Maintain depth." },
+            { "name": "Farmer Carry", "setsReps": "4 x 50m", "tempo": "", "cue": "Increase distance. Add weight if form is solid." },
+            { "name": "Sandbag Lunge", "setsReps": "3 x 30m", "tempo": "", "cue": "New Phase 2 exercise. Controlled knee tracking. Alternate legs." }
+          ]
+        }
+      ]
+    }
   },
   "phase3": {
     "label": "Phase 3 — Peak & Taper (Week 5–6)",
-    "Mon": { ... },
-    ...
+    "Mon": {
+      "label": "Strength — HYROX Stations",
+      "phases": [
+        {
+          "tag": "warmup",
+          "name": "🔥 Warm-up",
+          "exercises": [
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s", "tempo": "", "cue": "Race-pace mindset. Short warm-up, high focus." }
+          ]
+        },
+        {
+          "tag": "strength",
+          "name": "💪 Peak Strength — Race Prep",
+          "exercises": [
+            { "name": "SkiErg", "setsReps": "4 x 500m", "tempo": "", "cue": "Race intensity. Track split time. Target sub-2:00/500m." },
+            { "name": "Wall Ball", "setsReps": "4 x 25", "tempo": "", "cue": "Race pace. Minimal rest. Stay composed at fatigue." },
+            { "name": "Farmer Carry", "setsReps": "3 x 60m", "tempo": "", "cue": "Heavy. Grip strength is key at km 7." }
+          ]
+        }
+      ]
+    }
   }
 }
 
-Session phase structure:
-Strength sessions: warmup (3-4 exercises) + strength (4-6 HYROX-specific exercises)
-Run sessions: warmup (2-3 activation) + run (the run workout as 1-2 exercises)
-Brick/Simulation: warmup (2-3 activation) + brick (the full sequence as 2-4 exercises with detailed round/distance cues)
-
-Each exercise: { "name": "...", "setsReps": "...", "tempo": "", "cue": "Phase 1: ... | Phase 2: ... | Phase 3: ..." }
-Cues MUST show how the exercise changes across phases (volume, intensity, distance scaling).
-Simulation exercises MUST state the target % and "track total time as race benchmark".`;
+IMPORTANT: Fill in ALL days from the schedule (${Object.keys(sessionDays).join(', ')}) inside EACH of phase1, phase2, phase3.
+Each day must have at least 2 phases with at least 2-4 exercises each.
+Warmup: 2-3 exercises. Strength: 3-5 exercises. Run: 1-2 exercises. Brick/Simulation: 3-5 exercises with detailed distances.
+Use the periodisation rules above to make each phase genuinely different (different volume, intensity, distances, cues).`;
 
       const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
       let hyroxCompletion;
       try {
         hyroxCompletion = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
-          max_tokens: 5000,
+          max_tokens: 7000,
           temperature: 0.3,
           messages: [{ role: "user", content: hyroxPrompt }],
         });
