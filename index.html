@@ -3575,14 +3575,6 @@ h1 span{color:#1e90ff;}
 .program-table thead th:first-child{text-align:left;padding-left:0;}
 .program-table thead th:not(:first-child):not(.pt-th-notes){text-align:center;}
 .pt-th-notes{text-align:left;}
-/* Compact cells + hide Tempo on very small screens */
-@media(max-width:400px){
-  .pt-col-tempo,.pt-th-tempo{display:none;}
-  .pt-ex-row td{padding:8px 5px;}
-  .pt-load-input{width:42px;font-size:11px;}
-  .pt-notes{max-width:90px;}
-  .pt-ex-name{font-size:12px;}
-}
 /* Phase group header row */
 .pt-phase-row td{padding:16px 10px 6px;border-bottom:none;}
 .pt-phase-row:first-child td{padding-top:12px;}
@@ -3616,6 +3608,17 @@ h1 span{color:#1e90ff;}
 .pt-badge-up{background:rgba(68,204,136,0.12);color:#44cc88;}
 .pt-badge-dn{background:rgba(244,63,94,0.12);color:#f43f5e;}
 .pt-badge-same{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.40);}
+/* Dismiss animation for table rows */
+.pt-ex-row.dismissing{opacity:0;transform:translateX(40px);transition:opacity .28s ease,transform .28s ease;pointer-events:none;}
+/* Compact cells + hide Tempo on small screens — must come AFTER all pt-* base rules */
+@media(max-width:420px){
+  .pt-col-tempo,.pt-th-tempo{display:none;}
+  .pt-ex-row td{padding:8px 5px!important;}
+  .pt-load-input{width:42px;font-size:11px;}
+  .pt-notes{max-width:80px;}
+  .pt-ex-name{font-size:12px;}
+  .program-table thead th{padding:0 5px 10px;}
+}
 /* Legacy node flow (horizontal) — kept for edit mode if needed */
 .exercise-flow{display:flex;align-items:stretch;overflow-x:auto;padding:4px 2px 12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;margin-bottom:6px;gap:0;}
 .exercise-flow::-webkit-scrollbar{height:3px;}
