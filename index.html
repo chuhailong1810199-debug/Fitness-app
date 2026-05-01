@@ -100,11 +100,12 @@ function parseSetsCount(setsReps) {
 }
 // Split "4 × 8" → { sets:'4', reps:'8' } for table columns
 // Handles: "3 x 10", "4 × 8-12", "1 x 45s", "2 x 5 min", "3 x AMRAP", "3 x 10+"
+// If no "N ×" prefix (e.g. AI wrote "250m" without sets count), default sets to 1
 function parseSetsRepsSplit(setsReps) {
   if (!setsReps) return { sets: '—', reps: '—' };
-  const m = setsReps.match(/^(\d+)\s*[x×]\s*(.+)/i);
+  const m = setsReps.match(/(\d+)\s*[x×]\s*(.+)/i);
   if (m) return { sets: m[1], reps: m[2].trim() };
-  return { sets: '—', reps: setsReps.trim() || '—' };
+  return { sets: '1', reps: setsReps.trim() || '—' };
 }
 
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -1579,120 +1580,10 @@ function renderExercises() {
   const list = document.getElementById('exercise-list');
   if (!day) { list.innerHTML = '<div class="loading">Rest day 💤</div>'; updateProgress(); return; }
 
-  // Phase dot colors by tag
-  const PT_DOT_COLORS = {
-    warmup: '#f97316', strength: '#1e90ff', accessories: '#7665ff',
-    core: '#22d3ee', circuit: '#44cc88',
-  };
-  const PT_SUB_COLORS = ['#7665ff','#44cc88','#f43f5e','#f97316','#22d3ee','#a855f7'];
-
   const vKeys = [];
   const sortedPhases = sortPhases(day.phases);
 
-  if (!editMode) {
-    // ── TABLE VIEW (new design) ───────────────────────────────────────────
-    const dayLabel = day.label || activeDay;
-    let tbl = `<div class="program-table-wrap">
-      <div class="pt-day-title">${dayLabel}</div>
-      <table class="program-table">
-        <thead><tr>
-          <th style="width:44%">Exercise</th>
-          <th>Sets</th>
-          <th>Reps</th>
-          <th class="pt-th-tempo">Tempo</th>
-          <th>Load</th>
-          <th class="pt-th-notes">Notes</th>
-        </tr></thead>
-        <tbody>`;
-
-    sortedPhases.forEach((phase) => {
-      const pi = day.phases.indexOf(phase);
-      const dotColor = PT_DOT_COLORS[phase.tag] || '#6b7280';
-
-      // Phase group header row
-      const phaseIcon = phase.tag === 'warmup' ? '↑' :
-                        phase.tag === 'strength' ? '◆' :
-                        phase.tag === 'accessories' ? '↻' :
-                        phase.tag === 'core' ? '✦' : '↻';
-      const phaseMeta = phase.note ? phase.note : '';
-      tbl += `<tr class="pt-phase-row">
-        <td class="pt-phase-cell" colspan="5">
-          <div class="pt-phase-icon">${phaseIcon}</div>
-          <span class="pt-phase-name">${phase.name}</span>
-        </td>
-        <td><span class="pt-phase-meta">${phaseMeta}</span></td>
-      </tr>`;
-
-      phase.exercises.forEach((ex, ei) => {
-        const key  = activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
-        const done = !!(exerciseState[activeClient.id] && exerciseState[activeClient.id][key]);
-        const vKey = 'v_'+activeClient.id+'_'+activeDay+'_'+pi+'_'+ei;
-        vKeys.push(vKey);
-
-        const { sets, reps } = parseSetsRepsSplit(ex.setsReps);
-        const tempo = ex.tempo || '—';
-        const notes = ex.cue || ex.note || '';
-        const isSubStyle = phase.tag === 'accessories' || phase.tag === 'circuit';
-        const exDotColor = isSubStyle ? (PT_SUB_COLORS[ei % PT_SUB_COLORS.length]) : dotColor;
-
-        // Strength history badge
-        const hist = strengthHistory[key];
-        let histBadge = '';
-        if (hist && hist.length > 0) {
-          const latest = hist[0].kg;
-          const prev = hist.length > 1 ? hist[1].kg : null;
-          if (prev !== null) {
-            const delta = +(latest - prev).toFixed(1);
-            if (delta > 0) histBadge = `<span class="pt-badge-inline pt-badge-up">↑ ${latest}kg</span>`;
-            else if (delta < 0) histBadge = `<span class="pt-badge-inline pt-badge-dn">↓ ${latest}kg</span>`;
-            else histBadge = `<span class="pt-badge-inline pt-badge-same">→ ${latest}kg</span>`;
-          }
-        }
-
-        const loadVal = getSetLoad(key, 0) || getExerciseLoadValue(key) || '';
-
-        tbl += `<tr class="pt-ex-row${isSubStyle?' pt-ex-sub':''}${done?' pt-done':''}" id="card_${key}">
-          <td>
-            <div class="pt-name-cell">
-              <div class="pt-check${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
-              <span class="pt-dot ${isSubStyle?'pt-dot-sub':'pt-dot-main'}" style="background:${exDotColor}"></span>
-              <span class="pt-ex-name" onclick="openModal(${pi},${ei})">${ex.name}</span>
-              ${histBadge}
-            </div>
-          </td>
-          <td>${sets}</td>
-          <td>${reps}</td>
-          <td class="pt-col-tempo">${tempo}</td>
-          <td>
-            <input class="pt-load-input" type="number" min="0" step="0.5" placeholder="—"
-              value="${loadVal}"
-              oninput="setSetLoad('${key}',0,this.value);setExerciseLoad('${key}',this.value)">
-          </td>
-          <td><span class="pt-notes" title="${escHtml(notes)}">${escHtml(notes) || '—'}</span></td>
-        </tr>`;
-      });
-    });
-
-    tbl += `</tbody></table></div>`;
-
-    // Done strip
-    const doneKeys = Object.entries(exerciseState[activeClient.id] || {}).filter(([,v])=>v).map(([k])=>k);
-    const dayDoneKeys = doneKeys.filter(k => k.startsWith(activeClient.id+'_'+activeDay+'_'));
-    if (dayDoneKeys.length > 0 && !showDoneExercises) {
-      const strip = `<div class="done-strip" onclick="toggleDoneExercises()">
-        <span class="done-strip-label">✓ Đã hoàn thành</span>
-        <span class="done-strip-count">${dayDoneKeys.length} bài ↓ xem lại</span>
-      </div>`;
-      list.innerHTML = strip + tbl;
-    } else {
-      list.innerHTML = tbl;
-    }
-    updateProgress();
-    refreshVideoSlotsFromFirestore(vKeys);
-    return;
-  }
-
-  // ── EDIT MODE (original layout preserved) ────────────────────────────────
+  // ── VIEW / EDIT MODE ─────────────────────────────────────────────────────
   let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
 
   sortedPhases.forEach((phase) => {
@@ -2120,8 +2011,8 @@ function toggleExercise(key) {
   }
 }
 function updateProgress() {
-  const cards = document.querySelectorAll('.exercise-card, .exercise-node, .pt-ex-row');
-  const done  = document.querySelectorAll('.exercise-card.done-card, .exercise-node.done-node, .pt-ex-row.pt-done').length;
+  const cards = document.querySelectorAll('.exercise-card, .exercise-node');
+  const done  = document.querySelectorAll('.exercise-card.done-card, .exercise-node.done-node').length;
   const total = cards.length, pct = total ? Math.round(done/total*100) : 0;
   document.getElementById('progress').style.width        = pct + '%';
   document.getElementById('progress-label').textContent  = pct + '% complete';
