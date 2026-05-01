@@ -39,47 +39,51 @@ const APP_NAME = "Striveo";
 // ─────────────────────────────────────────────────────────────────────────────
 const GOAL_GUIDANCE = {
   fatLoss:
-    `Fat Loss + Body Recomposition Program. CORE PRINCIPLE: fat loss training = strength-focused + preserve muscle + smart cardio. NOT light circuits only.
+    `Fat Loss + Body Recomposition Program. CORE PRINCIPLE: fat loss training = strength-focused + preserve muscle + smart cardio. NOT light weight + high reps — that wastes sessions.
 
 EXERCISE SELECTION:
-- Compounds (main lifts, 3–5 sets): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Pull-Up, Barbell Row — these are the foundation, do NOT skip them
-- Accessories (isolation, 2–3 sets): Leg Curl, Lateral Raise, Face Pull, Tricep Pushdown, Bicep Curl, Cable Row
-- Unilateral + Core (1 per session): Bulgarian Split Squat, Single-Leg RDL, Plank, Ab Wheel, Pallof Press
-- Conditioning / Finisher (end of session, optional): 8–12 min HIIT, kettlebell circuit, rower intervals, sled push, jump rope
+- Compounds (main lifts): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Barbell Row, Pull-Up — foundation of every session
+- Accessories (isolation): Leg Curl, Lateral Raise, Face Pull, Tricep Pushdown, Bicep Curl, Cable Row, Chest Fly / Cable Fly — 2–3 per session
+- Unilateral + Core (1 per session): Bulgarian Split Squat, Reverse Lunge, Single-Leg RDL, Pallof Press, Ab Wheel
+- Conditioning Finisher (MANDATORY every session): 10–15 min HIIT or metcon circuit at end — rowing intervals, sled push, bike sprint, jump rope, kettlebell swing
 
-VOLUME TARGETS (per muscle group per week): 10–15 working sets — enough to preserve muscle, not so much it spikes fatigue.
-- Compounds: 3–5 sets per exercise
-- Accessories: 2–3 sets per exercise
-- Do NOT drop below 10 sets/muscle/week — muscle loss accelerates below this threshold
+INTENSITY — USE TWO TIERS every session, NOT uniform reps:
+- Heavy top set (1st compound): 4–6 reps at 80–85% 1RM, RPE 8–9 — strength stimulus to preserve CNS drive
+- Back-off / hypertrophy sets (remaining compounds): 8–12 reps at 70–75% 1RM, RPE 7–8
+- Accessories: 10–15 reps, RPE 7–8
+- NEVER programme all exercises at the same rep range (e.g. all 3x10 = wrong)
 
-INTENSITY: Keep load HEAVY. RPE 7–9 on main lifts. Fat loss does NOT mean light weight + high reps.
-- Main lifts: 6–10 reps at 70–80% 1RM
-- Accessories: 10–15 reps at RPE 7–8
-- Progression goal: maintain or INCREASE strength across the 4 weeks (progress = preserved muscle)
+PROGRESSIVE OVERLOAD — embed in cue for every main lift:
+- Top set: when client hits top of rep range for 2 sessions → add +2.5kg next session ("top set: add weight when 6 clean reps hit")
+- Back-off: progress reps before adding load
+- Maintenance rule: strength maintained = muscle preserved — never drop below starting load
 
-PROGRESSIVE OVERLOAD (embed in cue): Double progression — increase reps first, then weight (+2.5kg). Track strength as a muscle preservation metric.
+VOLUME (per muscle group per week): 10–15 working sets total.
+- 1st compound (heavy): 4–5 sets
+- 2nd–3rd compound (back-off): 3 sets each
+- Accessories: 2–3 sets each
 
 REST PERIODS:
-- Compound main lifts: 2–3 min (heavy, need recovery)
+- Heavy top set (4–6 reps): 2–3 min
+- Back-off sets (8–12 reps): 90s–2 min
 - Accessories: 60–90s
-- Conditioning/finisher: 20–40s work / 20–40s rest (HIIT format)
+- Conditioning finisher: 20–40s work / 15–30s rest
 
-CARDIO / CONDITIONING STRATEGY:
-- LISS Zone 2: 2–3x/week, 30–45 min, easy conversational pace — primary fat burning tool
-- HIIT / Metcon finisher: 1–2x/week MAX, 8–12 min at end of session — avoid overdoing (fatigue accumulation)
-- NEAT (daily steps): mention in cue as "target 8,000–10,000 steps/day" — this is the foundation of daily calorie burn
-- Cardio and strength on SAME day = cardio AFTER lifting (never before)
+SESSION-SPECIFIC EXERCISE RULES (anti-redundancy):
+- LEG day: 1 primary squat pattern (heavy, 4–6 reps) + 1 hinge (8–10 reps) + 1 unilateral (2–3 sets only, no fatigue stacking). NOT 3 leg exercises all at 3x10.
+- PUSH day: 1 horizontal press (Bench) + 1 vertical/overhead press (OHP) + 1 chest ISOLATION (Cable Fly or DB Fly). Do NOT add a 3rd pressing movement (e.g. Close Grip Bench = redundant on push day — put it on a dedicated arm/accessory slot instead).
+- PULL day: 1 vertical pull (Pull-Up OR Lat Pulldown — NOT both) + 1 horizontal row (Barbell Row or Cable Row) + 1 upper back/rear delt (Face Pull or Rear Delt Fly). Avoid stacking 2 vertical pulls.
 
-SESSION STRUCTURE (mandatory order):
-1. Warm-up: 3–4 exercises, activation + mobility (8–10 min)
-2. Main Lifts: 2–3 heavy compounds, RPE 7–9 (strength first, when CNS is fresh)
-3. Accessories: 2–4 isolation + unilateral exercises
-4. Conditioning Finisher (optional): 8–12 min HIIT or metcon circuit
+CARDIO / CONDITIONING:
+- Conditioning Finisher (MANDATORY after every strength session): 10–15 min. Choose from: rowing intervals (500m x 4), bike sprint (30s on/30s off x 8), sled push circuit, jump rope AMRAP, kettlebell swing + burpee circuit
+- LISS Zone 2: 2–3x/week separate from strength sessions, 30–45 min — primary fat oxidation tool
+- NEAT: mention "target 8,000–10,000 steps/day" in at least 1 cue per session
+- Cardio always AFTER lifting, never before
 
 FATIGUE MANAGEMENT:
-- Avoid combining high strength volume + high cardio volume in same week
-- If sessions ≥ 4/week: reduce accessory volume, keep compound intensity high
-- Mention deload every 4–6 weeks in cue: "reduce load 30–40% for 1 week if accumulated fatigue"`,
+- Conditioning finisher should be LIGHTER on heavy compound days (RPE 6–7 finisher) and HARDER on moderate-load days (RPE 8–9 finisher)
+- If sessions ≥ 4/week: reduce accessory volume, keep compound intensity
+- Deload every 4–6 weeks: reduce load 30–40%, keep movement`,
 
   muscle:
     `Muscle Hypertrophy + Strength Program. Dual goal: build muscle mass AND increase maximal strength.
@@ -246,6 +250,20 @@ function detectSplit(sessions, goalStr, notesStr) {
     };
     return hyroxSplits[sessions] || hyroxSplits[4];
   }
+
+  // Fat loss gets dedicated Zone 2 day(s) built into the split
+  const isFatLoss = /fat|loss|lean|cut|recomp|giảm|béo|mỡ/i.test(goalStr || "");
+  if (isFatLoss) {
+    const fatLossSplits = {
+      3: "Push / Pull / Legs — all 3 days are strength sessions. Zone 2 cardio (30–45 min, easy pace) must be recommended in cues for 2 rest days per week (e.g. Tue + Thu or Sat). Each strength session ends with a 10–15 min conditioning finisher.",
+      4: "Push / Pull / Legs / Zone 2 Cardio — Day 4 is a DEDICATED Zone 2 cardio day (35–45 min easy run or bike, conversational pace, no strength). Days 1–3 are strength with conditioning finisher.",
+      5: "Push / Pull / Legs / Zone 2 / Upper — Day 4 is dedicated Zone 2 (35–45 min). Days 1-3 and 5 are strength with conditioning finisher.",
+      6: "Push / Pull / Legs / Zone 2 / Upper / Zone 2 — Days 4 and 6 are dedicated Zone 2 cardio (35–45 min each). Strength days include 10–15 min conditioning finisher.",
+      7: "Push / Pull / Legs / Zone 2 / Upper / Zone 2 / Active Recovery — Days 4 and 6 are Zone 2. Day 7 is mobility + light walk only.",
+    };
+    return fatLossSplits[sessions] || fatLossSplits[3];
+  }
+
   const splits = {
     3: "Full-Body A/B/C or Push/Pull/Legs",
     4: "Upper/Lower × 2 or Push/Pull/Legs/Full-Body",
@@ -475,15 +493,37 @@ INJURIES / LIMITATIONS: None reported. Train normally.`;
 
     // ── Fat Loss specific rules (injected only when goal = fatLoss) ──────────
     const fatLossSpecificRules = goalGuidance === GOAL_GUIDANCE.fatLoss ? `
-FAT LOSS PROGRAM RULES (APPLY THESE — OVERRIDE generic defaults):
-- Main Lifts phase: 2–3 heavy compounds (squat, hinge, push, pull). 3–5 sets. 6–10 reps at 70–80% 1RM. RPE 7–9. Rest: 2–3 min. Load must be HEAVY — fat loss training is NOT light weight + high reps.
-- Accessories phase: 2–4 isolation + unilateral exercises. 2–3 sets. 10–15 reps. RPE 7–8. 60–90s rest.
-- Conditioning Finisher phase (tag: "accessories", name: "🔥 Conditioning Finisher"): 8–12 min HIIT or metcon circuit at END of session. Include 2–3 exercises (e.g. rowing intervals, jump rope, kettlebell swings, battle ropes). Format: 30s work / 20s rest or AMRAP style.
-- Session order is FIXED: Warm-up → Main Lifts (heavy, compound) → Accessories → Conditioning Finisher.
-- Cue for main lifts: include RPE target + progression note ("maintain or add weight vs last week — strength = muscle preserved").
-- Cue for finisher: include work/rest format + intensity target (e.g. "30s all-out / 20s rest, RPE 9").
-- Mention NEAT in at least 1 cue per session: "target 8,000–10,000 steps/day".
-- Do NOT overload cardio finishers on same day as max-effort compounds — note in cue if needed.` : '';
+FAT LOSS PROGRAM RULES (CRITICAL — OVERRIDE all generic defaults):
+
+INTENSITY STRUCTURE — NEVER uniform reps across all exercises:
+- 1st compound (primary): 4–5 sets × 4–6 reps at 80–85% 1RM, RPE 8–9, rest 2–3 min → this is the HEAVY top set
+- 2nd–3rd compound (back-off): 3 sets × 8–10 reps at 70–75% 1RM, RPE 7–8, rest 90s
+- Accessories: 2–3 sets × 10–15 reps, RPE 7–8, rest 60–90s
+- Example: Squat 4x5 (heavy) → RDL 3x8 (moderate) → Lunge 2x10 (lighter, lower fatigue) ✅
+
+PROGRESSIVE OVERLOAD (embed in EVERY main lift cue):
+- Top set rule: "Add +2.5kg when 6 clean reps achieved for 2 consecutive sessions"
+- Back-off rule: "Progress reps first (8→10→12), then add load"
+- Minimum: maintain current weight every session — drop in load = muscle loss signal
+
+SESSION PATTERN RULES (anti-redundancy — ENFORCE STRICTLY):
+- PUSH day: Bench Press (horizontal) + Overhead Press (vertical) + 1 chest ISOLATION (Cable Fly or DB Fly). Maximum 2 pressing movements per session. Do NOT add Close Grip Bench as 3rd press — it belongs in accessory slot on a different day.
+- PULL day: Choose ONE vertical pull (Pull-Up OR Lat Pulldown, not both) + ONE horizontal row (Barbell Row or Cable Row) + ONE rear delt/upper back (Face Pull or Rear Delt Fly). Max 1 vertical + 1 horizontal per session.
+- LEG day: 1 primary squat-pattern (4–6 reps heavy) + 1 hinge (8–10 reps) + 1 unilateral (2–3 sets, NOT 3 sets — leg fatigue is high). Add leg isolation as accessory (Leg Curl or Leg Extension).
+
+CONDITIONING FINISHER (MANDATORY on all STRENGTH days — no exceptions):
+- Add as a separate phase: tag "accessories", name "🔥 Conditioning Finisher"
+- Duration: 10–15 min, placed AFTER all strength work
+- On heavy compound days (high CNS load): lighter finisher RPE 6–7 — e.g. 500m row × 3, or 20 min bike zone 2
+- On moderate days: harder finisher RPE 8–9 — e.g. 30s row sprint / 30s rest × 8, or kettlebell swing + burpee AMRAP 10 min
+- Cue for finisher: always include work/rest format + RPE target + "10,000 steps/day on top of this"
+
+ZONE 2 CARDIO DAY STRUCTURE (if the split includes a dedicated Zone 2 day):
+- That day has ONLY cardio — NO strength exercises, NO heavy compound
+- Session structure: { label: "Zone 2 Cardio", phases: [ { tag: "warmup", exercises: [5 min easy walk or dynamic stretch] }, { tag: "strength", name: "🏃 Zone 2 Cardio", exercises: [main cardio block] }, { tag: "accessories", name: "🧘 Cool-down", exercises: [stretching, breathing] } ] }
+- Main cardio: 35–45 min at conversational pace (RPE 5–6, "can hold a full sentence"). Choose: outdoor run, treadmill, stationary bike, or rowing machine.
+- Cue: include heart rate target (60–70% max HR), duration, and NEAT reminder ("on top of daily 10,000 steps")
+- For 3-session programs (no dedicated Zone 2 day): add to at least 1 warm-up cue: "ZONE 2 RECOMMENDATION: Do 35 min easy run or bike on your rest days (Tue/Thu). Conversational pace. This is your primary fat burning tool."` : '';
 
     // ── Muscle/Strength specific rules (injected only when goal = muscle) ────
     const muscleSpecificRules = goalGuidance === GOAL_GUIDANCE.muscle ? `
@@ -1415,8 +1455,8 @@ Cues: max 6 words each. Use the periodisation rules to make phases genuinely dif
     // ── Phase guidelines per goal ────────────────────────────────────────────
     const phaseGuidanceMap = {
       [GOAL_GUIDANCE.fatLoss]:
-        `PHASE 1 — Strength Foundation (Week 1–2): Build movement base while preserving muscle. Main lifts: 3–4 sets × 8–10 reps at 70–75% 1RM, RPE 7–8, 2–3 min rest. Accessories: 3 sets × 10–15 reps, 60–90s rest. Conditioning finisher: 8 min HIIT at end of 2 sessions/week. No finisher on heavy compound days. Cue: target 8,000 steps/day.
-PHASE 2 — Fat Burn Peak (Week 3–4): Maintain strength, increase conditioning density. Main lifts: keep or add load (+2.5kg vs Phase 1), 6–10 reps, RPE 8–9. Accessories: add 1 set or shorten rest by 15s. Finisher: 10–12 min every session. Introduce LISS cardio 2x/week (30 min Zone 2). Cue: "Strength maintained = muscle preserved. Push finisher intensity, not lift volume."`,
+        `PHASE 1 — Strength Foundation (Week 1–2): Establish heavy top sets + back-off structure. 1st compound: 4 sets × 5–6 reps at 78–80% 1RM, RPE 8, 2–3 min rest. 2nd–3rd compound: 3 sets × 8–10 reps, RPE 7, 90s rest. Accessories: 2 sets × 12–15 reps. Conditioning finisher MANDATORY: 10 min moderate intensity (RPE 7). Cues: embed top set progression rule ("add +2.5kg when 6 clean reps × 2 sessions"). Anti-redundancy: max 2 pressing movements per push session; max 1 vertical + 1 horizontal pull per pull session.
+PHASE 2 — Fat Burn Peak (Week 3–4): Increase top set intensity + finisher density. 1st compound: 4–5 sets × 4–5 reps at 82–85% 1RM, RPE 8–9, 2–3 min rest. 2nd compound: 3 sets × 8 reps, +2.5kg vs Phase 1. Accessories: add 1 set vs Phase 1, shorten rest by 15s. Finisher MANDATORY every session: 12–15 min, RPE 8–9 on moderate-load days / RPE 6–7 on max-effort days. Include LISS 2x/week separate. Cue: "Strength stable or up = muscle preserved on cut."`,
 
       [GOAL_GUIDANCE.muscle]:
         `PHASE 1 — Hypertrophy Base (Week 1–2): HIGH VOLUME, moderate load. Compounds: 3–4 sets × 8–12 reps at 65–70% 1RM, 60–90s rest, RIR 3. Slow eccentric mandatory (3-1-2 tempo). Accessories: 3 sets × 10–15 reps, 60s rest, 2-0-2 tempo. Focus: build work capacity, establish mind-muscle connection, perfect technique.
