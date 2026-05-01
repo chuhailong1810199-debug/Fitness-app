@@ -1174,7 +1174,8 @@ HYROX SIMULATION SCALE (100% = SkiErg 1000m, Sled Push 50m, Sled Pull 50m, Burpe
 - 70%: Ski 700m, Sled Push 35m, Row 700m, Farmer 140m, Lunge 70m, Wall Ball 70 reps
 - 80%: Ski 800m, Sled Push 40m, Row 800m, Farmer 160m, Lunge 80m, Wall Ball 80 reps
 Run per round: 50%→600m, 60-70%→800m, 80%→1000m
-${exerciseLibraryContext}
+
+ALLOWED EXERCISES (strength sessions): SkiErg, Sled Push, Sled Pull, Burpee Broad Jump, Rowing, Farmer Carry, Sandbag Lunge, Wall Ball, Deadlift, Romanian Deadlift, Hip Thrust, Bulgarian Split Squat, Goblet Squat, Leg Press, Dumbbell Lunge, Box Step-up, Pull-up, Bent-over Row, Seated Row, Lat Pulldown, Push-up, Dumbbell Press, Band Pull-apart, Plank, Dead Bug, Hip Flexor Stretch, Ankle Circles.
 
 DISTANCE RULE: Farmer Carry / Sandbag Lunge / Sled Push / Sled Pull → setsReps in METERS (e.g. "3 x 40m"), never reps.
 
@@ -1209,16 +1210,37 @@ Cues MUST show how the exercise changes across phases (volume, intensity, distan
 Simulation exercises MUST state the target % and "track total time as race benchmark".`;
 
       const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
-      const hyroxCompletion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-        max_tokens: 8000,
-        temperature: 0.3,
-        messages: [{ role: "user", content: hyroxPrompt }],
-      });
+      let hyroxCompletion;
+      try {
+        hyroxCompletion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 5000,
+          temperature: 0.3,
+          messages: [{ role: "user", content: hyroxPrompt }],
+        });
+      } catch (groqErr) {
+        console.error("[pulseGenerateFree] Groq API error (HYROX):", groqErr.message);
+        throw new Error("AI service error. Please try again in a moment.");
+      }
 
       let hyroxRaw = hyroxCompletion.choices[0].message.content.trim();
+      // Robust JSON extraction: strip markdown fences, then find first { to last }
       hyroxRaw = hyroxRaw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-      const hyroxProgram = JSON.parse(hyroxRaw);
+      const hyroxStart = hyroxRaw.indexOf("{");
+      const hyroxEnd   = hyroxRaw.lastIndexOf("}");
+      if (hyroxStart === -1 || hyroxEnd === -1) {
+        console.error("[pulseGenerateFree] HYROX: No JSON object found in response. Raw (first 300):", hyroxRaw.substring(0, 300));
+        throw new Error("Could not generate HYROX plan. Please try again.");
+      }
+      hyroxRaw = hyroxRaw.substring(hyroxStart, hyroxEnd + 1);
+
+      let hyroxProgram;
+      try {
+        hyroxProgram = JSON.parse(hyroxRaw);
+      } catch (parseErr) {
+        console.error("[pulseGenerateFree] HYROX JSON parse error:", parseErr.message, "| Raw (first 500):", hyroxRaw.substring(0, 500));
+        throw new Error("Plan generation failed — response format error. Please try again.");
+      }
 
       steps.push({ icon: "✅", text: "Your 6-week HYROX plan is ready!" });
       console.log(`[pulseGenerateFree] 🏆 6-week HYROX plan generated for ${name} (${sessions} days/week, goal: ${hyroxGoalInput})`);
@@ -1322,17 +1344,33 @@ RULES:
 
     // ── Step 5: Call Groq ─────────────────────────────────────────────────────
     const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 6000,
-      temperature: 0.35,
-      messages: [{ role: "user", content: prompt }],
-    });
+    let completion;
+    try {
+      completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 5000,
+        temperature: 0.35,
+        messages: [{ role: "user", content: prompt }],
+      });
+    } catch (groqErr) {
+      console.error("[pulseGenerateFree] Groq API error (general):", groqErr.message);
+      throw new Error("AI service error. Please try again in a moment.");
+    }
 
     let raw = completion.choices[0].message.content.trim();
     raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    // Robust extraction: find first { to last }
+    const rawStart = raw.indexOf("{");
+    const rawEnd   = raw.lastIndexOf("}");
+    if (rawStart !== -1 && rawEnd !== -1) raw = raw.substring(rawStart, rawEnd + 1);
 
-    const program = JSON.parse(raw);
+    let program;
+    try {
+      program = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error("[pulseGenerateFree] General JSON parse error:", parseErr.message, "| Raw (first 400):", raw.substring(0, 400));
+      throw new Error("Plan generation failed — please try again.");
+    }
     steps.push({ icon: "✅", text: "Chương trình 6 tuần của bạn đã sẵn sàng!" });
 
     console.log(`[pulseGenerateFree] ⚡ 6-week program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
