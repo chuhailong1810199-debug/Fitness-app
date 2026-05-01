@@ -39,9 +39,47 @@ const APP_NAME = "Striveo";
 // ─────────────────────────────────────────────────────────────────────────────
 const GOAL_GUIDANCE = {
   fatLoss:
-    "Fat loss & body recomposition. Prioritise metabolic conditioning, " +
-    "circuit-style supersets, 12-15 reps, 30-60s rest. Include HIIT finishers. " +
-    "Keep sessions intense and time-efficient.",
+    `Fat Loss + Body Recomposition Program. CORE PRINCIPLE: fat loss training = strength-focused + preserve muscle + smart cardio. NOT light circuits only.
+
+EXERCISE SELECTION:
+- Compounds (main lifts, 3–5 sets): Barbell Back Squat, Romanian Deadlift, Bench Press, Overhead Press, Pull-Up, Barbell Row — these are the foundation, do NOT skip them
+- Accessories (isolation, 2–3 sets): Leg Curl, Lateral Raise, Face Pull, Tricep Pushdown, Bicep Curl, Cable Row
+- Unilateral + Core (1 per session): Bulgarian Split Squat, Single-Leg RDL, Plank, Ab Wheel, Pallof Press
+- Conditioning / Finisher (end of session, optional): 8–12 min HIIT, kettlebell circuit, rower intervals, sled push, jump rope
+
+VOLUME TARGETS (per muscle group per week): 10–15 working sets — enough to preserve muscle, not so much it spikes fatigue.
+- Compounds: 3–5 sets per exercise
+- Accessories: 2–3 sets per exercise
+- Do NOT drop below 10 sets/muscle/week — muscle loss accelerates below this threshold
+
+INTENSITY: Keep load HEAVY. RPE 7–9 on main lifts. Fat loss does NOT mean light weight + high reps.
+- Main lifts: 6–10 reps at 70–80% 1RM
+- Accessories: 10–15 reps at RPE 7–8
+- Progression goal: maintain or INCREASE strength across the 4 weeks (progress = preserved muscle)
+
+PROGRESSIVE OVERLOAD (embed in cue): Double progression — increase reps first, then weight (+2.5kg). Track strength as a muscle preservation metric.
+
+REST PERIODS:
+- Compound main lifts: 2–3 min (heavy, need recovery)
+- Accessories: 60–90s
+- Conditioning/finisher: 20–40s work / 20–40s rest (HIIT format)
+
+CARDIO / CONDITIONING STRATEGY:
+- LISS Zone 2: 2–3x/week, 30–45 min, easy conversational pace — primary fat burning tool
+- HIIT / Metcon finisher: 1–2x/week MAX, 8–12 min at end of session — avoid overdoing (fatigue accumulation)
+- NEAT (daily steps): mention in cue as "target 8,000–10,000 steps/day" — this is the foundation of daily calorie burn
+- Cardio and strength on SAME day = cardio AFTER lifting (never before)
+
+SESSION STRUCTURE (mandatory order):
+1. Warm-up: 3–4 exercises, activation + mobility (8–10 min)
+2. Main Lifts: 2–3 heavy compounds, RPE 7–9 (strength first, when CNS is fresh)
+3. Accessories: 2–4 isolation + unilateral exercises
+4. Conditioning Finisher (optional): 8–12 min HIIT or metcon circuit
+
+FATIGUE MANAGEMENT:
+- Avoid combining high strength volume + high cardio volume in same week
+- If sessions ≥ 4/week: reduce accessory volume, keep compound intensity high
+- Mention deload every 4–6 weeks in cue: "reduce load 30–40% for 1 week if accumulated fatigue"`,
 
   muscle:
     `Muscle Hypertrophy + Strength Program. Dual goal: build muscle mass AND increase maximal strength.
@@ -335,7 +373,7 @@ exports.generateProgram = onCall(
     memory: "256MiB",
   },
   async (request) => {
-    const { name, level, goal, sessionsPerWeek, notes } = request.data;
+    const { name, level, goal, sessionsPerWeek, notes, age, gender, weight, height } = request.data;
 
     // ── Day mapping ──────────────────────────────────────────────────────────
     const dayMaps = {
@@ -368,6 +406,46 @@ exports.generateProgram = onCall(
     };
     const levelGuidance = levelMap[level] || levelMap["Intermediate"];
 
+    // ── BMI context (weight + height) ────────────────────────────────────────
+    let bmiContext = "";
+    if (weight && height) {
+      const bmi = weight / Math.pow(height / 100, 2);
+      const bmiR = Math.round(bmi * 10) / 10;
+      let bmiCat, bmiRule = "";
+      if (bmi < 18.5) {
+        bmiCat = "Underweight";
+        bmiRule = "Client is underweight — avoid aggressive caloric deficit programming. Prioritise compound lifts and adequate recovery.";
+      } else if (bmi < 25) {
+        bmiCat = "Normal";
+        bmiRule = "Healthy BMI — standard programming applies.";
+      } else if (bmi < 30) {
+        bmiCat = "Overweight";
+        bmiRule = "Elevated BMI — include conditioning finisher each session, reduce high-impact plyometrics, emphasise NEAT in cues.";
+      } else {
+        bmiCat = "Obese";
+        bmiRule = "High BMI — low-impact modifications for all jumps/plyos. Include 10-min conditioning finisher. Prioritise movement quality over load. Avoid exercises with high spinal compression when standing (prefer seated/supported).";
+      }
+      bmiContext = `\nBODY METRICS: Weight ${weight}kg | Height ${height}cm | BMI ${bmiR} (${bmiCat})${gender ? ` | Gender: ${gender}` : ""}\n${bmiRule}`;
+    } else if (weight) {
+      bmiContext = `\nBODY METRICS: Weight ${weight}kg${gender ? ` | Gender: ${gender}` : ""}`;
+    } else if (gender) {
+      bmiContext = `\nGENDER: ${gender}`;
+    }
+
+    // ── Age context ───────────────────────────────────────────────────────────
+    let ageContext = "";
+    if (age) {
+      if (age < 25) {
+        ageContext = `\nAGE (${age}): Young athlete — can handle high volume and frequency. Fast recovery. Can include intensity techniques (supersets, drop sets).`;
+      } else if (age <= 40) {
+        ageContext = `\nAGE (${age}): Standard adult — balanced volume and intensity. Standard warm-up protocol.`;
+      } else if (age <= 55) {
+        ageContext = `\nAGE (${age}): 40+ athlete — extend warm-up to 10-12 min, include extra mobility work. Reduce max-effort frequency. Add 30s extra rest between sets. Avoid high-impact plyometrics. Prioritise joint health cues.`;
+      } else {
+        ageContext = `\nAGE (${age}): 55+ athlete — CRITICAL: prioritise mobility, balance, injury prevention. Longer warm-up (12-15 min), lower intensity (RPE 6-7 max), avoid heavy axial loading. Include balance drills. Rest 2-3 min between sets. Prefer machines/cables over barbells where possible.`;
+      }
+    }
+
     // ── Build the day skeleton for the prompt ────────────────────────────────
     const daySkeletonLines = days
       .map((d, i) => `  "${d}": { "label": "Session ${String.fromCharCode(65+i)} — [focus]", "phases": [...] }`)
@@ -395,6 +473,18 @@ You MUST follow ALL of these rules:
       : `
 INJURIES / LIMITATIONS: None reported. Train normally.`;
 
+    // ── Fat Loss specific rules (injected only when goal = fatLoss) ──────────
+    const fatLossSpecificRules = goalGuidance === GOAL_GUIDANCE.fatLoss ? `
+FAT LOSS PROGRAM RULES (APPLY THESE — OVERRIDE generic defaults):
+- Main Lifts phase: 2–3 heavy compounds (squat, hinge, push, pull). 3–5 sets. 6–10 reps at 70–80% 1RM. RPE 7–9. Rest: 2–3 min. Load must be HEAVY — fat loss training is NOT light weight + high reps.
+- Accessories phase: 2–4 isolation + unilateral exercises. 2–3 sets. 10–15 reps. RPE 7–8. 60–90s rest.
+- Conditioning Finisher phase (tag: "accessories", name: "🔥 Conditioning Finisher"): 8–12 min HIIT or metcon circuit at END of session. Include 2–3 exercises (e.g. rowing intervals, jump rope, kettlebell swings, battle ropes). Format: 30s work / 20s rest or AMRAP style.
+- Session order is FIXED: Warm-up → Main Lifts (heavy, compound) → Accessories → Conditioning Finisher.
+- Cue for main lifts: include RPE target + progression note ("maintain or add weight vs last week — strength = muscle preserved").
+- Cue for finisher: include work/rest format + intensity target (e.g. "30s all-out / 20s rest, RPE 9").
+- Mention NEAT in at least 1 cue per session: "target 8,000–10,000 steps/day".
+- Do NOT overload cardio finishers on same day as max-effort compounds — note in cue if needed.` : '';
+
     // ── Muscle/Strength specific rules (injected only when goal = muscle) ────
     const muscleSpecificRules = goalGuidance === GOAL_GUIDANCE.muscle ? `
 MUSCLE + STRENGTH PROGRAM RULES (APPLY THESE — OVERRIDE generic defaults):
@@ -413,7 +503,7 @@ CLIENT
 - Level: ${level}
 - Goal: ${goal}
 - Sessions/week: ${sessionsPerWeek} days (${days.join(", ")})
-- Rest days: ${restDays.join(", ")}
+- Rest days: ${restDays.join(", ")}${bmiContext}${ageContext}
 ${injurySection}
 
 GOAL APPROACH
@@ -461,6 +551,7 @@ Each day must follow this EXACT structure:
   ]
 }
 
+${fatLossSpecificRules}
 ${muscleSpecificRules}
 RULES
 - Warm-up: 3-4 exercises (5-10 min total). If client has injury, include rehab/activation exercises here.
@@ -1324,8 +1415,8 @@ Cues: max 6 words each. Use the periodisation rules to make phases genuinely dif
     // ── Phase guidelines per goal ────────────────────────────────────────────
     const phaseGuidanceMap = {
       [GOAL_GUIDANCE.fatLoss]:
-        `PHASE 1 — Foundation (Week 1–2): Establish movement patterns. 12-15 reps, 60s rest, 65% effort. Circuit-style superset introduction. Low-impact options if BMI elevated.
-PHASE 2 — Fat Burning (Week 3–4): Increase volume. 12-15 reps, 45s rest. Add HIIT finisher (10 min) to every session. Shorten rest by 15s vs Phase 1. Push metabolic demand — full circuits, 30s rest.`,
+        `PHASE 1 — Strength Foundation (Week 1–2): Build movement base while preserving muscle. Main lifts: 3–4 sets × 8–10 reps at 70–75% 1RM, RPE 7–8, 2–3 min rest. Accessories: 3 sets × 10–15 reps, 60–90s rest. Conditioning finisher: 8 min HIIT at end of 2 sessions/week. No finisher on heavy compound days. Cue: target 8,000 steps/day.
+PHASE 2 — Fat Burn Peak (Week 3–4): Maintain strength, increase conditioning density. Main lifts: keep or add load (+2.5kg vs Phase 1), 6–10 reps, RPE 8–9. Accessories: add 1 set or shorten rest by 15s. Finisher: 10–12 min every session. Introduce LISS cardio 2x/week (30 min Zone 2). Cue: "Strength maintained = muscle preserved. Push finisher intensity, not lift volume."`,
 
       [GOAL_GUIDANCE.muscle]:
         `PHASE 1 — Hypertrophy Base (Week 1–2): HIGH VOLUME, moderate load. Compounds: 3–4 sets × 8–12 reps at 65–70% 1RM, 60–90s rest, RIR 3. Slow eccentric mandatory (3-1-2 tempo). Accessories: 3 sets × 10–15 reps, 60s rest, 2-0-2 tempo. Focus: build work capacity, establish mind-muscle connection, perfect technique.

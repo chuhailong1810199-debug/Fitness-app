@@ -474,6 +474,10 @@ async function addClient() {
   const goal           = document.getElementById('new-client-goal').value.trim();
   const sessionsPerWeek = parseInt(document.getElementById('new-client-sessions').value) || 3;
   const notes          = (document.getElementById('new-client-notes').value || '').trim();
+  const age            = parseInt(document.getElementById('new-client-age').value)    || null;
+  const gender         = document.getElementById('new-client-gender').value           || null;
+  const weight         = parseFloat(document.getElementById('new-client-weight').value) || null;
+  const height         = parseFloat(document.getElementById('new-client-height').value) || null;
   if (!name || !email) return;
 
   const clientId = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
@@ -496,8 +500,8 @@ async function addClient() {
   document.getElementById('client-select').value = clientId;
   await switchClient();
 
-  // Trigger AI program generation
-  openAIReviewModal(clientId, { name, level, goal, sessionsPerWeek, notes });
+  // Trigger AI program generation — pass all available context
+  openAIReviewModal(clientId, { name, level, goal, sessionsPerWeek, notes, age, gender, weight, height });
 }
 
 // ── PULSE AI PROGRAM GENERATION ────────────────────────
@@ -4660,6 +4664,16 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         </select>
       </div>
       <div class="form-group"><label class="form-label">Notes / Chấn thương</label><input class="form-input" id="new-client-notes" placeholder="Đau lưng thấp, không squat nặng..."></div>
+      <div class="form-group"><label class="form-label">Age <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label><input class="form-input" id="new-client-age" type="number" min="14" max="80" placeholder="e.g. 28"></div>
+      <div class="form-group"><label class="form-label">Gender <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label>
+        <select class="form-select" id="new-client-gender">
+          <option value="">— Optional —</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Weight kg <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label><input class="form-input" id="new-client-weight" type="number" min="30" max="250" placeholder="e.g. 75"></div>
+      <div class="form-group"><label class="form-label">Height cm <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label><input class="form-input" id="new-client-height" type="number" min="100" max="230" placeholder="e.g. 172"></div>
     </div>
     <div class="form-actions">
       <button class="btn-save" onclick="addClient()">🤖 Add & Generate Program</button>
