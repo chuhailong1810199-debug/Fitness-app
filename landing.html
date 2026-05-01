@@ -1996,7 +1996,7 @@
       <!-- PHASE 1: Form -->
       <div id="pfm-form-phase" class="pfm-phase" style="padding:22px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px;">
-          Fill in your details — Pulse will build a <strong style="color:#fff;">personalised 6-week program</strong> for you, completely free.
+          Fill in your details — Pulse will build a <strong style="color:#fff;">personalised 4-week program</strong> for you, completely free.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div><label class="pfm-label">Your name *</label><input class="pfm-input" id="pfm-name" type="text" placeholder="e.g. Alex Johnson"></div>
@@ -2256,13 +2256,13 @@
     const fakeSteps = isHyrox ? [
       { icon: '📝', text: 'Saving your HYROX profile…' },
       { icon: '🎯', text: 'Analysing running fitness & race goal…' },
-      { icon: '🏋️', text: 'Building 6-week periodisation…' },
+      { icon: '🏋️', text: 'Building 4-week periodisation…' },
       { icon: '🏆', text: 'Pulse is writing your HYROX plan…' },
     ] : [
       { icon: '📝', text: `Saving your profile…` },
       { icon: '🎯', text: `Analysing your goal: ${goal.split('&')[0].trim()}` },
       { icon: '🎨', text: 'Loading coaching style…' },
-      { icon: '⚡', text: 'Pulse is writing your 6-week plan…' },
+      { icon: '⚡', text: 'Pulse is writing your 4-week plan…' },
     ];
     let stepIdx = 0;
     const stepInterval = setInterval(() => {
@@ -2284,21 +2284,21 @@
       });
       clearInterval(stepInterval);
       fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
-      _pfmCompleteStep('✅', isHyrox ? '6-week HYROX plan ready!' : 'Your program is ready!');
+      _pfmCompleteStep('✅', isHyrox ? '4-week HYROX plan ready!' : 'Your program is ready!');
       document.getElementById('pfm-current-text').textContent = 'Done ✨';
       await new Promise(r => setTimeout(r, 800));
 
       const prog = result.data.program;
-      const is6Week = prog && (prog._type === 'hyrox6week' || prog._type === 'general6week');
-      const isHyrox6Week = prog && prog._type === 'hyrox6week';
-      document.getElementById('pfm-result-title').textContent = isHyrox6Week
-        ? `${name}'s 6-Week HYROX Plan is ready! 🏆`
-        : `${name}'s 6-Week Program is ready! ✅`;
-      document.getElementById('pfm-result-subtitle').textContent = is6Week
-        ? '6-week periodised plan — built by ⚡ Pulse AI'
-        : '6-week training plan — built by ⚡ Pulse AI';
+      const is4Week = prog && (prog._type === 'hyrox4week' || prog._type === 'general4week');
+      const isHyrox4Week = prog && prog._type === 'hyrox4week';
+      document.getElementById('pfm-result-title').textContent = isHyrox4Week
+        ? `${name}'s 4-Week HYROX Plan is ready! 🏆`
+        : `${name}'s 4-Week Program is ready! ✅`;
+      document.getElementById('pfm-result-subtitle').textContent = is4Week
+        ? '4-week periodised plan — built by ⚡ Pulse AI'
+        : '4-week training plan — built by ⚡ Pulse AI';
       _renderFreeProgram(prog);
-      document.getElementById('pfm-subtitle').textContent = isHyrox6Week ? 'Your 6-Week HYROX Plan' : 'Your 6-Week Program';
+      document.getElementById('pfm-subtitle').textContent = isHyrox4Week ? 'Your 4-Week HYROX Plan' : 'Your 4-Week Program';
       _pfmTransitionTo('result');
     } catch (err) {
       clearInterval(stepInterval);
@@ -2395,23 +2395,22 @@
   function _renderFreeProgram(program) {
     const preview = document.getElementById('pfm-program-preview');
 
-    // ── 6-week plan (HYROX or General) — 3-phase tab UI ────────────────────
+    // ── 4-week plan (HYROX or General) — 2-phase tab UI ────────────────────
     if (program.phase1) {
-      const isHyrox = program._type === 'hyrox6week';
-      const headerLabel = isHyrox ? '🏆 6-Week HYROX Program' : '⚡ 6-Week Training Program';
+      const isHyrox = program._type === 'hyrox4week';
+      const headerLabel = isHyrox ? '🏆 4-Week HYROX Program' : '⚡ 4-Week Training Program';
       const headerColor = isHyrox ? '#f43f5e' : '#7665ff';
-      const phaseColors = { phase1: '#22d3ee', phase2: '#7665ff', phase3: '#f43f5e' };
-      const phaseIdxMap = { phase1: 0, phase2: 1, phase3: 2 };
+      const phaseColors = { phase1: '#22d3ee', phase2: '#7665ff' };
+      const phaseIdxMap = { phase1: 0, phase2: 1 };
       const phaseTabLabels = {
-        phase1: isHyrox ? ['Base','Wk 1–2']   : ['Foundation','Wk 1–2'],
-        phase2: isHyrox ? ['Build','Wk 3–4']  : ['Progressive','Wk 3–4'],
-        phase3: isHyrox ? ['Peak','Wk 5–6']   : ['Peak','Wk 5–6'],
+        phase1: isHyrox ? ['Base','Wk 1–2']        : ['Foundation','Wk 1–2'],
+        phase2: isHyrox ? ['Build & Peak','Wk 3–4'] : ['Progressive','Wk 3–4'],
       };
 
       let _activePhase = 'phase1';
 
       function _buildTabs(active) {
-        return ['phase1','phase2','phase3'].map(p => {
+        return ['phase1','phase2'].map(p => {
           const [top, bot] = phaseTabLabels[p];
           const isAct = p === active;
           const col = phaseColors[p];
@@ -2453,7 +2452,7 @@
             const pi  = phaseIdxMap[phase];
             // Update tabs
             preview.querySelectorAll('.pfm-tab-btn').forEach((btn, i) => {
-              const p = ['phase1','phase2','phase3'][i];
+              const p = ['phase1','phase2'][i];
               const isAct = p === phase;
               btn.className = 'pfm-tab-btn' + (isAct ? ' active' : '');
               btn.style.background = isAct ? phaseColors[p] : 'transparent';

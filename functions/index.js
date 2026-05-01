@@ -1076,9 +1076,9 @@ EXERCISE NAMING RULE: Use standard, clean exercise names only (e.g. "Romanian De
 EXERCISE NAMING RULE: Use standard, clean exercise names only. Do NOT append equipment modifiers to exercise names.`;
     }
 
-    // ── HYROX 6-WEEK PATH — branches here when HYROX goal detected ───────────
+    // ── HYROX 4-WEEK PATH — branches here when HYROX goal detected ───────────
     if (isHyroxGoal(goal, "")) {
-      steps.push({ icon: "🏆", text: "Building your 6-week HYROX prep plan..." });
+      steps.push({ icon: "🏆", text: "Building your 4-week HYROX prep plan..." });
 
       const hyroxGoalInput  = request.data.hyroxGoal   || "";
       const runPace         = request.data.runPace      || "";
@@ -1153,19 +1153,15 @@ ${experienceNote ? `\nEXPERIENCE NOTE: ${experienceNote}` : ""}
 WEEKLY SESSION SCHEDULE:
 ${daySchedule}
 
-6-WEEK PERIODISATION RULES:
+4-WEEK PERIODISATION RULES:
 PHASE 1 (Week 1-2) — BASE:
 - Zone 2 only (no tempo). Brick = 2-3 stations, NO simulation. Run per leg: 400-800m.
-- Station volume: 40% of race. Focus: technique + pacing + movement quality.
+- Station volume: 40-50% of race. Focus: technique + pacing + movement quality.
 
-PHASE 2 (Week 3-4) — BUILD:
-- Tempo run introduced. Brick = 4-5 stations. Simulation at 50-60% (4-6 rounds).
-- Compromised running: run immediately after station (zero rest between run and station).
-- Station volume: 60-70%.
-
-PHASE 3 (Week 5-6) — PEAK & TAPER:
-- Week 5: 70-80% simulation (all 8 rounds). Full station volume.
-- Week 6: Taper — cut total volume 40%, keep intensity. Race strategy cues in every session. Final simulation ≤ 50% volume.
+PHASE 2 (Week 3-4) — BUILD & PEAK:
+- Tempo run introduced. Brick = 5-6 stations. Simulation at 60-80% (6-8 rounds).
+- Compromised running: run immediately after station. Station volume: 70-80%.
+- Week 4: Taper slightly — cut volume 20%, keep intensity. Race strategy cues every session.
 
 HYROX SIMULATION SCALE (100% = SkiErg 1000m, Sled Push 50m, Sled Pull 50m, Burpee BJ 80m, Row 1000m, Farmer 200m, Lunge 100m, Wall Ball 100 reps):
 - 40%: Ski 400m, Sled Push 20m, Row 400m, Farmer 80m, Lunge 40m, Wall Ball 40 reps
@@ -1184,116 +1180,65 @@ OUTPUT: Return ONLY raw JSON — no markdown, no text outside JSON.
 CRITICAL JSON FORMAT — follow this EXACT structure. Each day has a "phases" array. Each phase has a "tag", "name", and "exercises" array. Each exercise has "name", "setsReps", "tempo", and "cue":
 
 {
-  "_type": "hyrox6week",
+  "_type": "hyrox4week",
   "phase1": {
-    "label": "Phase 1 — Base Building (Week 1–2)",
+    "label": "Phase 1 — Base (Week 1–2)",
     "Mon": {
       "label": "Strength — HYROX Stations",
       "phases": [
-        {
-          "tag": "warmup",
-          "name": "🔥 Warm-up",
-          "exercises": [
-            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s each", "tempo": "", "cue": "Open hips before sled work. Breathe deep." },
-            { "name": "Ankle Circles", "setsReps": "2 x 20 reps", "tempo": "", "cue": "Loosen ankles for running + lunge positions." },
-            { "name": "Dead Bug", "setsReps": "2 x 10", "tempo": "slow", "cue": "Brace core — key for farmer carry posture." }
-          ]
-        },
-        {
-          "tag": "strength",
-          "name": "💪 HYROX Strength",
-          "exercises": [
-            { "name": "SkiErg", "setsReps": "4 x 200m", "tempo": "", "cue": "Drive hips back, arms pull to hip. Moderate pace — build aerobic base." },
-            { "name": "Wall Ball", "setsReps": "4 x 15", "tempo": "", "cue": "Full squat depth, throw to target height. Rest 90s." },
-            { "name": "Farmer Carry", "setsReps": "4 x 30m", "tempo": "", "cue": "Shoulders back, neutral spine. Walk controlled pace." },
-            { "name": "Rowing", "setsReps": "3 x 250m", "tempo": "", "cue": "Drive legs first. Target consistent split time per 500m." }
-          ]
-        }
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s each", "tempo": "", "cue": "Open hips, breathe deep." },
+            { "name": "Ankle Circles", "setsReps": "2 x 20", "tempo": "", "cue": "Loosen ankles for runs." }
+        ]},
+        { "tag": "strength", "name": "💪 HYROX Strength", "exercises": [
+            { "name": "SkiErg", "setsReps": "4 x 200m", "tempo": "", "cue": "Drive hips back. Moderate pace." },
+            { "name": "Wall Ball", "setsReps": "4 x 15", "tempo": "", "cue": "Full squat depth. Rest 90s." },
+            { "name": "Farmer Carry", "setsReps": "4 x 30m", "tempo": "", "cue": "Shoulders back, neutral spine." }
+        ]}
       ]
     },
     "Wed": {
       "label": "Zone 2 Run",
       "phases": [
-        {
-          "tag": "warmup",
-          "name": "🔥 Activation",
-          "exercises": [
-            { "name": "Leg Swing", "setsReps": "2 x 15 each", "tempo": "", "cue": "Dynamic warm-up before run. Front and lateral swings." },
+        { "tag": "warmup", "name": "🔥 Activation", "exercises": [
+            { "name": "Leg Swing", "setsReps": "2 x 15 each", "tempo": "", "cue": "Front and lateral swings." },
             { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Mobilise hip flexors." }
-          ]
-        },
-        {
-          "tag": "run",
-          "name": "🏃 Zone 2 Run",
-          "exercises": [
-            { "name": "Zone 2 Run", "setsReps": "1 x 30 min", "tempo": "", "cue": "RPE 4-5 — conversational pace. Focus on nasal breathing. Flat terrain preferred." }
-          ]
-        }
+        ]},
+        { "tag": "run", "name": "🏃 Zone 2 Run", "exercises": [
+            { "name": "Zone 2 Run", "setsReps": "1 x 30 min", "tempo": "", "cue": "RPE 4-5. Nasal breathing." }
+        ]}
       ]
     }
   },
   "phase2": {
-    "label": "Phase 2 — Build (Week 3–4)",
+    "label": "Phase 2 — Build & Peak (Week 3–4)",
     "Mon": {
       "label": "Strength — HYROX Stations",
       "phases": [
-        {
-          "tag": "warmup",
-          "name": "🔥 Warm-up",
-          "exercises": [
-            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s", "tempo": "", "cue": "Same warm-up, now moving faster to prepare for higher intensity." }
-          ]
-        },
-        {
-          "tag": "strength",
-          "name": "💪 HYROX Strength — Build",
-          "exercises": [
-            { "name": "SkiErg", "setsReps": "5 x 300m", "tempo": "", "cue": "Increase distance vs Phase 1. Push for consistent splits." },
-            { "name": "Wall Ball", "setsReps": "5 x 20", "tempo": "", "cue": "Add reps. Reduce rest to 60s. Maintain depth." },
-            { "name": "Farmer Carry", "setsReps": "4 x 50m", "tempo": "", "cue": "Increase distance. Add weight if form is solid." },
-            { "name": "Sandbag Lunge", "setsReps": "3 x 30m", "tempo": "", "cue": "New Phase 2 exercise. Controlled knee tracking. Alternate legs." }
-          ]
-        }
-      ]
-    }
-  },
-  "phase3": {
-    "label": "Phase 3 — Peak & Taper (Week 5–6)",
-    "Mon": {
-      "label": "Strength — HYROX Stations",
-      "phases": [
-        {
-          "tag": "warmup",
-          "name": "🔥 Warm-up",
-          "exercises": [
-            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s", "tempo": "", "cue": "Race-pace mindset. Short warm-up, high focus." }
-          ]
-        },
-        {
-          "tag": "strength",
-          "name": "💪 Peak Strength — Race Prep",
-          "exercises": [
-            { "name": "SkiErg", "setsReps": "4 x 500m", "tempo": "", "cue": "Race intensity. Track split time. Target sub-2:00/500m." },
-            { "name": "Wall Ball", "setsReps": "4 x 25", "tempo": "", "cue": "Race pace. Minimal rest. Stay composed at fatigue." },
-            { "name": "Farmer Carry", "setsReps": "3 x 60m", "tempo": "", "cue": "Heavy. Grip strength is key at km 7." }
-          ]
-        }
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 45s", "tempo": "", "cue": "Faster pace, race mindset." },
+            { "name": "Dead Bug", "setsReps": "2 x 10", "tempo": "slow", "cue": "Brace core for carries." }
+        ]},
+        { "tag": "strength", "name": "💪 HYROX Strength — Peak", "exercises": [
+            { "name": "SkiErg", "setsReps": "5 x 300m", "tempo": "", "cue": "Push splits vs Phase 1." },
+            { "name": "Wall Ball", "setsReps": "5 x 20", "tempo": "", "cue": "60s rest. Hold depth." },
+            { "name": "Farmer Carry", "setsReps": "4 x 50m", "tempo": "", "cue": "Add weight if form solid." }
+        ]}
       ]
     }
   }
 }
 
-IMPORTANT: Fill in ALL days from the schedule (${Object.keys(sessionDays).join(', ')}) inside EACH of phase1, phase2, phase3.
-Each day must have at least 2 phases with at least 2-4 exercises each.
-Warmup: 2-3 exercises. Strength: 3-5 exercises. Run: 1-2 exercises. Brick/Simulation: 3-5 exercises with detailed distances.
-Use the periodisation rules above to make each phase genuinely different (different volume, intensity, distances, cues).`;
+IMPORTANT: Fill in ALL days from the schedule (${Object.keys(sessionDays).join(', ')}) inside EACH of phase1, phase2.
+Each day must have 2 phases minimum. Warmup: exactly 2 exercises. Strength/Run/Brick: 3 exercises max.
+Cues: max 6 words each. Use the periodisation rules to make phases genuinely different.`;
 
       const groq = new Groq({ apiKey: GROQ_API_KEY.value() });
       let hyroxCompletion;
       try {
         hyroxCompletion = await groq.chat.completions.create({
           model: "llama-3.3-70b-versatile",
-          max_tokens: 4000,
+          max_tokens: 6000,
           temperature: 0.3,
           messages: [{ role: "user", content: hyroxPrompt }],
         });
@@ -1331,8 +1276,8 @@ Use the periodisation rules above to make each phase genuinely different (differ
     }
     // ── END HYROX 6-WEEK PATH ─────────────────────────────────────────────────
 
-    // ── Step 5: Build 6-week 3-phase prompt ─────────────────────────────────
-    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 6 tuần..." });
+    // ── Step 5: Build 4-week 2-phase prompt ─────────────────────────────────
+    steps.push({ icon: "⚡", text: "Pulse đang tạo chương trình 4 tuần..." });
 
     const physicalContext = (gender || weight || height || age)
       ? `\nPHYSICAL INFO:${gender ? `\n- Gender: ${gender}` : ""}${age ? `\n- Age: ${age}` : ""}${weight ? `\n- Weight: ${weight}kg` : ""}${height ? `\n- Height: ${height}cm` : ""}`
@@ -1342,27 +1287,23 @@ Use the periodisation rules above to make each phase genuinely different (differ
     const phaseGuidanceMap = {
       [GOAL_GUIDANCE.fatLoss]:
         `PHASE 1 — Foundation (Week 1–2): Establish movement patterns. 12-15 reps, 60s rest, 65% effort. Circuit-style superset introduction. Low-impact options if BMI elevated.
-PHASE 2 — Fat Burning (Week 3–4): Increase volume. 12-15 reps, 45s rest. Add HIIT finisher (10 min) to every session. Shorten rest by 15s vs Phase 1.
-PHASE 3 — Peak Conditioning (Week 5–6): Week 5 max metabolic demand — full circuits, HIIT finishers, 30s rest. Week 6 maintain intensity, vary exercises to avoid adaptation.`,
+PHASE 2 — Fat Burning (Week 3–4): Increase volume. 12-15 reps, 45s rest. Add HIIT finisher (10 min) to every session. Shorten rest by 15s vs Phase 1. Push metabolic demand — full circuits, 30s rest.`,
 
       [GOAL_GUIDANCE.muscle]:
         `PHASE 1 — Hypertrophy Base (Week 1–2): Technique + volume base. 8-10 reps, 90s rest, 65-70% 1RM. Establish mind-muscle connection. 3 sets per exercise.
-PHASE 2 — Progressive Overload (Week 3–4): Add load each session (+2.5kg). 6-8 reps, 2 min rest, 75-80% 1RM. 4 sets. Introduce tempo (3-1-2 on compounds).
-PHASE 3 — Intensification (Week 5–6): Week 5 peak — 5-6 reps, 80-85% 1RM, 4-5 sets. Week 6 — introduce drop sets or paused reps on 1 main lift per session.`,
+PHASE 2 — Progressive Overload (Week 3–4): Add load each session (+2.5kg). 6-8 reps, 2 min rest, 75-80% 1RM. 4 sets. Introduce tempo (3-1-2 on compounds). Push to 80-85% 1RM by Week 4.`,
 
       [GOAL_GUIDANCE.endurance]:
         `PHASE 1 — Aerobic Base (Week 1–2): High rep (15-20), minimal rest (30-45s). Zone 2 effort throughout. Introduce supersets. Build work capacity.
-PHASE 2 — Threshold Development (Week 3–4): Add intervals or tempo sets. 15 reps, 30s rest. Push sustainable pace on cardio elements. Circuit density increases.
-PHASE 3 — Peak Endurance (Week 5–6): Week 5 — continuous circuits, max work capacity. Week 6 — maintain density, add 1 AMRAP set per session.`,
+PHASE 2 — Threshold Development (Week 3–4): Add intervals or tempo sets. 15 reps, 30s rest. Push sustainable pace on cardio elements. Circuit density increases. Add 1 AMRAP set per session by Week 4.`,
 
       [GOAL_GUIDANCE.general]:
         `PHASE 1 — Foundation (Week 1–2): Full-body compound focus. 3 sets, 10-12 reps, 60-90s rest. Technique emphasis. Build base movement quality.
-PHASE 2 — Progressive Development (Week 3–4): Add 1 set per exercise. 4 sets, 10 reps, 60s rest. Increase load by 5% vs Phase 1. Introduce accessory supersets.
-PHASE 3 — Peak (Week 5–6): Week 5 — 4-5 sets, increase intensity across the board. Week 6 — vary rep ranges (8 / 12 / 15) within same session for full-spectrum stimulus.`,
+PHASE 2 — Progressive Development (Week 3–4): Add 1 set per exercise. 4 sets, 10 reps, 60s rest. Increase load by 5% vs Phase 1. Introduce accessory supersets. Vary rep ranges (8/12/15) by Week 4.`,
     };
     const phaseGuidance = phaseGuidanceMap[goalGuidance] || phaseGuidanceMap[GOAL_GUIDANCE.general];
 
-    const prompt = `You are Pulse, an elite AI personal trainer. Generate a 6-week progressive training program as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
+    const prompt = `You are Pulse, an elite AI personal trainer. Generate a 4-week progressive training program as 2 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4).
 
 CLIENT:
 - Name: ${name} | Level: ${level} | Goal: ${goal}
@@ -1372,114 +1313,84 @@ GOAL: ${goalGuidance}
 LEVEL: ${levelGuidance}
 SPLIT: ${splitGuidance}
 ${exerciseLibraryContext}
-PERIODISATION (CRITICAL — each phase must be genuinely different):
+PERIODISATION (CRITICAL — phases must be genuinely different):
 ${phaseGuidance}
 
 CRITICAL JSON FORMAT — return ONLY raw JSON, no markdown, no text outside JSON.
-Each phase (phase1/phase2/phase3) has its own days with exercises appropriate for THAT phase's intensity.
-Each day → "phases" array → each phase → "exercises" array → each exercise: { "name", "setsReps", "tempo", "cue" }
+Each phase (phase1/phase2) has its own days. Each day → "phases" array → each phase → "exercises" array → each exercise: { "name", "setsReps", "tempo", "cue" }
 
-EXAMPLE (follow this exact structure for all ${sessions} days across all 3 phases):
+EXAMPLE (follow this exact structure for all ${sessions} days across both phases):
 {
-  "_type": "general6week",
+  "_type": "general4week",
   "phase1": {
     "label": "Phase 1 — Foundation (Week 1–2)",
     "${days[0]}": {
       "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
       "phases": [
-        {
-          "tag": "warmup",
-          "name": "🔥 Warm-up",
-          "exercises": [
-            { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Mobilise hips before compound work." },
-            { "name": "Band Pull-apart", "setsReps": "2 x 15", "tempo": "", "cue": "Activate rear delts and scapula." },
-            { "name": "Goblet Squat", "setsReps": "2 x 8", "tempo": "slow", "cue": "Light weight. Establish squat depth and thoracic position." }
-          ]
-        },
-        {
-          "tag": "strength",
-          "name": "💪 Main Lifts",
-          "exercises": [
-            { "name": "Bench Press", "setsReps": "3 x 10", "tempo": "3-1-2", "cue": "65% effort. Focus on scapular retraction and elbow tuck." },
-            { "name": "Romanian Deadlift", "setsReps": "3 x 10", "tempo": "3-1-1", "cue": "Hinge at hips, soft knees. Feel hamstring tension at bottom." },
-            { "name": "Lat Pulldown", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Drive elbows to hips. Full stretch at top." }
-          ]
-        },
-        {
-          "tag": "accessories",
-          "name": "⚡ Accessories",
-          "exercises": [
-            { "name": "Incline DB Press", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "Upper chest focus. Controlled descent." },
-            { "name": "Cable Fly", "setsReps": "3 x 15", "tempo": "", "cue": "Squeeze at centre. Constant tension." }
-          ]
-        }
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+            { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Mobilise hips, 65% effort." },
+            { "name": "Band Pull-apart", "setsReps": "2 x 15", "tempo": "", "cue": "Activate rear delts." }
+        ]},
+        { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
+            { "name": "Bench Press", "setsReps": "3 x 10", "tempo": "3-1-2", "cue": "65% 1RM, elbow tuck." },
+            { "name": "Romanian Deadlift", "setsReps": "3 x 10", "tempo": "3-1-1", "cue": "Hinge deep, feel hamstrings." },
+            { "name": "Lat Pulldown", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Drive elbows to hips." }
+        ]},
+        { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
+            { "name": "Incline DB Press", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "Upper chest focus." },
+            { "name": "Cable Fly", "setsReps": "3 x 15", "tempo": "", "cue": "Squeeze at centre." }
+        ]}
       ]
     }${days.length > 1 ? `,
     "${days[1]}": {
       "label": "Session B — ${days[1] === 'Wed' ? 'Pull' : 'Lower'}",
       "phases": [
         { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
-          { "name": "Hip Flexor Stretch", "setsReps": "2 x 30s each", "tempo": "", "cue": "Open hip flexors before pulling work." }
+            { "name": "Hip Flexor Stretch", "setsReps": "2 x 30s each", "tempo": "", "cue": "Open hips, breathe deep." },
+            { "name": "Dead Bug", "setsReps": "2 x 10", "tempo": "slow", "cue": "Brace core throughout." }
         ]},
         { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
-          { "name": "Bent-over Row", "setsReps": "3 x 10", "tempo": "2-1-2", "cue": "Chest up, drive elbows to hip. 65% load Phase 1." },
-          { "name": "Deadlift", "setsReps": "3 x 8", "tempo": "3-1-1", "cue": "Brace before pulling. Lock hips and shoulders simultaneously." }
+            { "name": "Bent-over Row", "setsReps": "3 x 10", "tempo": "2-1-2", "cue": "Chest up, elbows to hip." },
+            { "name": "Deadlift", "setsReps": "3 x 8", "tempo": "3-1-1", "cue": "Brace before pulling." },
+            { "name": "Seated Row", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Squeeze scapula at finish." }
         ]},
         { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
-          { "name": "Seated Row", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Full stretch, squeeze scapula at finish." }
+            { "name": "Face Pull", "setsReps": "3 x 15", "tempo": "", "cue": "Elbows high, external rotate." },
+            { "name": "Plank", "setsReps": "3 x 30s", "tempo": "", "cue": "Hollow body, breathe steady." }
         ]}
       ]
     }` : ''}
   },
   "phase2": {
-    "label": "Phase 2 — Progressive Overload (Week 3–4)",
+    "label": "Phase 2 — Overload (Week 3–4)",
     "${days[0]}": {
       "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
       "phases": [
         { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
-          { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Same warm-up, now moving at pace to raise HR faster." }
+            { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Faster pace, raise HR." },
+            { "name": "Band Pull-apart", "setsReps": "2 x 15", "tempo": "", "cue": "Activate before heavy push." }
         ]},
         { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
-          { "name": "Bench Press", "setsReps": "4 x 8", "tempo": "3-1-2", "cue": "Add 2.5kg vs Phase 1. 75% effort. 90s rest." },
-          { "name": "Romanian Deadlift", "setsReps": "4 x 8", "tempo": "3-1-1", "cue": "Increase load by 5%. Maintain perfect hinge." },
-          { "name": "Lat Pulldown", "setsReps": "4 x 10", "tempo": "2-1-2", "cue": "Heavier load. Slow eccentric to maximise lat stretch." }
+            { "name": "Bench Press", "setsReps": "4 x 8", "tempo": "3-1-2", "cue": "+2.5kg vs Phase 1." },
+            { "name": "Romanian Deadlift", "setsReps": "4 x 8", "tempo": "3-1-1", "cue": "+5% load, perfect hinge." },
+            { "name": "Lat Pulldown", "setsReps": "4 x 10", "tempo": "2-1-2", "cue": "Heavier, slow eccentric." }
         ]},
         { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
-          { "name": "Incline DB Press", "setsReps": "3 x 10", "tempo": "2-0-2", "cue": "5% heavier than Phase 1. Superset with Cable Fly — rest 45s." },
-          { "name": "Cable Fly", "setsReps": "3 x 12", "tempo": "", "cue": "Supersetted with Incline DB. Constant tension throughout." }
-        ]}
-      ]
-    }
-  },
-  "phase3": {
-    "label": "Phase 3 — Peak (Week 5–6)",
-    "${days[0]}": {
-      "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
-      "phases": [
-        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
-          { "name": "Hip Circle", "setsReps": "2 x 10", "tempo": "", "cue": "Short warm-up, high intensity follows." }
-        ]},
-        { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
-          { "name": "Bench Press", "setsReps": "5 x 5", "tempo": "2-1-1", "cue": "80-85% 1RM. 2 min rest. Last set: add drop set to failure." },
-          { "name": "Romanian Deadlift", "setsReps": "4 x 6", "tempo": "3-1-1", "cue": "Heavy. Brace hard. Week 6: add paused rep at knee height." },
-          { "name": "Lat Pulldown", "setsReps": "4 x 8", "tempo": "2-1-2", "cue": "Peak load. Slow eccentric 3s. Feel every rep." }
-        ]},
-        { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
-          { "name": "Incline DB Press", "setsReps": "3 x 8", "tempo": "2-0-2", "cue": "Heaviest weight yet. Rest-pause if needed on last set." },
-          { "name": "Cable Fly", "setsReps": "3 x 10", "tempo": "", "cue": "Full range. Week 6: extend set by 5 partial reps at end." }
+            { "name": "Incline DB Press", "setsReps": "3 x 10", "tempo": "2-0-2", "cue": "+5% vs Phase 1." },
+            { "name": "Cable Fly", "setsReps": "3 x 12", "tempo": "", "cue": "Superset with above." }
         ]}
       ]
     }
   }
 }
 
-NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) inside EACH of phase1, phase2, phase3.
+NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) inside EACH of phase1, phase2.
 - Use the split: ${splitGuidance}
-- Vary sessions by muscle group / movement pattern — never repeat same muscle group two days in a row
-- Each phase must be distinctly different in volume/load/rest per the periodisation rules
+- Vary sessions by muscle group — never repeat same muscle group two days in a row
+- Each phase must be distinctly different in volume/load/rest
 - Warmup: exactly 2 exercises. Main: exactly 3 compounds. Accessories: exactly 2 isolation. Total = 7 exercises per day MAX.
-- Cues: MAXIMUM 8 words each — be concise (e.g. "Brace core, drive knees out." not a full paragraph)
-- Exercise names: clean standard names only, no equipment qualifiers
+- Cues: MAXIMUM 6 words each
+- Exercise names: clean standard names only
 - Do NOT add any text outside the JSON`;
 
     // ── Step 5: Call Groq ─────────────────────────────────────────────────────
@@ -1515,9 +1426,9 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
       console.error("[pulseGenerateFree] General JSON parse error:", parseErr.message, "| Raw (first 400):", raw.substring(0, 400));
       throw new HttpsError("internal", "Plan format error — please try again.");
     }
-    steps.push({ icon: "✅", text: "Chương trình 6 tuần của bạn đã sẵn sàng!" });
+    steps.push({ icon: "✅", text: "Chương trình 4 tuần của bạn đã sẵn sàng!" });
 
-    console.log(`[pulseGenerateFree] ⚡ 6-week program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
+    console.log(`[pulseGenerateFree] ⚡ 4-week program generated for ${name} (${level}, ${goal}, ${sessions} days/week)`);
     return { program, steps, clientName: name };
   }
 );
