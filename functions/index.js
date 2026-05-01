@@ -1358,67 +1358,123 @@ PHASE 3 — Peak (Week 5–6): Week 5 — 4-5 sets, increase intensity across th
     };
     const phaseGuidance = phaseGuidanceMap[goalGuidance] || phaseGuidanceMap[GOAL_GUIDANCE.general];
 
-    const daySkeleton = days
-      .map(d => `        "${d}": { "label": "...", "phases": [...] }`)
-      .join(",\n");
+    const prompt = `You are Pulse, an elite AI personal trainer. Generate a 6-week progressive training program as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
 
-    const prompt = `You are Pulse, an elite AI personal trainer. Create a FREE 6-week progressive training program structured as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
-
-CLIENT INFO:
-- Name: ${name}
-- Level: ${level}
-- Goal: ${goal}
+CLIENT:
+- Name: ${name} | Level: ${level} | Goal: ${goal}
 - Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
 ${bmiContext}${ageContext}
-
-GOAL APPROACH:
-${goalGuidance}
-
-LEVEL GUIDANCE:
-${levelGuidance}
-
-SPLIT STRUCTURE (same across all 3 phases):
-${splitGuidance}
-${exerciseLibraryContext}${styleContext}
-
-6-WEEK PERIODISATION:
+GOAL: ${goalGuidance}
+LEVEL: ${levelGuidance}
+SPLIT: ${splitGuidance}
+${exerciseLibraryContext}
+PERIODISATION (CRITICAL — each phase must be genuinely different):
 ${phaseGuidance}
 
-OUTPUT FORMAT — Return ONLY raw JSON, no markdown, no text outside JSON:
+CRITICAL JSON FORMAT — return ONLY raw JSON, no markdown, no text outside JSON.
+Each phase (phase1/phase2/phase3) has its own days with exercises appropriate for THAT phase's intensity.
+Each day → "phases" array → each phase → "exercises" array → each exercise: { "name", "setsReps", "tempo", "cue" }
+
+EXAMPLE (follow this exact structure for all ${sessions} days across all 3 phases):
 {
   "_type": "general6week",
   "phase1": {
-    "label": "Phase 1 — [goal-appropriate name] (Week 1–2)",
-${daySkeleton}
+    "label": "Phase 1 — Foundation (Week 1–2)",
+    "${days[0]}": {
+      "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
+      "phases": [
+        {
+          "tag": "warmup",
+          "name": "🔥 Warm-up",
+          "exercises": [
+            { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Mobilise hips before compound work." },
+            { "name": "Band Pull-apart", "setsReps": "2 x 15", "tempo": "", "cue": "Activate rear delts and scapula." },
+            { "name": "Goblet Squat", "setsReps": "2 x 8", "tempo": "slow", "cue": "Light weight. Establish squat depth and thoracic position." }
+          ]
+        },
+        {
+          "tag": "strength",
+          "name": "💪 Main Lifts",
+          "exercises": [
+            { "name": "Bench Press", "setsReps": "3 x 10", "tempo": "3-1-2", "cue": "65% effort. Focus on scapular retraction and elbow tuck." },
+            { "name": "Romanian Deadlift", "setsReps": "3 x 10", "tempo": "3-1-1", "cue": "Hinge at hips, soft knees. Feel hamstring tension at bottom." },
+            { "name": "Lat Pulldown", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Drive elbows to hips. Full stretch at top." }
+          ]
+        },
+        {
+          "tag": "accessories",
+          "name": "⚡ Accessories",
+          "exercises": [
+            { "name": "Incline DB Press", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "Upper chest focus. Controlled descent." },
+            { "name": "Cable Fly", "setsReps": "3 x 15", "tempo": "", "cue": "Squeeze at centre. Constant tension." }
+          ]
+        }
+      ]
+    }${days.length > 1 ? `,
+    "${days[1]}": {
+      "label": "Session B — ${days[1] === 'Wed' ? 'Pull' : 'Lower'}",
+      "phases": [
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+          { "name": "Hip Flexor Stretch", "setsReps": "2 x 30s each", "tempo": "", "cue": "Open hip flexors before pulling work." }
+        ]},
+        { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
+          { "name": "Bent-over Row", "setsReps": "3 x 10", "tempo": "2-1-2", "cue": "Chest up, drive elbows to hip. 65% load Phase 1." },
+          { "name": "Deadlift", "setsReps": "3 x 8", "tempo": "3-1-1", "cue": "Brace before pulling. Lock hips and shoulders simultaneously." }
+        ]},
+        { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
+          { "name": "Seated Row", "setsReps": "3 x 12", "tempo": "2-1-2", "cue": "Full stretch, squeeze scapula at finish." }
+        ]}
+      ]
+    }` : ''}
   },
   "phase2": {
-    "label": "Phase 2 — [goal-appropriate name] (Week 3–4)",
-${daySkeleton}
+    "label": "Phase 2 — Progressive Overload (Week 3–4)",
+    "${days[0]}": {
+      "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
+      "phases": [
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+          { "name": "Hip Circle", "setsReps": "2 x 10 each", "tempo": "", "cue": "Same warm-up, now moving at pace to raise HR faster." }
+        ]},
+        { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
+          { "name": "Bench Press", "setsReps": "4 x 8", "tempo": "3-1-2", "cue": "Add 2.5kg vs Phase 1. 75% effort. 90s rest." },
+          { "name": "Romanian Deadlift", "setsReps": "4 x 8", "tempo": "3-1-1", "cue": "Increase load by 5%. Maintain perfect hinge." },
+          { "name": "Lat Pulldown", "setsReps": "4 x 10", "tempo": "2-1-2", "cue": "Heavier load. Slow eccentric to maximise lat stretch." }
+        ]},
+        { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
+          { "name": "Incline DB Press", "setsReps": "3 x 10", "tempo": "2-0-2", "cue": "5% heavier than Phase 1. Superset with Cable Fly — rest 45s." },
+          { "name": "Cable Fly", "setsReps": "3 x 12", "tempo": "", "cue": "Supersetted with Incline DB. Constant tension throughout." }
+        ]}
+      ]
+    }
   },
   "phase3": {
-    "label": "Phase 3 — [goal-appropriate name] (Week 5–6)",
-${daySkeleton}
+    "label": "Phase 3 — Peak (Week 5–6)",
+    "${days[0]}": {
+      "label": "Session A — ${days[0] === 'Mon' ? 'Push' : 'Full Body'}",
+      "phases": [
+        { "tag": "warmup", "name": "🔥 Warm-up", "exercises": [
+          { "name": "Hip Circle", "setsReps": "2 x 10", "tempo": "", "cue": "Short warm-up, high intensity follows." }
+        ]},
+        { "tag": "strength", "name": "💪 Main Lifts", "exercises": [
+          { "name": "Bench Press", "setsReps": "5 x 5", "tempo": "2-1-1", "cue": "80-85% 1RM. 2 min rest. Last set: add drop set to failure." },
+          { "name": "Romanian Deadlift", "setsReps": "4 x 6", "tempo": "3-1-1", "cue": "Heavy. Brace hard. Week 6: add paused rep at knee height." },
+          { "name": "Lat Pulldown", "setsReps": "4 x 8", "tempo": "2-1-2", "cue": "Peak load. Slow eccentric 3s. Feel every rep." }
+        ]},
+        { "tag": "accessories", "name": "⚡ Accessories", "exercises": [
+          { "name": "Incline DB Press", "setsReps": "3 x 8", "tempo": "2-0-2", "cue": "Heaviest weight yet. Rest-pause if needed on last set." },
+          { "name": "Cable Fly", "setsReps": "3 x 10", "tempo": "", "cue": "Full range. Week 6: extend set by 5 partial reps at end." }
+        ]}
+      ]
+    }
   }
 }
 
-Each day structure:
-{
-  "label": "Session A — Push",
-  "phases": [
-    { "tag": "warmup",     "name": "🔥 Warm-up",    "exercises": [{ "name": "...", "setsReps": "...", "tempo": "", "cue": "Phase 1: ... | Phase 2: ... | Phase 3: ..." }] },
-    { "tag": "strength",   "name": "💪 Main Lifts",  "exercises": [{ "name": "...", "setsReps": "4 x 8", "tempo": "3-1-2", "cue": "Phase 1: 65% 1RM. Phase 2: +2.5kg. Phase 3: 80% 1RM, add drop set." }] },
-    { "tag": "accessories","name": "⚡ Accessories", "exercises": [{ "name": "...", "setsReps": "3 x 12", "tempo": "2-0-2", "cue": "..." }] }
-  ]
-}
-
-RULES:
-- Warm-up: 3-4 exercises (mobility + activation)
-- Main Lifts: 3-5 compound exercises matching the split focus
-- Accessories: 3-5 isolation / support exercises
-- The SAME exercises can appear across phases — the cue field shows how load/volume/rest changes each phase
-- Vary session focus logically — do NOT repeat the same muscle group two days in a row
-- BODY COMPOSITION RULES override goal if they conflict (BMI context above takes priority)
-- Exercise names must be clean standard names — NEVER append equipment qualifiers
+NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) inside EACH of phase1, phase2, phase3.
+- Use the split: ${splitGuidance}
+- Vary sessions by muscle group / movement pattern — never repeat same muscle group two days in a row
+- Each phase must be distinctly different in volume/load/rest per the periodisation rules
+- Warmup: 2-3 exercises. Main: 3-4 compounds. Accessories: 2-3 isolation
+- Exercise names: clean standard names only, no equipment qualifiers
 - Do NOT add any text outside the JSON`;
 
     // ── Step 5: Call Groq ─────────────────────────────────────────────────────
@@ -1427,7 +1483,7 @@ RULES:
     try {
       completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 5000,
+        max_tokens: 7000,
         temperature: 0.35,
         messages: [{ role: "user", content: prompt }],
       });
