@@ -225,7 +225,7 @@ function detectSplit(sessions, goalStr, notesStr) {
   }
 
   // Fat loss gets dedicated Zone 2 day(s) built into the split
-  const isFatLoss = /fat|loss|lean|cut|recomp|giảm|béo|mỡ/i.test(goalStr || "");
+  const isFatLoss = /fat[\s-]?loss|weight[\s-]?loss|lean(?:ing)?|cut(?:ting)?|recomp|giảm[\s-]?mỡ|giảm[\s-]?béo|giảm[\s-]?cân|béo|mỡ/i.test(goalStr || "");
   if (isFatLoss) {
     const fatLossSplits = {
       3: "Push / Pull / Legs — all 3 days are strength sessions. Zone 2 cardio (30–45 min, easy pace) must be recommended in cues for 2 rest days per week (e.g. Tue + Thu or Sat). Each strength session ends with a 10–15 min conditioning finisher.",
@@ -425,15 +425,16 @@ exports.generateProgram = onCall(
 
     // ── Age context ───────────────────────────────────────────────────────────
     let ageContext = "";
-    if (age) {
-      if (age < 25) {
-        ageContext = `\nAGE (${age}): Young athlete — can handle high volume and frequency. Fast recovery. Can include intensity techniques (supersets, drop sets).`;
-      } else if (age <= 40) {
-        ageContext = `\nAGE (${age}): Standard adult — balanced volume and intensity. Standard warm-up protocol.`;
-      } else if (age <= 55) {
-        ageContext = `\nAGE (${age}): 40+ athlete — extend warm-up to 10-12 min, include extra mobility work. Reduce max-effort frequency. Add 30s extra rest between sets. Avoid high-impact plyometrics. Prioritise joint health cues.`;
+    const numAge = age ? parseInt(age, 10) : null;
+    if (numAge && !isNaN(numAge) && numAge > 0) {
+      if (numAge < 25) {
+        ageContext = `\nAGE (${numAge}): Young athlete — can handle high volume and frequency. Fast recovery. Can include intensity techniques (supersets, drop sets).`;
+      } else if (numAge <= 40) {
+        ageContext = `\nAGE (${numAge}): Standard adult — balanced volume and intensity. Standard warm-up protocol.`;
+      } else if (numAge <= 55) {
+        ageContext = `\nAGE (${numAge}): 40+ athlete — extend warm-up to 10-12 min, include extra mobility work. Reduce max-effort frequency. Add 30s extra rest between sets. Avoid high-impact plyometrics. Prioritise joint health cues.`;
       } else {
-        ageContext = `\nAGE (${age}): 55+ athlete — CRITICAL: prioritise mobility, balance, injury prevention. Longer warm-up (12-15 min), lower intensity (RPE 6-7 max), avoid heavy axial loading. Include balance drills. Rest 2-3 min between sets. Prefer machines/cables over barbells where possible.`;
+        ageContext = `\nAGE (${numAge}): 55+ athlete — CRITICAL: prioritise mobility, balance, injury prevention. Longer warm-up (12-15 min), lower intensity (RPE 6-7 max), avoid heavy axial loading. Include balance drills. Rest 2-3 min between sets. Prefer machines/cables over barbells where possible.`;
       }
     }
 
@@ -537,9 +538,7 @@ Each day must follow this EXACT structure:
   ]
 }
 
-${fatLossSpecificRules}
-${muscleSpecificRules}
-RULES
+${fatLossSpecificRules || muscleSpecificRules ? `${fatLossSpecificRules}${muscleSpecificRules}\n` : ""}RULES
 - Warm-up: 3-4 exercises (5-10 min total). If client has injury, include rehab/activation exercises here.
 - Main Lifts: 3-5 compound exercises
 - Accessories: 3-5 isolation / support exercises
