@@ -91,6 +91,7 @@ let _lastPickedExercise = null;
 let _dashVolumeChart = null;
 let _progChart = null;
 let _progPills = [];
+let _dashGen = 0; // generation counter — discards stale renderCoachDashboard() resolutions
 let exerciseLoads = {};
 let setLoads = {}; // exerciseKey → [kg_set1, kg_set2, ...]
 let strengthHistory = {}; // exerciseKey → [{date, kg}] sorted newest first
@@ -3038,8 +3039,10 @@ async function renderCoachDashboard() {
   if (userRole !== 'coach') { wrap.style.display = 'none'; return; }
   if (!activeClient) { wrap.innerHTML = '<div class="cd-empty">Chọn client để xem dashboard.</div>'; return; }
   wrap.style.display = 'block';
+  const gen = ++_dashGen;
 
   const hist = await getHistory();
+  if (gen !== _dashGen) return; // stale — newer switchClient fired while we were awaiting
   if (hist.length === 0) {
     wrap.innerHTML = '<div class="cd-empty">Chưa có buổi tập nào được ghi nhận.</div>';
     return;
