@@ -555,7 +555,7 @@ RULES
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 4096,
+      max_tokens: 6000,
       temperature: 0.4,
       messages: [{ role: "user", content: prompt }],
     });
@@ -1249,7 +1249,7 @@ EXERCISE NAMING RULE: Use standard, clean exercise names only. Do NOT append equ
       const daySchedule = Object.entries(sessionDays)
         .map(([d, type]) => `- ${d}: ${type}`).join("\n");
 
-      const hyroxPrompt = `You are an expert HYROX coach. Generate a complete 6-week HYROX prep program as 3 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4, Phase 3 = Week 5-6).
+      const hyroxPrompt = `You are an expert HYROX coach. Generate a complete 4-week HYROX prep program as 2 phases (Phase 1 = Week 1-2, Phase 2 = Week 3-4).
 
 ATHLETE:
 - Name: ${name} | Level: ${level} | Gender: ${gender || "N/A"} | Age: ${age || "N/A"}
@@ -1385,8 +1385,8 @@ Cues: max 6 words each. Use the periodisation rules to make phases genuinely dif
         throw new HttpsError("internal", "HYROX plan: AI response format error. Please try again.");
       }
 
-      steps.push({ icon: "✅", text: "Your 6-week HYROX plan is ready!" });
-      console.log(`[pulseGenerateFree] 🏆 6-week HYROX plan generated for ${name} (${sessions} days/week, goal: ${hyroxGoalInput})`);
+      steps.push({ icon: "✅", text: "Your 4-week HYROX plan is ready!" });
+      console.log(`[pulseGenerateFree] 🏆 4-week HYROX plan generated for ${name} (${sessions} days/week, goal: ${hyroxGoalInput})`);
       return { program: hyroxProgram, steps, clientName: name };
     }
     // ── END HYROX 6-WEEK PATH ─────────────────────────────────────────────────
