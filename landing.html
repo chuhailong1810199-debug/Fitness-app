@@ -1339,14 +1339,14 @@
     <p class="section-eyebrow">Key Features</p>
 
     <!-- Tab switcher -->
-    <div class="feat-tabs">
-      <button class="feat-tab active" onclick="switchFeat(0)">
+    <div class="feat-tabs" role="tablist" aria-label="App features">
+      <button class="feat-tab active" onclick="switchFeat(0)" role="tab" aria-selected="true" aria-controls="feat-0" id="feat-tab-0">
         <span class="feat-tab-num">01</span>Program
       </button>
-      <button class="feat-tab" onclick="switchFeat(1)">
+      <button class="feat-tab" onclick="switchFeat(1)" role="tab" aria-selected="false" aria-controls="feat-1" id="feat-tab-1">
         <span class="feat-tab-num">02</span>Progress
       </button>
-      <button class="feat-tab" onclick="switchFeat(2)">
+      <button class="feat-tab" onclick="switchFeat(2)" role="tab" aria-selected="false" aria-controls="feat-2" id="feat-tab-2">
         <span class="feat-tab-num">03</span>Strength
       </button>
     </div>
@@ -1355,7 +1355,7 @@
     <div class="feat-panels">
 
       <!-- Panel 01: Exercise flow -->
-      <div class="feat-panel active anim" id="feat-0">
+      <div class="feat-panel active anim" id="feat-0" role="tabpanel" aria-labelledby="feat-tab-0">
         <div class="feat-info">
           <div class="feat-num">01</div>
           <h3 class="feat-title">Personalized Program</h3>
@@ -1393,7 +1393,7 @@
       </div>
 
       <!-- Panel 02: Progress tracking -->
-      <div class="feat-panel" id="feat-1">
+      <div class="feat-panel" id="feat-1" role="tabpanel" aria-labelledby="feat-tab-1">
         <div class="feat-info">
           <div class="feat-num">02</div>
           <h3 class="feat-title">Real Progress Tracking</h3>
@@ -1431,7 +1431,7 @@
       </div>
 
       <!-- Panel 03: Strength progression -->
-      <div class="feat-panel" id="feat-2">
+      <div class="feat-panel" id="feat-2" role="tabpanel" aria-labelledby="feat-tab-2">
         <div class="feat-info">
           <div class="feat-num">03</div>
           <h3 class="feat-title">Strength Progression</h3>
@@ -1912,11 +1912,11 @@
   function switchFeat(index) {
     var tabs   = document.querySelectorAll('.feat-tab');
     var panels = document.querySelectorAll('.feat-panel');
-    tabs.forEach(function (t, i) { t.classList.toggle('active', i === index); });
-    panels.forEach(function (p, i) {
-      // Remove both active + anim first
-      p.classList.remove('active', 'anim');
+    tabs.forEach(function (t, i) {
+      t.classList.toggle('active', i === index);
+      t.setAttribute('aria-selected', i === index ? 'true' : 'false');
     });
+    panels.forEach(function (p) { p.classList.remove('active', 'anim'); });
     var target = panels[index];
     if (!target) return;
     target.classList.add('active');
