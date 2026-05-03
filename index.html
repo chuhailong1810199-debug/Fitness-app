@@ -3040,13 +3040,16 @@ async function renderClientOverview() {
       const sessions = snap.docs || [];
       const lastDoc = sessions[0];
       const lastDate = lastDoc ? (lastDoc.data().date?.toDate?.() || null) : null;
-      // Count unique days only (avoid double-counting same day finished multiple times)
+      // Count unique (date + day) pairs — handles 2 sessions same calendar day (different workout days)
+      // but avoids double-counting same workout day re-submitted multiple times
       const uniqueDays = new Set(
         sessions
           .filter(d => (d.data().done || 0) > 0)
           .map(d => {
             const dt = d.data().date?.toDate?.();
-            return dt ? dt.toISOString().slice(0, 10) : null;
+            const dateStr = dt ? dt.toISOString().slice(0, 10) : null;
+            const dayStr = d.data().day || '';
+            return dateStr ? `${dateStr}_${dayStr}` : null;
           })
           .filter(Boolean)
       );
