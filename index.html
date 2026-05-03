@@ -436,7 +436,7 @@ function openEditClientModal() {
   document.getElementById('edit-client-email').value = activeClient.email || '';
   document.getElementById('edit-client-level').value = activeClient.level || 'Advanced';
   document.getElementById('edit-client-goal').value  = activeClient.goal  || '';
-  document.getElementById('edit-client-modal').classList.add('open');
+  openModalById('edit-client-modal');
 }
 
 async function saveClientInfo() {
@@ -550,7 +550,7 @@ async function launchPulse() {
   preview.style.display = 'none';
   actions.style.display = 'none';
   preview.innerHTML = '';
-  modal.classList.add('open');
+  openModalById('ai-review-modal');
   if (genBtn) genBtn.disabled = true;
 
   try {
@@ -613,7 +613,7 @@ async function openAIReviewModal(clientId, clientData) {
   preview.style.display = 'none';
   actions.style.display = 'none';
   preview.innerHTML = '';
-  modal.classList.add('open');
+  openModalById('ai-review-modal');
 
   // Animate steps
   const steps = [
@@ -1957,11 +1957,58 @@ function openModal(pi, ei) {
       sparkWrap.style.display = 'none';
     }
   }
-  document.getElementById('modal').classList.add('open');
+  const modalEl = document.getElementById('modal');
+  modalEl.classList.add('open');
+  trapFocus(modalEl);
 }
 function closeModal(id) {
-  document.getElementById(id)?.classList.remove('open');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+  returnFocus(el);
 }
+
+// ── Focus management ──────────────────────────────────
+var _focusReturnMap = {};
+var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+function trapFocus(overlay) {
+  _focusReturnMap[overlay.id] = document.activeElement;
+  var first = overlay.querySelector(FOCUSABLE);
+  if (first) first.focus();
+  overlay._trapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = Array.from(overlay.querySelectorAll(FOCUSABLE));
+    if (!focusable.length) return;
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === focusable[0]) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); focusable[0].focus(); }
+    }
+  };
+  overlay.addEventListener('keydown', overlay._trapHandler);
+}
+function returnFocus(overlay) {
+  if (overlay._trapHandler) {
+    overlay.removeEventListener('keydown', overlay._trapHandler);
+    overlay._trapHandler = null;
+  }
+  var prev = _focusReturnMap[overlay.id];
+  if (prev && prev.focus) prev.focus();
+  delete _focusReturnMap[overlay.id];
+}
+function openModalById(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  trapFocus(el);
+}
+// Global ESC handler for all modals
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  var open = document.querySelector('.modal-overlay.open');
+  if (open) closeModal(open.id);
+});
 
 function startEditSetsReps() {
   const current = document.getElementById('modal-setsreps').textContent;
@@ -2510,7 +2557,7 @@ async function openUpdateModal() {
       if (el && last[k] != null) el.value = last[k];
     });
   }
-  document.getElementById('update-modal').classList.add('open');
+  openModalById('update-modal');
   document.getElementById('checkpoint-banner').classList.add('hidden');
 }
 
@@ -2788,12 +2835,11 @@ function openExercisePicker(pi) {
   document.getElementById('picker-muscle').value = '';
   document.getElementById('picker-tool').value   = '';
   document.getElementById('picker-diff').value   = '';
-  document.getElementById('exercise-picker-modal').classList.add('open');
-  setTimeout(() => document.getElementById('picker-search').focus(), 100);
+  openModalById('exercise-picker-modal');
 }
 
 function closeExercisePicker() {
-  document.getElementById('exercise-picker-modal').classList.remove('open');
+  closeModal('exercise-picker-modal');
 }
 
 function renderPickerResults() {
@@ -4367,6 +4413,11 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .exercise-note-input:focus{border-color:rgba(255,255,255,0.35);}
 .exercise-note-input::placeholder{color:rgba(255,255,255,0.3);}
 .exercise-note-display{margin:4px 12px 12px;padding:8px 12px;background:rgba(255,255,255,0.04);border-left:2px solid rgba(255,255,255,0.25);border-radius:0 8px 8px 0;font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5;}
+/* Focus-visible rings — overrides all outline:none rules above */
+:focus-visible{outline:2px solid oklch(68% .16 295);outline-offset:2px;border-radius:3px;}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:oklch(68% .16 295 / 0.8);box-shadow:0 0 0 3px oklch(68% .16 295 / 0.18);}
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -4635,7 +4686,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <span class="client-label">Client</span>
     <select class="client-select" id="client-select" onchange="switchClient(this.value)" ontouchend="setTimeout(()=>switchClient(this.value),100)"><option>Loading...</option></select>
     <span class="client-badge" id="client-level">—</span>
-    <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
+    <button class="add-client-btn" onclick="openModalById('add-client-modal')">+ Add</button>
     <button class="add-client-btn" onclick="openEditClientModal()" style="background:#1a0c06;border-color:rgba(255,255,255,0.60);color:rgba(255,255,255,0.88);">Edit</button>
     <button class="add-client-btn" onclick="openClientProfile()" style="background:#0a1a2e;border-color:#2a3a4e;color:#4488ff;">Profile</button>
   </div>
@@ -4661,7 +4712,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="edit-mode-bar">
       <span class="edit-mode-label">Edit Program</span>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="add-day-btn" onclick="document.getElementById('add-day-modal').classList.add('open')">+ Day</button>
+        <button class="add-day-btn" onclick="openModalById('add-day-modal')">+ Day</button>
         <button class="pulse-gen-btn" id="pulse-gen-btn" onclick="launchPulse()" title="Generate next cycle with Pulse AI">⚡ Pulse</button>
         <div class="edit-toggle" onclick="toggleEditMode()">
           <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
@@ -4809,7 +4860,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- EXERCISE INFO MODAL -->
-<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal('modal')">
+<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-name" onclick="if(event.target===this)closeModal('modal')">
   <div class="modal">
     <div class="modal-name" id="modal-name"></div>
     <div class="modal-phase" id="modal-phase"></div>
@@ -4839,9 +4890,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- UPDATE MEASUREMENT MODAL -->
-<div class="modal-overlay" id="update-modal" onclick="if(event.target===this)closeModal('update-modal')">
+<div class="modal-overlay" id="update-modal" role="dialog" aria-modal="true" aria-labelledby="update-modal-title" onclick="if(event.target===this)closeModal('update-modal')">
   <div class="modal">
-    <div class="modal-title">Checkpoint Update</div>
+    <div class="modal-title" id="update-modal-title">Checkpoint Update</div>
     <div class="modal-sub" id="update-modal-sub">Nhập số đo mới từ InBody.</div>
     <div class="baseline-row">
       <div class="baseline-group"><label class="baseline-label">Cân nặng (kg) *</label><input class="baseline-input" id="up-weight" type="number" placeholder="70" step="0.1"></div>
@@ -4864,9 +4915,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- EDIT CLIENT MODAL (coach only) -->
-<div class="modal-overlay" id="edit-client-modal" onclick="if(event.target===this)closeModal('edit-client-modal')">
+<div class="modal-overlay" id="edit-client-modal" role="dialog" aria-modal="true" aria-labelledby="edit-client-modal-title" onclick="if(event.target===this)closeModal('edit-client-modal')">
   <div class="modal">
-    <div class="modal-title">Edit Client Info</div>
+    <div class="modal-title" id="edit-client-modal-title">Edit Client Info</div>
     <div class="modal-sub">Cập nhật thông tin đăng nhập và profile của khách.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="edit-client-name" placeholder="Thai Son"></div>
@@ -4886,9 +4937,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- ADD CLIENT MODAL (coach only) -->
-<div class="modal-overlay" id="add-client-modal" onclick="if(event.target===this)closeModal('add-client-modal')">
+<div class="modal-overlay" id="add-client-modal" role="dialog" aria-modal="true" aria-labelledby="add-client-modal-title" onclick="if(event.target===this)closeModal('add-client-modal')">
   <div class="modal">
-    <div class="modal-title">Add New Client</div>
+    <div class="modal-title" id="add-client-modal-title">Add New Client</div>
     <div class="modal-sub">Client sẽ dùng Gmail để login. AI sẽ tự động generate program sau khi tạo.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="new-client-name" placeholder="Thai Son"></div>
@@ -4926,7 +4977,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- PULSE AI REVIEW MODAL -->
-<div class="modal-overlay" id="ai-review-modal">
+<div class="modal-overlay" id="ai-review-modal" role="dialog" aria-modal="true" aria-label="Pulse AI Program Generator">
   <div class="modal" style="max-width:560px;max-height:86vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:16px;">
 
     <!-- Pulse Header -->
@@ -5098,9 +5149,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- ADD DAY MODAL -->
-<div class="modal-overlay" id="add-day-modal" onclick="if(event.target===this)closeModal('add-day-modal')">
+<div class="modal-overlay" id="add-day-modal" role="dialog" aria-modal="true" aria-labelledby="add-day-modal-title" onclick="if(event.target===this)closeModal('add-day-modal')">
   <div class="modal">
-    <div class="modal-title">Add Training Day</div>
+    <div class="modal-title" id="add-day-modal-title">Add Training Day</div>
     <div class="modal-sub">Thêm ngày tập mới vào lịch.</div>
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Day</label>
@@ -5120,9 +5171,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
 
 <!-- EXERCISE PICKER MODAL (Bước 6) -->
-<div class="modal-overlay" id="exercise-picker-modal" onclick="if(event.target===this)closeExercisePicker()">
+<div class="modal-overlay" id="exercise-picker-modal" role="dialog" aria-modal="true" aria-labelledby="exercise-picker-modal-title" onclick="if(event.target===this)closeExercisePicker()">
   <div class="modal picker-modal">
-    <div class="modal-title">Chọn bài tập</div>
+    <div class="modal-title" id="exercise-picker-modal-title">Chọn bài tập</div>
     <input class="form-input" id="picker-search" placeholder="Tìm tên bài tập..." oninput="renderPickerResults()" style="margin-bottom:10px">
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <select class="form-select" id="picker-muscle" onchange="renderPickerResults()" style="flex:1">
