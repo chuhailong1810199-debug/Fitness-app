@@ -466,15 +466,23 @@
     .card-slider::-webkit-scrollbar { display: none; }
     /* dots */
     .slider-dots {
-      display: flex; gap: 7px; justify-content: center; margin-top: 24px;
+      display: flex; gap: 0; justify-content: center; margin-top: 14px;
     }
     .slider-dot {
+      /* 44×44px touch target; visual dot via ::after */
+      width: 44px; height: 44px; border-radius: 50%;
+      background: none; border: none;
+      cursor: pointer; flex-shrink: 0;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      transition: none;
+    }
+    .slider-dot::after {
+      content: '';
       width: 6px; height: 6px; border-radius: 50%;
       background: var(--border-md);
-      transition: background 0.2s, width 0.25s;
-      cursor: pointer; flex-shrink: 0;
+      transition: background 0.2s, width 0.25s, border-radius 0.25s;
     }
-    .slider-dot.active { background: var(--accent-lg); width: 18px; border-radius: 3px; }
+    .slider-dot.active::after { background: var(--accent-lg); width: 18px; border-radius: 3px; }
     /* service cards */
     .service-card {
       flex: 0 0 min(320px, 80vw);
