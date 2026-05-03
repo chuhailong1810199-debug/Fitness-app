@@ -926,7 +926,7 @@
       padding: 12px 14px;
       font: inherit; font-size: 16px;
       transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
-      outline: none;
+      outline: none; /* focus-visible ring set below */
     }
     input:focus, select:focus, textarea:focus {
       border-color: oklch(51% .23 295 / 0.55);
@@ -1088,6 +1088,29 @@
       nav { padding-inline: 14px; }
       .hero-content { padding-inline: 14px; }
       section, footer { padding-inline: 14px; }
+    }
+
+    /* ── Focus-visible rings ─────────────────────────── */
+    :focus-visible {
+      outline: 2px solid var(--accent-lg);
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+    /* Form inputs get a border-based ring instead of outline */
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      border-color: oklch(51% .23 295 / 0.80);
+      box-shadow: 0 0 0 3px oklch(51% .23 295 / 0.20);
+    }
+
+    /* ── Reduced motion ──────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
     }
   </style>
 </head>
