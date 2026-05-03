@@ -2386,11 +2386,12 @@ function centerActiveNavTab() {
 }
 
 function showPage(page) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  const tabMap = { workout: 0, progress: 1, log: 2 };
-  if (tabMap[page] !== undefined) {
-    document.querySelectorAll('.nav-tab')[tabMap[page]]?.classList.add('active');
-  }
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.remove('active');
+    t.removeAttribute('aria-current');
+  });
+  const tab = document.getElementById('nav-' + page);
+  if (tab) { tab.classList.add('active'); tab.setAttribute('aria-current', 'page'); }
   centerActiveNavTab();
   document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
   document.getElementById('progress-page').classList.toggle('active', page === 'progress');
@@ -3623,7 +3624,7 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 
 /* NAV */
 .nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.12);justify-content:center;}
-.nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s,background .15s;background:none;border-top:none;border-left:none;border-right:none;border-radius:0;}
 .nav-tab.active{color:oklch(68% .16 295);border-bottom-color:oklch(68% .16 295);}
 .header{margin-bottom:1rem;}
 h1{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;text-transform:none;letter-spacing:1px;color:#fff;}
@@ -4639,11 +4640,11 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <button class="add-client-btn" onclick="openClientProfile()" style="background:#0a1a2e;border-color:#2a3a4e;color:#4488ff;">Profile</button>
   </div>
 
-  <div class="nav">
-    <div class="nav-tab active" onclick="showPage('workout')">Workout</div>
-    <div class="nav-tab" onclick="showPage('progress')">Progress</div>
-    <div class="nav-tab" onclick="showPage('log')">Log</div>
-  </div>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="nav-tab active" onclick="showPage('workout')" aria-current="page" id="nav-workout">Workout</button>
+    <button class="nav-tab" onclick="showPage('progress')" id="nav-progress">Progress</button>
+    <button class="nav-tab" onclick="showPage('log')" id="nav-log">Log</button>
+  </nav>
 
   <!-- WORKOUT PAGE -->
   <div class="workout-page" id="workout-page">
