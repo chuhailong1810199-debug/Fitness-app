@@ -2989,17 +2989,27 @@ async function renderClientOverview() {
         collection(db, 'clients', client.id, 'workoutHistory'),
         where('date', '>=', weekStart),
         orderBy('date', 'desc'),
-        limit(20)
+        limit(50)
       ));
       const sessions = snap.docs || [];
       const lastDoc = sessions[0];
       const lastDate = lastDoc ? (lastDoc.data().date?.toDate?.() || null) : null;
+      // Count unique days only (avoid double-counting same day finished multiple times)
+      const uniqueDays = new Set(
+        sessions
+          .filter(d => (d.data().done || 0) > 0)
+          .map(d => {
+            const dt = d.data().date?.toDate?.();
+            return dt ? dt.toISOString().slice(0, 10) : null;
+          })
+          .filter(Boolean)
+      );
       const spw = parseInt(client.sessionsPerWeek) || 0;
-      const adherencePct = spw > 0 ? Math.min(100, Math.round(sessions.length / spw * 100)) : null;
+      const adherencePct = spw > 0 ? Math.min(100, Math.round(uniqueDays.size / spw * 100)) : null;
       const status = adherencePct === null ? 'unknown'
         : adherencePct >= 80 ? 'on-track'
         : adherencePct >= 40 ? 'at-risk' : 'inactive';
-      return { id: client.id, name: client.name, sessionsThisWeek: sessions.length, lastDate, adherencePct, status };
+      return { id: client.id, name: client.name, sessionsThisWeek: uniqueDays.size, lastDate, adherencePct, status };
     })
   );
 
