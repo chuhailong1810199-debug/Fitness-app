@@ -44,6 +44,14 @@ service cloud.firestore {
       allow read: if isCoach();
     }
 
+    // ── EXERCISES collection (thư viện bài tập) ──────────
+    // Tất cả user đã login đều được đọc
+    // Chỉ coach mới được thêm/sửa/xóa
+    match /exercises/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isCoach();
+    }
+
     // ── CLIENTS collection ────────────────────────────────
     // Coach: full access tất cả clients
     // Client: chỉ đọc/ghi data của chính mình (khớp email)
