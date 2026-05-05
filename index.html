@@ -89,13 +89,9 @@ let _exerciseCacheLoaded = false;
 let _pickerPhaseIndex = null;
 let _lastPickedExercise = null;
 let _dashVolumeChart = null;
-let _progChart = null;
-let _progPills = [];
-let _dashGen = 0; // generation counter — discards stale renderCoachDashboard() resolutions
 let exerciseLoads = {};
 let setLoads = {}; // exerciseKey → [kg_set1, kg_set2, ...]
 let strengthHistory = {}; // exerciseKey → [{date, kg}] sorted newest first
-let progressionHistory = {}; // nameKey → [{date, kg, peakLoadKg, tonnage, exerciseName}]
 
 function parseSetsCount(setsReps) {
   if (!setsReps) return 3;
@@ -351,7 +347,6 @@ async function loadApp() {
   renderExercises();
   await renderStats();
   subscribeProgram();
-  if (userRole === 'coach') renderClientOverview(); // async, runs once on init
   // Show intro slides after login (once per session)
   if (!sessionStorage.getItem('slides-seen')) {
     const slidesEl = document.getElementById('slides-screen');
@@ -411,9 +406,6 @@ async function switchClient(id) {
   const next = clientsData.find(c => c.id === id) || null;
   if (!next) return;
 
-  // Destroy progression chart synchronously before any async work
-  if (_progChart) { try { _progChart.destroy(); } catch(e) {} _progChart = null; }
-
   // ── Fade out ──
   const pages = document.querySelectorAll('.workout-page, .progress-page, .log-page');
   pages.forEach(p => p.classList.add('switching'));
@@ -426,7 +418,6 @@ async function switchClient(id) {
   if (_programUnsub) _programUnsub();
   subscribeProgram();
   await hydrateExerciseLoadsForActiveDay();
-  await loadStrengthHistory();
   renderExercises();
   await renderStats();
   renderCoachDashboard();
@@ -445,7 +436,7 @@ function openEditClientModal() {
   document.getElementById('edit-client-email').value = activeClient.email || '';
   document.getElementById('edit-client-level').value = activeClient.level || 'Advanced';
   document.getElementById('edit-client-goal').value  = activeClient.goal  || '';
-  openModalById('edit-client-modal');
+  document.getElementById('edit-client-modal').classList.add('open');
 }
 
 async function saveClientInfo() {
@@ -559,7 +550,7 @@ async function launchPulse() {
   preview.style.display = 'none';
   actions.style.display = 'none';
   preview.innerHTML = '';
-  openModalById('ai-review-modal');
+  modal.classList.add('open');
   if (genBtn) genBtn.disabled = true;
 
   try {
@@ -622,7 +613,7 @@ async function openAIReviewModal(clientId, clientData) {
   preview.style.display = 'none';
   actions.style.display = 'none';
   preview.innerHTML = '';
-  openModalById('ai-review-modal');
+  modal.classList.add('open');
 
   // Animate steps
   const steps = [
@@ -913,10 +904,8 @@ async function finishWorkout() {
           const tonnage = perSet.length > 0
             ? Math.round(perSet.reduce((s, kg) => s + kg * reps, 0))
             : Math.round(sets * reps * loadKg);
-          const nameKey = (ex.name || '').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40);
-          const peakLoadKg = perSet.length > 0 ? Math.max(...perSet) : loadKg;
           const exerciseRef = doc(db, 'clients', activeClient.id, 'workoutHistory', sessionRef.id, 'exercises', exerciseKey);
-          batch.set(exerciseRef, { exerciseKey, nameKey, loadKg, peakLoadKg, exerciseName: ex.name || '', day: activeDay, sets, reps, tonnage, setLoads: perSet });
+          batch.set(exerciseRef, { exerciseKey, loadKg, exerciseName: ex.name || '', day: activeDay, sets, reps, tonnage, setLoads: perSet });
           writeCount++;
         });
       });
@@ -1496,7 +1485,6 @@ async function hydrateExerciseLoadsForActiveDay() {
 async function loadStrengthHistory() {
   if (!activeClient) return;
   strengthHistory = {};
-  progressionHistory = {};
   try {
     const histSnap = await getDocs(query(
       collection(db, 'clients', activeClient.id, 'workoutHistory'),
@@ -1521,26 +1509,17 @@ async function loadStrengthHistory() {
 
     results.forEach(({ date, exSnap }) => {
       exSnap.forEach(d => {
-        const { exerciseKey, nameKey, loadKg, peakLoadKg, tonnage, exerciseName } = d.data();
+        const { exerciseKey, loadKg } = d.data();
         const kg = parseFloat(loadKg);
         if (!exerciseKey || !Number.isFinite(kg) || kg <= 0) return;
         if (!strengthHistory[exerciseKey]) strengthHistory[exerciseKey] = [];
         strengthHistory[exerciseKey].push({ date, kg });
-        // Also index by nameKey for progression chart (compute from exerciseName for old records)
-        const nk = nameKey || (exerciseName ? exerciseName.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40) : null);
-        if (nk) {
-          if (!progressionHistory[nk]) progressionHistory[nk] = [];
-          progressionHistory[nk].push({ date, kg, peakLoadKg: parseFloat(peakLoadKg) || kg, tonnage: tonnage || 0, exerciseName: exerciseName || '' });
-        }
       });
     });
 
     // Sort each array newest → oldest
     Object.keys(strengthHistory).forEach(k => {
       strengthHistory[k].sort((a, b) => b.date - a.date);
-    });
-    Object.keys(progressionHistory).forEach(k => {
-      progressionHistory[k].sort((a, b) => b.date - a.date);
     });
   } catch (e) { console.warn('loadStrengthHistory:', e); }
 }
@@ -1629,7 +1608,7 @@ function renderExercises() {
     } else {
       html += `<span class="phase-tag ${phaseTagClass[phase.tag]||'phase-warmup'}">${phase.name}</span></div>`;
     }
-    html += phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${escHtml(phase.note)}</div></div></div>` : '';
+    html += phase.note ? `<div class="trainer-note-card"><span class="trainer-note-icon">💡</span><div><div class="trainer-note-label">Trainer Note</div><div class="trainer-note-text">${phase.note}</div></div></div>` : '';
     if (!editMode) {
       // (unreachable in edit mode — kept for safety)
       html += `<div class="exercise-flow">`;
@@ -1647,7 +1626,6 @@ function renderExercises() {
           <div class="node-name${done?' done':''}" onclick="openModal(${pi},${ei})">${ex.name}</div>
           <div class="node-sets">${ex.setsReps}${ex.tempo?' · '+ex.tempo:''}</div>
           ${getStrengthBadge(key)}
-          ${(() => { const s = getProgressionSuggestion(key); return s.suggest ? `<div class="overload-nudge">→ Try ${s.nextKg}kg</div>` : ''; })()}
           <div class="node-setloads">
             ${Array.from({length: parseSetsCount(ex.setsReps)}, (_,si) => `
               <div class="set-load-row">
@@ -1966,57 +1944,11 @@ function openModal(pi, ei) {
       sparkWrap.style.display = 'none';
     }
   }
-  modalEl.classList.add('open');
-  trapFocus(modalEl);
+  document.getElementById('modal').classList.add('open');
 }
 function closeModal(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove('open');
-  returnFocus(el);
+  document.getElementById(id)?.classList.remove('open');
 }
-
-// ── Focus management ──────────────────────────────────
-var _focusReturnMap = {};
-var FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-function trapFocus(overlay) {
-  _focusReturnMap[overlay.id] = document.activeElement;
-  var first = overlay.querySelector(FOCUSABLE);
-  if (first) first.focus();
-  overlay._trapHandler = function(e) {
-    if (e.key !== 'Tab') return;
-    var focusable = Array.from(overlay.querySelectorAll(FOCUSABLE));
-    if (!focusable.length) return;
-    var last = focusable[focusable.length - 1];
-    if (e.shiftKey) {
-      if (document.activeElement === focusable[0]) { e.preventDefault(); last.focus(); }
-    } else {
-      if (document.activeElement === last) { e.preventDefault(); focusable[0].focus(); }
-    }
-  };
-  overlay.addEventListener('keydown', overlay._trapHandler);
-}
-function returnFocus(overlay) {
-  if (overlay._trapHandler) {
-    overlay.removeEventListener('keydown', overlay._trapHandler);
-    overlay._trapHandler = null;
-  }
-  var prev = _focusReturnMap[overlay.id];
-  if (prev && prev.focus) prev.focus();
-  delete _focusReturnMap[overlay.id];
-}
-function openModalById(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('open');
-  trapFocus(el);
-}
-// Global ESC handler for all modals
-document.addEventListener('keydown', function(e) {
-  if (e.key !== 'Escape') return;
-  var open = document.querySelector('.modal-overlay.open');
-  if (open) closeModal(open.id);
-});
 
 function startEditSetsReps() {
   const current = document.getElementById('modal-setsreps').textContent;
@@ -2441,12 +2373,11 @@ function centerActiveNavTab() {
 }
 
 function showPage(page) {
-  document.querySelectorAll('.nav-tab').forEach(t => {
-    t.classList.remove('active');
-    t.removeAttribute('aria-current');
-  });
-  const tab = document.getElementById('nav-' + page);
-  if (tab) { tab.classList.add('active'); tab.setAttribute('aria-current', 'page'); }
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tabMap = { workout: 0, progress: 1, log: 2 };
+  if (tabMap[page] !== undefined) {
+    document.querySelectorAll('.nav-tab')[tabMap[page]]?.classList.add('active');
+  }
   centerActiveNavTab();
   document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
   document.getElementById('progress-page').classList.toggle('active', page === 'progress');
@@ -2565,7 +2496,7 @@ async function openUpdateModal() {
       if (el && last[k] != null) el.value = last[k];
     });
   }
-  openModalById('update-modal');
+  document.getElementById('update-modal').classList.add('open');
   document.getElementById('checkpoint-banner').classList.add('hidden');
 }
 
@@ -2843,11 +2774,12 @@ function openExercisePicker(pi) {
   document.getElementById('picker-muscle').value = '';
   document.getElementById('picker-tool').value   = '';
   document.getElementById('picker-diff').value   = '';
-  openModalById('exercise-picker-modal');
+  document.getElementById('exercise-picker-modal').classList.add('open');
+  setTimeout(() => document.getElementById('picker-search').focus(), 100);
 }
 
 function closeExercisePicker() {
-  closeModal('exercise-picker-modal');
+  document.getElementById('exercise-picker-modal').classList.remove('open');
 }
 
 function renderPickerResults() {
@@ -2908,200 +2840,14 @@ function selectExercise(name) {
 }
 
 // ── COACH DASHBOARD (Bước 5) ───────────────────────────
-// ── ISO week string (YYYY-Www), tested at week 52/53 boundary ─
-function isoWeekStr(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2,'0')}`;
-}
-
-// Progression chart data from in-memory progressionHistory
-function getProgressionChartData(selectedKeys) {
-  if (!selectedKeys || !selectedKeys.length) return { weeks: [], seriesByExercise: {} };
-  const allWeeks = new Set();
-  selectedKeys.forEach(nk => (progressionHistory[nk] || []).forEach(e => allWeeks.add(isoWeekStr(e.date))));
-  const sortedWeeks = [...allWeeks].sort();
-  const seriesByExercise = {};
-  selectedKeys.forEach(nk => {
-    const entries = progressionHistory[nk] || [];
-    if (!entries.length) return;
-    const exName = entries[0].exerciseName || nk;
-    const weekMap = {};
-    entries.forEach(e => {
-      const w = isoWeekStr(e.date);
-      if (!weekMap[w]) weekMap[w] = { peakKg: 0, tonnage: 0 };
-      weekMap[w].peakKg = Math.max(weekMap[w].peakKg, e.peakLoadKg || e.kg);
-      weekMap[w].tonnage += e.tonnage || 0;
-    });
-    seriesByExercise[nk] = {
-      label: exName,
-      peakKg: sortedWeeks.map(w => weekMap[w]?.peakKg ?? null),
-      tonnage: sortedWeeks.map(w => weekMap[w]?.tonnage ?? 0)
-    };
-  });
-  return { weeks: sortedWeeks, seriesByExercise };
-}
-
-// Re-render the progression line chart with current _progPills selection
-function renderProgChart() {
-  if (_progChart) { try { _progChart.destroy(); } catch(e) {} _progChart = null; }
-  const area = document.getElementById('prog-chart-area');
-  if (!area) return;
-  const { weeks, seriesByExercise } = getProgressionChartData(_progPills);
-  if (weeks.length < 2) {
-    area.innerHTML = '<div class="cd-empty">Log 2+ sessions to see load progression</div>';
-    return;
-  }
-  area.innerHTML = '<div class="prog-chart-wrap"><canvas id="prog-chart"></canvas></div>';
-  const ctx = document.getElementById('prog-chart');
-  if (!ctx) return;
-  const COLORS = ['#1e90ff','#4cd964','#ff9500','#af52de','#ff3b30'];
-  const datasets = Object.entries(seriesByExercise).map(([, s], i) => ({
-    label: escHtml(s.label),
-    data: s.peakKg,
-    _tonnage: s.tonnage,
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: 'transparent',
-    tension: 0.3, pointRadius: 3, fill: false
-  }));
-  _progChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: weeks, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            afterBody: (items) => items.map(item => `Tonnage: ${item.dataset._tonnage[item.dataIndex] || 0}kg`)
-          }
-        }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.58)', font: { size: 10 } } },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: 'rgba(255,255,255,0.58)', font: { size: 10 } },
-          title: { display: true, text: 'Peak Load (kg)', color: 'rgba(255,255,255,0.50)', font: { size: 10 } },
-          beginAtZero: false
-        }
-      }
-    }
-  });
-}
-
-function toggleProgPill(btn, nk) {
-  const idx = _progPills.indexOf(nk);
-  if (idx >= 0) _progPills.splice(idx, 1); else _progPills.push(nk);
-  btn.classList.toggle('active', _progPills.includes(nk));
-  renderProgChart();
-}
-
-// Nudge: same load 2+ consecutive sessions → suggest +2.5
-function getProgressionSuggestion(exerciseKey) {
-  const hist = strengthHistory[exerciseKey];
-  if (!hist || hist.length < 2) return { suggest: false };
-  const latest = hist[0].kg, prev = hist[1].kg;
-  if (latest <= 0) return { suggest: false };
-  if (latest > prev) return { suggest: false };
-  if (latest === prev) return { suggest: true, nextKg: +(latest + 2.5).toFixed(1) };
-  return { suggest: false };
-}
-
-// Multi-client overview table (runs once on init, not on every switchClient)
-async function renderClientOverview() {
-  const wrap = document.getElementById('coach-overview');
-  if (!wrap || userRole !== 'coach' || clientsData.length === 0) return;
-
-  // Loading skeleton
-  wrap.innerHTML = `<div class="cd-section-title">All Clients</div>
-    <div class="cd-card">
-      <table class="co-table"><thead><tr>
-        <th>Name</th><th>Sessions (7d)</th><th>Last Workout</th><th>Adherence</th><th>Status</th>
-      </tr></thead><tbody>
-        ${clientsData.map(() => `<tr class="co-skeleton"><td colspan="5">&nbsp;</td></tr>`).join('')}
-      </tbody></table>
-    </div>`;
-
-  const now = new Date();
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - 7); weekStart.setHours(0,0,0,0);
-
-  const results = await Promise.allSettled(
-    clientsData.map(async client => {
-      const snap = await getDocs(query(
-        collection(db, 'clients', client.id, 'workoutHistory'),
-        where('date', '>=', weekStart),
-        orderBy('date', 'desc'),
-        limit(50)
-      ));
-      const sessions = snap.docs || [];
-      const lastDoc = sessions[0];
-      const lastDate = lastDoc ? (lastDoc.data().date?.toDate?.() || null) : null;
-      // Count unique (date + day) pairs — handles 2 sessions same calendar day (different workout days)
-      // but avoids double-counting same workout day re-submitted multiple times
-      const uniqueDays = new Set(
-        sessions
-          .filter(d => (d.data().done || 0) > 0)
-          .map(d => {
-            const dt = d.data().date?.toDate?.();
-            const dateStr = dt ? dt.toISOString().slice(0, 10) : null;
-            const dayStr = d.data().day || '';
-            return dateStr ? `${dateStr}_${dayStr}` : null;
-          })
-          .filter(Boolean)
-      );
-      const spw = parseInt(client.sessionsPerWeek) || 0;
-      const adherencePct = spw > 0 ? Math.min(100, Math.round(uniqueDays.size / spw * 100)) : null;
-      const status = adherencePct === null ? 'unknown'
-        : adherencePct >= 80 ? 'on-track'
-        : adherencePct >= 40 ? 'at-risk' : 'inactive';
-      return { id: client.id, name: client.name, sessionsThisWeek: uniqueDays.size, lastDate, adherencePct, status };
-    })
-  );
-
-  const STATUS_LABEL = { 'on-track': 'On Track', 'at-risk': 'At Risk', 'inactive': 'Inactive', 'unknown': '—' };
-  const STATUS_CLASS = { 'on-track': 'co-status-ok', 'at-risk': 'co-status-risk', 'inactive': 'co-status-inactive', 'unknown': '' };
-
-  const rows = results.map((r, i) => {
-    if (r.status === 'rejected') {
-      return `<tr><td>${escHtml(clientsData[i].name || '?')}</td><td>—</td><td>—</td><td>—</td><td class="co-status co-status-inactive">Error</td></tr>`;
-    }
-    const { id, name, sessionsThisWeek, lastDate, adherencePct, status } = r.value;
-    const isActive = activeClient && activeClient.id === id;
-    const lastStr = lastDate ? lastDate.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : 'Never';
-    const adherStr = adherencePct !== null ? adherencePct + '%' : '—';
-    return `<tr class="${isActive ? 'co-row-active' : ''}" onclick="switchClient('${id}')" style="cursor:pointer">
-      <td>${escHtml(name)}</td>
-      <td>${sessionsThisWeek}</td>
-      <td>${lastStr}</td>
-      <td>${adherStr}</td>
-      <td><span class="co-status ${STATUS_CLASS[status]}">${STATUS_LABEL[status]}</span></td>
-    </tr>`;
-  });
-
-  const allFailed = results.every(r => r.status === 'rejected');
-  wrap.innerHTML = `<div class="cd-section-title">All Clients</div>
-    <div class="cd-card">
-      ${allFailed ? '<div class="cd-empty" style="color:#ff6666">Session expired — reload to refresh</div>' : ''}
-      <table class="co-table"><thead><tr>
-        <th>Name</th><th>Sessions (7d)</th><th>Last Workout</th><th>Adherence</th><th>Status</th>
-      </tr></thead><tbody>${rows.join('')}</tbody></table>
-    </div>`;
-}
-
 async function renderCoachDashboard() {
   const wrap = document.getElementById('coach-dashboard');
   if (!wrap) return;
   if (userRole !== 'coach') { wrap.style.display = 'none'; return; }
   if (!activeClient) { wrap.innerHTML = '<div class="cd-empty">Chọn client để xem dashboard.</div>'; return; }
   wrap.style.display = 'block';
-  const gen = ++_dashGen;
 
   const hist = await getHistory();
-  if (gen !== _dashGen) return; // stale — newer switchClient fired while we were awaiting
   if (hist.length === 0) {
     wrap.innerHTML = '<div class="cd-empty">Chưa có buổi tập nào được ghi nhận.</div>';
     return;
@@ -3147,13 +2893,6 @@ async function renderCoachDashboard() {
   // History table (last 10)
   const recent = hist.slice(0, 10);
 
-  // Top 3 exercises for progression chart (by entry count in progressionHistory)
-  const top3Pills = Object.entries(progressionHistory)
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, 3)
-    .map(([nk]) => nk);
-  _progPills = [...top3Pills];
-
   wrap.innerHTML = `
     <div class="cd-section-title">Coach Dashboard — ${activeClient.name}</div>
     <div class="cd-stats-row">
@@ -3197,16 +2936,7 @@ async function renderCoachDashboard() {
           }).join('')}
         </tbody>
       </table>
-    </div>
-
-    ${top3Pills.length > 0 ? `
-    <div class="cd-card">
-      <div class="cd-card-title">Load Progression</div>
-      <div class="prog-pills">
-        ${top3Pills.map(nk => `<button class="prog-pill active" onclick="toggleProgPill(this,'${nk}')">${escHtml(progressionHistory[nk]?.[0]?.exerciseName || nk)}</button>`).join('')}
-      </div>
-      <div id="prog-chart-area" class="prog-chart-area"></div>
-    </div>` : ''}`;
+    </div>`;
 
   // Render Chart.js bar chart
   if (_dashVolumeChart) { try { _dashVolumeChart.destroy(); } catch(e) {} _dashVolumeChart = null; }
@@ -3233,9 +2963,6 @@ async function renderCoachDashboard() {
       }
     });
   }
-
-  // Render progression line chart (data already in-memory from loadStrengthHistory)
-  if (top3Pills.length > 0) renderProgChart();
 }
 
 
@@ -3681,7 +3408,7 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 
 /* NAV */
 .nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.12);justify-content:center;}
-.nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s,background .15s;background:none;border-top:none;border-left:none;border-right:none;border-radius:0;}
+.nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .nav-tab.active{color:oklch(68% .16 295);border-bottom-color:oklch(68% .16 295);}
 .header{margin-bottom:1rem;}
 h1{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;text-transform:none;letter-spacing:1px;color:#fff;}
@@ -4126,31 +3853,6 @@ h1 span{color:#1e90ff;}
 .cd-hist-table td{color:rgba(255,255,255,0.88);padding:5px 0;border-bottom:1px solid #1a1a1a;}
 .cd-hist-table tr:last-child td{border-bottom:none;}
 
-/* ── COACH OVERVIEW TABLE ────────────────────────── */
-.co-table{width:100%;border-collapse:collapse;font-size:12px;}
-.co-table th{color:rgba(255,255,255,0.60);text-align:left;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.12);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:10px;}
-.co-table td{color:rgba(255,255,255,0.88);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);}
-.co-table tr:last-child td{border-bottom:none;}
-.co-table tr.co-row-active td{color:#fff;font-weight:700;}
-.co-table tr.co-row-active{background:rgba(30,144,255,0.08);}
-.co-table tr:not(.co-skeleton):hover{background:rgba(255,255,255,0.04);}
-.co-skeleton td{background:rgba(255,255,255,0.06);border-radius:4px;height:20px;animation:co-pulse 1.2s ease-in-out infinite;}
-@keyframes co-pulse{0%,100%{opacity:.6}50%{opacity:.3}}
-.co-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.4px;}
-.co-status-ok{background:oklch(72% .20 145 / 0.18);color:oklch(72% .20 145);}
-.co-status-risk{background:rgba(255,149,0,0.18);color:#ff9500;}
-.co-status-inactive{background:rgba(255,59,48,0.18);color:#ff3b30;}
-
-/* ── PROGRESSION CHART ──────────────────────────── */
-.prog-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.prog-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.45);background:transparent;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.4px;}
-.prog-pill.active{border-color:#1e90ff;color:#1e90ff;background:rgba(30,144,255,0.12);}
-.prog-chart-area{min-height:40px;}
-.prog-chart-wrap{position:relative;height:200px;}
-
-/* ── OVERLOAD NUDGE CHIP ────────────────────────── */
-.overload-nudge{display:inline-block;font-size:11px;font-weight:700;color:oklch(72% .20 145);background:oklch(72% .20 145 / 0.13);border:1px solid oklch(72% .20 145 / 0.35);border-radius:10px;padding:2px 8px;margin-top:3px;letter-spacing:.3px;}
-
 /* ── LEADS VIEWER (FTN-32) ───────────────────────── */
 
 /* ── EXERCISE PICKER (Bước 6) ─────────────────────── */
@@ -4424,11 +4126,6 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .exercise-note-input:focus{border-color:rgba(255,255,255,0.35);}
 .exercise-note-input::placeholder{color:rgba(255,255,255,0.3);}
 .exercise-note-display{margin:4px 12px 12px;padding:8px 12px;background:rgba(255,255,255,0.04);border-left:2px solid rgba(255,255,255,0.25);border-radius:0 8px 8px 0;font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5;}
-/* Focus-visible rings — overrides all outline:none rules above */
-:focus-visible{outline:2px solid oklch(68% .16 295);outline-offset:2px;border-radius:3px;}
-input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:oklch(68% .16 295 / 0.8);box-shadow:0 0 0 3px oklch(68% .16 295 / 0.18);}
-/* Reduced motion */
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}
 </style>
 <script>
 // Slides work immediately — no module dependency
@@ -4697,16 +4394,16 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <span class="client-label">Client</span>
     <select class="client-select" id="client-select" onchange="switchClient(this.value)" ontouchend="setTimeout(()=>switchClient(this.value),100)"><option>Loading...</option></select>
     <span class="client-badge" id="client-level">—</span>
-    <button class="add-client-btn" onclick="openModalById('add-client-modal')">+ Add</button>
+    <button class="add-client-btn" onclick="document.getElementById('add-client-modal').classList.add('open')">+ Add</button>
     <button class="add-client-btn" onclick="openEditClientModal()" style="background:#1a0c06;border-color:rgba(255,255,255,0.60);color:rgba(255,255,255,0.88);">Edit</button>
     <button class="add-client-btn" onclick="openClientProfile()" style="background:#0a1a2e;border-color:#2a3a4e;color:#4488ff;">Profile</button>
   </div>
 
-  <nav class="nav" aria-label="Main navigation">
-    <button class="nav-tab active" onclick="showPage('workout')" aria-current="page" id="nav-workout">Workout</button>
-    <button class="nav-tab" onclick="showPage('progress')" id="nav-progress">Progress</button>
-    <button class="nav-tab" onclick="showPage('log')" id="nav-log">Log</button>
-  </nav>
+  <div class="nav">
+    <div class="nav-tab active" onclick="showPage('workout')">Workout</div>
+    <div class="nav-tab" onclick="showPage('progress')">Progress</div>
+    <div class="nav-tab" onclick="showPage('log')">Log</div>
+  </div>
 
   <!-- WORKOUT PAGE -->
   <div class="workout-page" id="workout-page">
@@ -4723,7 +4420,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="edit-mode-bar">
       <span class="edit-mode-label">Edit Program</span>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="add-day-btn" onclick="openModalById('add-day-modal')">+ Day</button>
+        <button class="add-day-btn" onclick="document.getElementById('add-day-modal').classList.add('open')">+ Day</button>
         <button class="pulse-gen-btn" id="pulse-gen-btn" onclick="launchPulse()" title="Generate next cycle with Pulse AI">⚡ Pulse</button>
         <div class="edit-toggle" onclick="toggleEditMode()">
           <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
@@ -4748,8 +4445,6 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- PROGRESS PAGE -->
   <div class="progress-page" id="progress-page">
-    <!-- COACH OVERVIEW (all clients, rendered once on init) -->
-    <div id="coach-overview"></div>
     <!-- COACH DASHBOARD (Bước 5) -->
     <div id="coach-dashboard" style="display:none"></div>
 
@@ -4871,7 +4566,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- EXERCISE INFO MODAL -->
-<div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-name" onclick="if(event.target===this)closeModal('modal')">
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal('modal')">
   <div class="modal">
     <div class="modal-name" id="modal-name"></div>
     <div class="modal-phase" id="modal-phase"></div>
@@ -4901,9 +4596,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- UPDATE MEASUREMENT MODAL -->
-<div class="modal-overlay" id="update-modal" role="dialog" aria-modal="true" aria-labelledby="update-modal-title" onclick="if(event.target===this)closeModal('update-modal')">
+<div class="modal-overlay" id="update-modal" onclick="if(event.target===this)closeModal('update-modal')">
   <div class="modal">
-    <div class="modal-title" id="update-modal-title">Checkpoint Update</div>
+    <div class="modal-title">Checkpoint Update</div>
     <div class="modal-sub" id="update-modal-sub">Nhập số đo mới từ InBody.</div>
     <div class="baseline-row">
       <div class="baseline-group"><label class="baseline-label">Cân nặng (kg) *</label><input class="baseline-input" id="up-weight" type="number" placeholder="70" step="0.1"></div>
@@ -4926,9 +4621,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- EDIT CLIENT MODAL (coach only) -->
-<div class="modal-overlay" id="edit-client-modal" role="dialog" aria-modal="true" aria-labelledby="edit-client-modal-title" onclick="if(event.target===this)closeModal('edit-client-modal')">
+<div class="modal-overlay" id="edit-client-modal" onclick="if(event.target===this)closeModal('edit-client-modal')">
   <div class="modal">
-    <div class="modal-title" id="edit-client-modal-title">Edit Client Info</div>
+    <div class="modal-title">Edit Client Info</div>
     <div class="modal-sub">Cập nhật thông tin đăng nhập và profile của khách.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="edit-client-name" placeholder="Thai Son"></div>
@@ -4948,9 +4643,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- ADD CLIENT MODAL (coach only) -->
-<div class="modal-overlay" id="add-client-modal" role="dialog" aria-modal="true" aria-labelledby="add-client-modal-title" onclick="if(event.target===this)closeModal('add-client-modal')">
+<div class="modal-overlay" id="add-client-modal" onclick="if(event.target===this)closeModal('add-client-modal')">
   <div class="modal">
-    <div class="modal-title" id="add-client-modal-title">Add New Client</div>
+    <div class="modal-title">Add New Client</div>
     <div class="modal-sub">Client sẽ dùng Gmail để login. AI sẽ tự động generate program sau khi tạo.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="new-client-name" placeholder="Thai Son"></div>
@@ -4988,7 +4683,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- PULSE AI REVIEW MODAL -->
-<div class="modal-overlay" id="ai-review-modal" role="dialog" aria-modal="true" aria-label="Pulse AI Program Generator">
+<div class="modal-overlay" id="ai-review-modal">
   <div class="modal" style="max-width:560px;max-height:86vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:16px;">
 
     <!-- Pulse Header -->
@@ -5160,9 +4855,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 <!-- ADD DAY MODAL -->
-<div class="modal-overlay" id="add-day-modal" role="dialog" aria-modal="true" aria-labelledby="add-day-modal-title" onclick="if(event.target===this)closeModal('add-day-modal')">
+<div class="modal-overlay" id="add-day-modal" onclick="if(event.target===this)closeModal('add-day-modal')">
   <div class="modal">
-    <div class="modal-title" id="add-day-modal-title">Add Training Day</div>
+    <div class="modal-title">Add Training Day</div>
     <div class="modal-sub">Thêm ngày tập mới vào lịch.</div>
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Day</label>
@@ -5182,9 +4877,9 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
 
 <!-- EXERCISE PICKER MODAL (Bước 6) -->
-<div class="modal-overlay" id="exercise-picker-modal" role="dialog" aria-modal="true" aria-labelledby="exercise-picker-modal-title" onclick="if(event.target===this)closeExercisePicker()">
+<div class="modal-overlay" id="exercise-picker-modal" onclick="if(event.target===this)closeExercisePicker()">
   <div class="modal picker-modal">
-    <div class="modal-title" id="exercise-picker-modal-title">Chọn bài tập</div>
+    <div class="modal-title">Chọn bài tập</div>
     <input class="form-input" id="picker-search" placeholder="Tìm tên bài tập..." oninput="renderPickerResults()" style="margin-bottom:10px">
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <select class="form-select" id="picker-muscle" onchange="renderPickerResults()" style="flex:1">
