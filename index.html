@@ -2548,6 +2548,7 @@ async function submitPulseFreeForm() {
   const sessions   = document.getElementById('pfm-sessions').value;
   const gender     = document.getElementById('pfm-gender').value;
   const weight     = document.getElementById('pfm-weight').value;
+  const limitations = [...document.querySelectorAll('#pfm-limitations input:checked')].map(c => c.value).join(',');
 
   const errEl = document.getElementById('pfm-form-error');
 
@@ -2586,7 +2587,7 @@ async function submitPulseFreeForm() {
 
   try {
     const fn = firebase.app().functions('asia-southeast1').httpsCallable('pulseGenerateFree');
-    const result = await fn({ name, email, goal, level, sessionsPerWeek: parseInt(sessions), gender, weight: weight ? parseFloat(weight) : null });
+    const result = await fn({ name, email, goal, level, sessionsPerWeek: parseInt(sessions), gender, weight: weight ? parseFloat(weight) : null, limitations: limitations || null });
 
     clearInterval(stepInterval);
     fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
@@ -4767,9 +4768,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
               <option value="">— Chọn mục tiêu —</option>
               <option value="Giảm mỡ, cải thiện vóc dáng">🔥 Giảm mỡ, cải thiện vóc dáng</option>
               <option value="Tăng cơ, tăng sức mạnh">💪 Tăng cơ, tăng sức mạnh</option>
-              <option value="Duy trì thể lực, tăng độ bền">🏃 Duy trì thể lực, tăng độ bền</option>
               <option value="Cải thiện tư thế, phục hồi">🧘 Cải thiện tư thế, phục hồi</option>
-              <option value="Tổng quát — cân bằng sức khoẻ">⚖️ Tổng quát — cân bằng sức khoẻ</option>
             </select>
           </div>
           <div class="pfm-row">
@@ -4805,6 +4804,16 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
             <div>
               <label class="pfm-label">Cân nặng (kg)</label>
               <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="Ví dụ: 68">
+            </div>
+          </div>
+          <div>
+            <label class="pfm-label">Giới hạn / Chấn thương (nếu có)</label>
+            <div id="pfm-limitations" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="lower_back_pain" style="accent-color:#7665ff;"> Đau lưng dưới</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="shoulder_pain" style="accent-color:#7665ff;"> Đau vai</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="ankle_pain" style="accent-color:#7665ff;"> Đau mắt cá chân</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="neck_stiffness" style="accent-color:#7665ff;"> Cứng cổ</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="knee_pain" style="accent-color:#7665ff;"> Đau đầu gối</label>
             </div>
           </div>
         </div>

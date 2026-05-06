@@ -169,6 +169,25 @@ If stations not available, name the substitute clearly in the cue field.`,
 
 const HYROX_KEYWORDS = /hyrox|hybrid.?perform|hybrid.?athlet|hybrid.?train|functional.?race|race.?prep|sled.?push|wall.?ball|ski.?erg|skierg|farmer.?carry|sandbag|burpee.?broad/i;
 
+// ── Warm-up muscle matching — shared across all generate functions ────────────
+const WARMUP_RULES = `WARM-UP RULES (mandatory — read before generating any warm-up phase):
+1. QUANTITY: 2-3 exercises only (5-8 min total).
+2. STRUCTURE: pulse raise (1 ex) → mobility (1 ex) → activation (1 ex, match session focus).
+   If limitation present: swap activation for 1 targeted rehab drill (max 3 exercises total).
+3. MUSCLE MATCHING — pick warm-up from the category matching that session's muscle focus:
+   - Push (chest / shoulder / tricep)  → e.g. Band Pull-Apart, Shoulder CARs, Thoracic Rotation, Wall Slide
+   - Pull (back / bicep / rear delt)   → e.g. Cat-Cow, Dead Hang, Band Face Pull, Scapula Wall Slide
+   - Lower body (quad / hamstring / glute / hip) → e.g. Hip 90/90, Ankle Circles, Glute Bridge Activation, Cossack Squat
+   - Full body / Mixed                 → e.g. Jump Rope or March in Place, Hip Circle, Dead Bug
+   - Cardio / Endurance / Zone 2       → e.g. Light Jog, Leg Swings, Dynamic Lunge, Arm Circles
+   - Boxing / Combat                   → e.g. Shadow Boxing (light), Shoulder CARs, Hip Circle
+4. EXCLUSIONS — skip these for the matching limitation:
+   lower_back_pain → no deadhinge, good morning, sit-up in warm-up
+   shoulder_pain   → no overhead arm circles, upright-row warm-up, behind-neck movements
+   ankle_pain      → no jumping jacks, skipping, deep ankle dorsiflexion
+   neck_stiffness  → no shrugs, neck rolls under load
+   knee_pain       → no jump squats, deep-impact landing, high box step`;
+
 // ── Groq error → friendly user message ───────────────────────────────────────
 function groqErrorMessage(err) {
   const msg = (err.message || "").toLowerCase();
@@ -540,7 +559,7 @@ Each day must follow this EXACT structure:
 ${fatLossSpecificRules}
 ${muscleSpecificRules}
 RULES
-- Warm-up: 3-4 exercises (5-10 min total). If client has injury, include rehab/activation exercises here.
+${WARMUP_RULES}
 - Main Lifts: 3-5 compound exercises
 - Accessories: 3-5 isolation / support exercises
 - Embed 4-week progression inside the "cue" field (load, sets, or intensity)
@@ -949,7 +968,7 @@ Each day structure:
 }
 
 RULES:
-- Warm-up: 3-4 exercises (adjust duration based on age guidance above)
+${WARMUP_RULES}
 - Main Lifts: 3-5 compound exercises matching the split focus
 - Accessories: 3-5 isolation / support exercises
 - Embed 4-week progression in "cue" field (Week 1→4 load/intensity/sets)
@@ -993,7 +1012,7 @@ exports.pulseGenerateFree = onCall(
     cors: true,
   },
   async (request) => {
-    const { name, email, goal, level, sessionsPerWeek, gender, weight, height, age } = request.data || {};
+    const { name, email, goal, level, sessionsPerWeek, gender, weight, height, age, limitations } = request.data || {};
 
     // Validate required fields
     if (!name || !email || !goal || !level || !sessionsPerWeek) {
@@ -1124,6 +1143,21 @@ IMPORTANT: Mirror this coaching style — same phase structure, similar exercise
           "Longer warm-up (12-15 min), lower intensity (RPE 6-7 max), avoid heavy axial loading. " +
           "Include balance drills in warm-up. Rest 2-3 min between sets. " +
           "Prefer machines and cables over free-weight barbells where possible.";
+      }
+    }
+
+    // ── Limitation warm-up note ───────────────────────────────────────────────
+    let limitationWarmupNote = "";
+    if (limitations && limitations.trim() && limitations.toLowerCase() !== "none") {
+      const lList = limitations.split(",").map(s => s.trim().toLowerCase());
+      const lMods = [];
+      if (lList.includes("lower_back_pain")) lMods.push("Lower back pain: no deadhinge, good morning, sit-up in warm-up. Use Bird Dog, Hip Thrust activation instead.");
+      if (lList.includes("shoulder_pain"))   lMods.push("Shoulder pain: no overhead arm circles, upright-row warm-up, behind-neck movements. Use Band Pull-Apart, Shoulder CARs instead.");
+      if (lList.includes("ankle_pain"))      lMods.push("Ankle pain: no jumping jacks, skipping, deep ankle dorsiflexion. Use ankle circles, seated calf activation, single-leg balance instead.");
+      if (lList.includes("neck_stiffness"))  lMods.push("Neck stiffness: no shrugs, neck rolls under load. Use thoracic rotation, chin tucks instead.");
+      if (lList.includes("knee_pain"))       lMods.push("Knee pain: no jump squats, deep-impact landing. Use box step-up, terminal knee extension, leg press instead.");
+      if (lMods.length > 0) {
+        limitationWarmupNote = "\nLIMITATIONS — apply strictly to warm-up and exercise selection:\n" + lMods.map((m, i) => `${i + 1}. ${m}`).join("\n");
       }
     }
 
@@ -1430,6 +1464,7 @@ CLIENT:
 - Name: ${name} | Level: ${level} | Goal: ${goal}
 - Sessions/week: ${sessions} (${days.join(", ")})${physicalContext}
 ${bmiContext}${ageContext}
+${limitationWarmupNote}
 GOAL: ${goalGuidance}
 LEVEL: ${levelGuidance}
 SPLIT: ${splitGuidance}
@@ -1509,7 +1544,8 @@ NOW generate the COMPLETE program for ALL ${sessions} days (${days.join(', ')}) 
 - Use the split: ${splitGuidance}
 - Vary sessions by muscle group — never repeat same muscle group two days in a row
 - Each phase must be distinctly different in volume/load/rest
-- Warmup: exactly 2 exercises. Main: exactly 3 compounds. Accessories: exactly 2 isolation. Total = 7 exercises per day MAX.
+${WARMUP_RULES}
+- Main: exactly 3 compounds. Accessories: exactly 2 isolation. Total = 7 exercises per day MAX.
 ${cueRule}
 - Exercise names: clean standard names only
 - Do NOT add any text outside the JSON`;
