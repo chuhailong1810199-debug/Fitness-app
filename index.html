@@ -1663,7 +1663,9 @@ function renderExercises() {
         vKeys.push(vKey);
         const coachUrl  = getVideoUrl(vKey, 'coach');
         const clientUrl = getVideoUrl(vKey, 'client');
-        html += `<div class="exercise-card${done?' done-card':''}" id="card_${key}"
+        html += `<div class="swipe-wrap" data-pi="${pi}" data-ei="${ei}" id="swipe-wrap_${key}">
+          <div class="swipe-delete-bg"><span class="swipe-delete-icon">🗑</span><span>Xoá</span></div>
+          <div class="exercise-card${done?' done-card':''}" id="card_${key}"
           onpointerdown="lpDown(event,${pi},${ei})" onpointerup="lpUp()" onpointercancel="lpUp()" onpointermove="lpMove(event)">
           <div class="exercise-header">
             <div class="checkbox${done?' done':''}" onclick="toggleExercise('${key}')">${done?'✓':''}</div>
@@ -1697,7 +1699,7 @@ function renderExercises() {
                </div>`
             : (ex.note ? `<div class="exercise-note-display">${safeExerciseNote}</div>` : '')
           }
-        </div>`;
+        </div></div>`;
       });
       html += `</div>`;
     }
@@ -1760,6 +1762,8 @@ function renderExercises() {
   updateProgress();
   // Load video URLs from Firestore for any exercise not yet cached in localStorage
   refreshVideoSlotsFromFirestore(vKeys);
+  // Enable swipe-to-delete on edit mode exercise cards
+  initSwipeDelete();
 }
 
 // ── EDIT PROGRAM ───────────────────────────────────────
@@ -1773,6 +1777,71 @@ function toggleEditMode() {
 function toggleEditCard(key) {
   document.getElementById('edit_'+key)?.classList.toggle('show');
   document.getElementById('card_'+key)?.classList.toggle('editing');
+}
+
+function initSwipeDelete() {
+  if (!editMode) return;
+  document.querySelectorAll('.swipe-wrap').forEach(wrap => {
+    const card = wrap.querySelector('.exercise-card');
+    const pi   = parseInt(wrap.dataset.pi);
+    const ei   = parseInt(wrap.dataset.ei);
+    const THRESHOLD = 90;
+    let startX = 0, startY = 0, curX = 0, swiping = false, locked = false;
+
+    card.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      curX = 0; swiping = false; locked = false;
+      card.style.transition = 'none';
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      if (locked) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!swiping) {
+        if (Math.abs(dx) < 8) return;
+        if (Math.abs(dx) > Math.abs(dy)) swiping = true; else return;
+      }
+      if (dx <= 0) { card.style.transform = 'translateX(0)'; return; }
+      e.preventDefault();
+      curX = Math.min(dx, THRESHOLD * 1.6);
+      card.style.transform = `translateX(${curX}px)`;
+      // Fade in the delete bg hint
+      const pct = Math.min(curX / THRESHOLD, 1);
+      wrap.querySelector('.swipe-delete-bg').style.opacity = pct;
+    }, { passive: false });
+
+    card.addEventListener('touchend', async () => {
+      if (!swiping) return;
+      swiping = false;
+      if (curX >= THRESHOLD) {
+        locked = true;
+        // Fly out to the right
+        card.style.transition = 'transform .22s ease-in, opacity .22s';
+        card.style.transform = 'translateX(115%)';
+        card.style.opacity = '0';
+        // Collapse the row
+        const h = wrap.offsetHeight;
+        wrap.style.maxHeight = h + 'px';
+        wrap.style.overflow = 'hidden';
+        await new Promise(r => setTimeout(r, 220));
+        wrap.style.transition = 'max-height .28s ease, margin .28s ease, opacity .18s';
+        wrap.style.maxHeight = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.opacity = '0';
+        await new Promise(r => setTimeout(r, 290));
+        getOrCreateProgram()[activeDay].phases[pi].exercises.splice(ei, 1);
+        await saveProgramToFirestore();
+        renderExercises();
+      } else {
+        // Snap back
+        card.style.transition = 'transform .3s cubic-bezier(0.34,1.56,0.64,1)';
+        card.style.transform = 'translateX(0)';
+        wrap.querySelector('.swipe-delete-bg').style.opacity = '0';
+      }
+    });
+  });
 }
 function showMoveRow(key) { document.getElementById('move_'+key)?.classList.toggle('show'); }
 
@@ -3464,7 +3533,10 @@ h1 span{color:#7665ff;}
 .add-exercise-btn{width:100%;padding:11px;border-radius:8px;border:1.5px dashed oklch(1 0 0/0.18);background:transparent;color:oklch(60% 0 0);font-family:inherit;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:8px;transition:border-color .2s,color .2s;}
 .add-exercise-btn:hover{border-color:oklch(51% .23 295/0.55);color:oklch(68% .16 295);}
 #exercise-list{border-radius:14px;padding:12px;}
-.exercise-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-left:3px solid rgba(255,255,255,0.16);border-radius:8px;padding:12px 14px;margin-bottom:6px;transition:border-left-color .2s;}
+.swipe-wrap{position:relative;margin-bottom:6px;border-radius:8px;overflow:hidden;}
+.swipe-delete-bg{position:absolute;inset:0;background:linear-gradient(90deg,#ff3b30,#ff6b5e);display:flex;align-items:center;padding-left:18px;gap:8px;color:#fff;font-weight:700;font-size:13px;letter-spacing:.5px;border-radius:8px;opacity:0;transition:opacity .1s;}
+.swipe-delete-icon{font-size:18px;}
+.exercise-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-left:3px solid rgba(255,255,255,0.16);border-radius:8px;padding:12px 14px;margin-bottom:0;transition:border-left-color .2s;position:relative;z-index:1;will-change:transform;}
 .exercise-card.done-card{border-left-color:#7665ff;}
 .exercise-card.editing{border-left-color:#6688ff;background:#111122;}
 .exercise-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
