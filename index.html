@@ -1475,12 +1475,18 @@ function renderDayTabs() {
   const idx = avail.indexOf(activeDay);
   const hasPrev = idx > 0;
   const hasNext = idx < avail.length - 1;
+  const dots = avail.map((_, i) =>
+    `<span class="day-nav-dot${i === idx ? ' active' : ''}"></span>`
+  ).join('');
   document.getElementById('day-tabs').innerHTML =
-    `<button class="day-nav-btn${hasPrev?'':' hidden'}" onclick="swipeDayNav('right')" aria-label="Previous day">‹</button>` +
-    avail.map(d =>
-      `<div class="day-tab${d===activeDay?' active':''}" onclick="setDay('${d}')">${d}</div>`
-    ).join('') +
-    `<button class="day-nav-btn${hasNext?'':' hidden'}" onclick="swipeDayNav('left')" aria-label="Next day">›</button>`;
+    `<div class="day-nav-row">
+       <button class="day-nav-btn${hasPrev?'':' invisible'}" onclick="swipeDayNav('right')" aria-label="Previous day">‹</button>
+       <div class="day-label-wrap">
+         <span class="day-label-current">${activeDay}</span>
+         <div class="day-dots">${dots}</div>
+       </div>
+       <button class="day-nav-btn${hasNext?'':' invisible'}" onclick="swipeDayNav('left')" aria-label="Next day">›</button>
+     </div>`;
 }
 
 function getLoadStorageKey(clientId = activeClient?.id, day = activeDay) {
@@ -1727,11 +1733,17 @@ function initDaySwipe() {
   const list = document.getElementById('exercise-list');
   if (!list) return;
 
-  let startX = 0, startY = 0, curX = 0, isSwiping = false;
+  let startX = 0, startY = 0, curX = 0, isSwiping = false, ignored = false;
   const THRESHOLD = 60;
-  const DAMPEN    = 0.38; // resistance while dragging
+  const DAMPEN    = 0.38;
+
+  // Elements that own their own swipe/scroll — day nav must not steal their touches
+  const IGNORE_SELECTOR = '.exercise-node, .exercise-flow, .exercise-card, .swipe-wrap, input, textarea, button, select, .node-check, .node-info, .info-btn, .checkbox, .set-load-input, .weight-input';
 
   list.addEventListener('touchstart', e => {
+    // If touch starts inside an exercise element, ignore entirely
+    ignored = !!e.target.closest(IGNORE_SELECTOR);
+    if (ignored) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     curX = 0; isSwiping = false;
@@ -1739,17 +1751,16 @@ function initDaySwipe() {
   }, { passive: true });
 
   list.addEventListener('touchmove', e => {
+    if (ignored || editMode) return;
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
     if (!isSwiping) {
       if (Math.abs(dx) < 8) return;
       if (Math.abs(dx) > Math.abs(dy)) isSwiping = true; else return;
     }
-    if (editMode) return; // don't swipe in edit mode
     e.preventDefault();
     curX = dx;
     const { avail, idx } = _getDayNavInfo();
-    // Apply rubber-band when at the edge
     const atLeft  = idx <= 0              && dx > 0;
     const atRight = idx >= avail.length-1 && dx < 0;
     const move = (atLeft || atRight) ? dx * 0.15 : dx * DAMPEN;
@@ -1757,7 +1768,7 @@ function initDaySwipe() {
   }, { passive: false });
 
   list.addEventListener('touchend', async () => {
-    if (!isSwiping) return;
+    if (ignored || !isSwiping) return;
     isSwiping = false;
     if (editMode) { list.style.transition = 'transform .25s cubic-bezier(0.34,1.56,0.64,1)'; list.style.transform = 'translateX(0)'; return; }
     // Rest timer visible — block navigation
@@ -3697,14 +3708,18 @@ h1 span{color:#7665ff;}
 .stat-dots{display:flex;gap:6px;justify-content:center;margin-bottom:1rem;}
 .stat-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);cursor:pointer;transition:background .2s,width .25s;}
 .stat-dot.active{background:#7665ff;width:14px;border-radius:3px;}
-.day-tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;}
-.day-tab{padding:6px 14px;border-radius:4px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.07);font-size:12px;font-weight:700;cursor:pointer;color:rgba(255,255,255,0.60);text-transform:uppercase;transition:all .15s;}
-.day-nav-btn{background:none;border:none;color:rgba(255,255,255,0.28);font-size:20px;font-weight:700;cursor:pointer;padding:4px 6px;line-height:1;transition:color .15s, transform .15s;user-select:none;}
-.day-nav-btn:active{color:rgba(255,255,255,0.7);transform:scale(1.2);}
-.day-nav-btn.hidden{visibility:hidden;pointer-events:none;}
+.day-tabs{margin-bottom:1rem;}
+.day-nav-row{display:flex;align-items:center;justify-content:space-between;gap:0;}
+.day-label-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.day-label-current{font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;}
+.day-dots{display:flex;gap:6px;align-items:center;}
+.day-nav-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .2s, transform .2s;}
+.day-nav-dot.active{background:#7665ff;transform:scale(1.25);box-shadow:0 0 6px rgba(118,101,255,0.6);}
+.day-nav-btn{background:none;border:none;color:rgba(255,255,255,0.35);font-size:22px;font-weight:700;cursor:pointer;padding:6px 10px;line-height:1;transition:color .15s, transform .12s;user-select:none;}
+.day-nav-btn:active{color:#fff;transform:scale(1.25);}
+.day-nav-btn.invisible{visibility:hidden;pointer-events:none;}
 #exercise-list{will-change:transform;}
 .day-tab:hover{border-color:rgba(118,101,255,0.5);color:rgba(255,255,255,0.82);}
-.day-tab.active{background:#7665ff;color:#fff;border-color:#7665ff;box-shadow:0 0 14px rgba(118,101,255,0.45);}
 .progress-wrap{margin-bottom:1.5rem;}
 .progress-bar{height:3px;background:#1e1e1e;border-radius:2px;overflow:hidden;}
 .progress-fill{height:100%;background:linear-gradient(90deg,#7665ff,#9b8dff);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);}
@@ -4350,7 +4365,7 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .google-btn:hover,.finish-btn:hover,.btn-save:hover,.baseline-save-btn:hover,.celebration-btn:hover,.intro-enter:hover,.cp-save-btn:hover,.pp-upload-label:hover{transform:translateY(-1px);background:rgba(255,255,255,0.88)!important;}
 .btn-discard,.modal-close,.add-client-btn,.add-day-btn,.cp-back-btn,.pp-ba-btn,.pp-ba-close,.pp-fullscreen-close,.no-baseline-btn,.add-exercise-btn,.add-phase-btn,.cp-meas-add-btn{border-radius:999px!important;background:rgba(255,255,255,0.04)!important;border:1px solid rgba(255,255,255,0.18)!important;color:#fff!important;}
 .day-tab,.baseline-chip,.picker-badge,.muscle-role-tag,.badge{border-radius:999px!important;}
-.day-tab.active,.baseline-chip.sel,.toggle-track.on,.pp-ba-btn.active{background:#ffffff!important;color:#0d0d0d!important;border-color:transparent!important;box-shadow:none;}
+.baseline-chip.sel,.toggle-track.on,.pp-ba-btn.active{background:#ffffff!important;color:#0d0d0d!important;border-color:transparent!important;box-shadow:none;}
 .checkbox{border-radius:8px;border-color:rgba(255,255,255,0.35);}
 .checkbox.done{background:#ffffff;border-color:transparent;color:#0d0d0d;}
 .exercise-card,.wl-card,.cp-section,.cd-card{border-left:1px solid var(--line)!important;border-radius:20px;}
