@@ -1475,18 +1475,14 @@ function renderDayTabs() {
   const idx = avail.indexOf(activeDay);
   const hasPrev = idx > 0;
   const hasNext = idx < avail.length - 1;
-  const dots = avail.map((_, i) =>
-    `<span class="day-nav-dot${i === idx ? ' active' : ''}"></span>`
-  ).join('');
   document.getElementById('day-tabs').innerHTML =
-    `<div class="day-nav-row">
-       <button class="day-nav-btn${hasPrev?'':' invisible'}" onclick="swipeDayNav('right')" aria-label="Previous day">‹</button>
-       <div class="day-label-wrap">
-         <span class="day-label-current">${activeDay}</span>
-         <div class="day-dots">${dots}</div>
-         <span class="day-stat-label">TRAINING DAY</span>
+    `<div class="day-nav-inner">
+       <button class="day-chev${hasPrev?'':' invis'}" onclick="swipeDayNav('right')" aria-label="Previous day">‹</button>
+       <div class="day-nav-center">
+         <span class="day-nav-name">${activeDay}</span>
+         <span class="day-nav-pos">${idx + 1} / ${avail.length}</span>
        </div>
-       <button class="day-nav-btn${hasNext?'':' invisible'}" onclick="swipeDayNav('left')" aria-label="Next day">›</button>
+       <button class="day-chev${hasNext?'':' invis'}" onclick="swipeDayNav('left')" aria-label="Next day">›</button>
      </div>`;
 }
 
@@ -3709,18 +3705,25 @@ h1 span{color:#7665ff;}
 .stat-dots{display:flex;gap:6px;justify-content:center;margin-bottom:1rem;}
 .stat-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);cursor:pointer;transition:background .2s,width .25s;}
 .stat-dot.active{background:#7665ff;width:14px;border-radius:3px;}
-.day-tabs{margin-bottom:.6rem;}
-.day-nav-row{display:flex;align-items:stretch;justify-content:space-between;gap:8px;}
-.day-label-wrap{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:16px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden;}
-.day-label-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7665ff,transparent);}
-.day-label-current{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;color:#fff;line-height:1;}
-.day-dots{display:flex;gap:6px;align-items:center;}
-.day-nav-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .2s,width .25s;}
-.day-nav-dot.active{background:#7665ff;width:14px;border-radius:3px;}
-.day-stat-label{font-size:10px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;}
-.day-nav-btn{background:none;border:none;color:rgba(255,255,255,0.28);font-size:22px;font-weight:700;cursor:pointer;padding:6px 2px;line-height:1;transition:color .15s,transform .12s;user-select:none;flex-shrink:0;}
-.day-nav-btn:active{color:#fff;transform:scale(1.25);}
-.day-nav-btn.invisible{visibility:hidden;pointer-events:none;}
+/* ── Combined card ───────────────────────────────── */
+.combined-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:16px;overflow:hidden;margin-bottom:.75rem;position:relative;}
+.combined-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7665ff,transparent);z-index:1;}
+.combined-card .stats{margin-bottom:0;padding-bottom:0;}
+.combined-card .stat{background:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;padding:18px 12px 10px;}
+.combined-card .stat::before{display:none;}
+.combined-card .stat-dots{margin-bottom:12px;}
+.combined-divider{height:1px;background:rgba(255,255,255,0.08);margin:0 14px;}
+.day-nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 8px 14px;}
+.day-nav-center{text-align:center;flex:1;}
+.day-nav-name{font-family:'Figtree',sans-serif;font-size:24px;font-weight:800;color:#fff;display:block;line-height:1;}
+.day-nav-pos{font-size:10px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-top:5px;}
+.day-chev{background:none;border:none;color:rgba(255,255,255,0.30);font-size:22px;font-weight:700;cursor:pointer;padding:6px 10px;line-height:1;transition:color .15s,transform .12s;user-select:none;}
+.day-chev:active{color:#fff;transform:scale(1.2);}
+.day-chev.invis{visibility:hidden;pointer-events:none;}
+/* Compact edit controls */
+.ctrl-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;padding:2px 0;}
+.ctrl-label{font-size:10px;color:rgba(255,255,255,0.30);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;}
+.ctrl-right{display:flex;align-items:center;gap:8px;}
 #exercise-list{will-change:transform;}
 .day-tab:hover{border-color:rgba(118,101,255,0.5);color:rgba(255,255,255,0.82);}
 .progress-wrap{margin-bottom:1.5rem;}
@@ -4334,9 +4337,8 @@ body::before{display:none;}
 .nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(13,13,13,0.75)!important;}
 .nav-tab{border-radius:999px;border:1px solid transparent;color:var(--txt-muted);letter-spacing:1.4px;}
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
-.stat,.day-label-wrap{border-radius:16px;padding:16px 12px;}
-.stat{flex:0 0 100%;}
-.stat::before,.day-label-wrap::before{background:#fff;height:2px;opacity:0.3;}
+.stat{border-radius:16px;padding:16px 12px;flex:0 0 100%;}
+.stat::before{background:#fff;height:2px;opacity:0.3;}
 .stat-num{font-size:clamp(26px,5vw,36px)!important;color:#fff;text-shadow:none;}
 .stat-label,.subtitle,.form-label,.cp-label,.baseline-label,.progress-label,.wl-stat-lbl,.month-title,.cd-stat-lbl,.cd-card-title,.cp-subsection-title,.slide-desc,.login-sub{color:var(--txt-muted)!important;}
 h1,.login-logo,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
@@ -4738,28 +4740,33 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- WORKOUT PAGE -->
   <div class="workout-page" id="workout-page">
-    <div class="stats" id="stats-slider">
-      <div class="stat"><div class="stat-num" id="sessions">0</div><div class="stat-label">Sessions</div></div>
-      <div class="stat"><div class="stat-num" id="done-count">0/0</div><div class="stat-label">Completed</div></div>
-      <div class="stat"><div class="stat-num" id="total-vol">0</div><div class="stat-label">Volume kg</div></div>
+    <!-- Combined stat + day card -->
+    <div class="combined-card">
+      <div class="stats" id="stats-slider">
+        <div class="stat"><div class="stat-num" id="sessions">0</div><div class="stat-label">Sessions</div></div>
+        <div class="stat"><div class="stat-num" id="done-count">0/0</div><div class="stat-label">Completed</div></div>
+        <div class="stat"><div class="stat-num" id="total-vol">0</div><div class="stat-label">Volume kg</div></div>
+      </div>
+      <div class="stat-dots" id="stat-dots">
+        <div class="stat-dot active"></div>
+        <div class="stat-dot"></div>
+        <div class="stat-dot"></div>
+      </div>
+      <div class="combined-divider"></div>
+      <div id="day-tabs"></div>
     </div>
-    <div class="stat-dots" id="stat-dots">
-      <div class="stat-dot active"></div>
-      <div class="stat-dot"></div>
-      <div class="stat-dot"></div>
-    </div>
-    <div class="edit-mode-bar">
-      <span class="edit-mode-label">Edit Program</span>
-      <div style="display:flex;gap:8px;align-items:center">
+    <!-- Compact edit controls -->
+    <div class="ctrl-bar">
+      <span class="ctrl-label">Edit program</span>
+      <div class="ctrl-right">
         <button class="add-day-btn" onclick="document.getElementById('add-day-modal').classList.add('open')">+ Day</button>
-        <button class="pulse-gen-btn" id="pulse-gen-btn" onclick="launchPulse()" title="Generate next cycle with Pulse AI">⚡ Pulse</button>
+        <button class="pulse-gen-btn" id="pulse-gen-btn" onclick="launchPulse()">⚡ Pulse</button>
         <div class="edit-toggle" onclick="toggleEditMode()">
           <div class="toggle-track" id="toggle-track"><div class="toggle-thumb"></div></div>
           <span class="edit-mode-text" id="edit-mode-text">Off</span>
         </div>
       </div>
     </div>
-    <div class="day-tabs" id="day-tabs"></div>
     <div class="progress-wrap">
       <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
       <div class="progress-label" id="progress-label">0% complete</div>
