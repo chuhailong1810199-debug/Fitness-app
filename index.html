@@ -2676,8 +2676,7 @@ function showPage(page) {
 }
 
 function initNavAutoHide() {
-  // Các phần tử sẽ ẩn khi scroll xuống (trừ combined-card)
-  const hideEls = () => [
+  const getEls = () => [
     document.querySelector('.header'),
     document.getElementById('client-bar'),
     document.querySelector('.nav'),
@@ -2689,32 +2688,38 @@ function initNavAutoHide() {
   const hide = () => {
     if (hidden) return;
     hidden = true;
-    hideEls().forEach(el => el.classList.add('scroll-hidden'));
+    getEls().forEach(el => el.classList.add('scroll-hidden'));
   };
   const show = () => {
     if (!hidden) return;
     hidden = false;
-    hideEls().forEach(el => el.classList.remove('scroll-hidden'));
+    getEls().forEach(el => el.classList.remove('scroll-hidden'));
   };
 
+  // Scroll xuống → ẩn ngay
   window.addEventListener('scroll', () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      const delta = y - lastY;
-      if (delta > 8 && y > 60) hide();
-      else if (delta < -8 || y < 20) show();
+      if (y - lastY > 8 && y > 60) hide();
       lastY = y;
       ticking = false;
     });
   }, { passive: true });
 
-  // Vuốt mạnh lên → luôn hiện
-  let touchStartY = 0;
-  window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  // Chỉ hiện lại khi fling mạnh lên (velocity > ngưỡng)
+  let touchStartY = 0, touchStartT = 0;
+  window.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchStartT = Date.now();
+  }, { passive: true });
   window.addEventListener('touchend', e => {
-    if (e.changedTouches[0].clientY - touchStartY > 50) show();
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartT;
+    const velocity = dy / dt; // px/ms
+    // Fling mạnh lên: distance > 80px VÀ velocity > 0.6 px/ms
+    if (dy > 80 && velocity > 0.5) show();
   }, { passive: true });
 }
 
@@ -3753,15 +3758,19 @@ h1 span{color:#7665ff;}
 .combined-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:16px;overflow:hidden;margin-bottom:.75rem;position:relative;}
 .combined-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7665ff,transparent);z-index:1;}
 .combined-card .stats{margin-bottom:0;padding-bottom:0;}
-.combined-card .stat{background:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;padding:18px 12px 10px;}
+.combined-card .stat{background:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;padding:10px 12px 6px;}
 .combined-card .stat::before{display:none;}
-.combined-card .stat-dots{margin-bottom:12px;}
+.combined-card .stat-dots{margin-bottom:6px;}
+.combined-card .stat-dot{width:4px;height:4px;}
+.combined-card .stat-dot.active{width:10px;}
+.combined-card .stat-num{font-size:22px!important;}
+.combined-card .stat-label{font-size:10px;}
 .combined-divider{height:1px;background:rgba(255,255,255,0.08);margin:0 14px;}
-.day-nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 8px 14px;}
+.day-nav-inner{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 10px;}
 .day-nav-center{text-align:center;flex:1;}
-.day-nav-name{font-family:'Figtree',sans-serif;font-size:24px;font-weight:800;color:#fff;display:block;line-height:1;}
-.day-nav-pos{font-size:10px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-top:5px;}
-.day-chev{background:none;border:none;color:rgba(255,255,255,0.30);font-size:22px;font-weight:700;cursor:pointer;padding:6px 10px;line-height:1;transition:color .15s,transform .12s;user-select:none;}
+.day-nav-name{font-family:'Figtree',sans-serif;font-size:18px;font-weight:800;color:#fff;display:block;line-height:1;}
+.day-nav-pos{font-size:9px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-top:3px;}
+.day-chev{background:none;border:none;color:rgba(255,255,255,0.30);font-size:20px;font-weight:700;cursor:pointer;padding:4px 10px;line-height:1;transition:color .15s,transform .12s;user-select:none;}
 .day-chev:active{color:#fff;transform:scale(1.2);}
 .day-chev.invis{visibility:hidden;pointer-events:none;}
 /* Compact edit controls */
