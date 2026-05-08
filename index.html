@@ -346,6 +346,7 @@ async function loadApp() {
   await loadStrengthHistory();
   renderExercises();
   initDaySwipe();
+  initNavAutoHide();
   await renderStats();
   subscribeProgram();
   // Show intro slides after login (once per session)
@@ -2674,6 +2675,46 @@ function showPage(page) {
   }
 }
 
+function initNavAutoHide() {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+  let lastY = 0, ticking = false, hidden = false;
+
+  const hide = () => {
+    if (hidden) return;
+    hidden = true;
+    nav.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+    nav.style.transform  = 'translateY(calc(100% + env(safe-area-inset-bottom)))';
+  };
+  const show = () => {
+    if (!hidden) return;
+    hidden = false;
+    nav.style.transition = 'transform .25s cubic-bezier(.4,0,.2,1)';
+    nav.style.transform  = 'translateY(0)';
+  };
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (delta > 6 && y > 80) hide();       // scroll xuống > 6px → ẩn
+      else if (delta < -6) show();            // scroll lên > 6px → hiện
+      lastY = y;
+      ticking = false;
+    });
+  }, { passive: true });
+
+  // Khi touch mạnh lên (fling up) → luôn hiện
+  let touchStartY = 0;
+  window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener('touchend', e => {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dy > 40) show(); // vuốt mạnh lên → show
+  }, { passive: true });
+}
+
 function showScreen(name) {
   ['login-screen','loading-screen','app-screen','no-client-screen'].forEach(id => {
     const el = document.getElementById(id);
@@ -4345,6 +4386,8 @@ body::before{display:none;}
   overflow-x:auto;overflow-y:hidden;
   -webkit-overflow-scrolling:touch;scrollbar-width:none;
   flex-wrap:nowrap;
+  transform:translateY(0);
+  will-change:transform;
 }
 .nav::-webkit-scrollbar{display:none;}
 .app-screen .app{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
