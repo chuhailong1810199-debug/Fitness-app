@@ -919,14 +919,46 @@ async function finishWorkout() {
     updateFinishBtn();
     renderExercises();
     await renderStats(); // updates sessions + streak
-    if (total > 0 && doneN < total) {
-      showToast(`Đã ghi ${doneN}/${total} bài tập ✓ — Tiếp tục cố gắng! 💪`, 4000);
-    } else {
-      showToast('Hoàn thành buổi tập! 💪🔥', 3000);
-    }
+    const hist = await getHistory();
+    const streak = calcStreak(hist);
+    const durationMs = window._workoutStartTime ? Date.now() - window._workoutStartTime : 0;
+    window._workoutStartTime = null;
+    showWorkoutSummary({ doneN, total, tonnage: Math.round(totalVolume), durationMs, streak });
   } finally {
     _workoutLogging = false;
   }
+}
+
+function showWorkoutSummary({ doneN, total, tonnage, durationMs, streak }) {
+  const mins = Math.round(durationMs / 60000);
+  const pct  = total > 0 ? Math.round(doneN / total * 100) : 100;
+  const incomplete = total > 0 && doneN < total;
+  const durStr = mins > 0 ? `${mins} phút` : '—';
+  const streakStr = streak > 0 ? `🔥 ${streak} ngày liên tiếp` : '—';
+
+  const el = document.getElementById('workout-summary-modal');
+  if (!el) return;
+
+  el.querySelector('.wsm-pct').textContent    = pct + '%';
+  el.querySelector('.wsm-done').textContent   = `${doneN}/${total} bài tập`;
+  el.querySelector('.wsm-ton').textContent    = tonnage > 0 ? tonnage.toLocaleString() + ' kg' : '—';
+  el.querySelector('.wsm-dur').textContent    = durStr;
+  el.querySelector('.wsm-streak').textContent = streakStr;
+  el.querySelector('.wsm-title').textContent  = incomplete ? 'Buổi tập đã ghi lại 💪' : 'Hoàn thành! 🎉';
+  el.querySelector('.wsm-subtitle').textContent = incomplete
+    ? `Còn ${total - doneN} bài chưa xong — không sao, tiếp tục thôi!`
+    : 'Xuất sắc! Mỗi buổi là 1 bước tiến.';
+  // Animate ring
+  const circ = 2 * Math.PI * 34; // r=34 → 213.6
+  const arc = el.querySelector('.wsm-ring-arc');
+  if (arc) { arc.style.strokeDashoffset = circ; requestAnimationFrame(() => { arc.style.transition='stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)'; arc.style.strokeDashoffset = circ * (1 - pct/100); }); }
+
+  el.classList.add('open');
+  if (navigator.vibrate) navigator.vibrate([30, 50, 80]);
+}
+
+function closeWorkoutSummary() {
+  document.getElementById('workout-summary-modal')?.classList.remove('open');
 }
 
 // ── REST TIMER ──────────────────────────────────────────────────────
@@ -2268,6 +2300,8 @@ function toggleExercise(key) {
   exerciseState[activeClient.id][key] = !wasDone;
 
   if (!wasDone) {
+    if (navigator.vibrate) navigator.vibrate(12); // haptic
+    if (!window._workoutStartTime) window._workoutStartTime = Date.now();
     // Marking as done — animate out then re-render
     const card = document.getElementById('card_' + key);
     if (card) {
@@ -3699,6 +3733,28 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 /* PULSE FREE — slide button */
 .slide-try-free{margin-top:10px;width:100%;padding:14px;border-radius:8px;background:transparent;border:1px solid oklch(68% .16 295 / .5);color:oklch(78% .14 295);font-family:'Figtree',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
 .slide-try-free:hover{background:oklch(68% .16 295 / .15);border-color:oklch(68% .16 295 / .8);}
+
+/* WORKOUT SUMMARY MODAL */
+#workout-summary-modal{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;}
+#workout-summary-modal.open{display:flex;}
+.wsm-card{position:relative;background:linear-gradient(160deg,#0e0a1f 0%,#0d0d0d 100%);border:1px solid rgba(118,101,255,0.3);border-radius:24px;padding:28px 24px 24px;width:100%;max-width:360px;text-align:center;overflow:hidden;}
+.wsm-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(118,101,255,0.25) 0%,transparent 70%);pointer-events:none;}
+.wsm-close{position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.35);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;}
+.wsm-close:hover{color:#fff;}
+.wsm-icon{font-size:36px;margin-bottom:8px;}
+.wsm-title{font-family:'Figtree',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;}
+.wsm-subtitle{font-size:13px;color:rgba(255,255,255,0.50);margin-bottom:20px;line-height:1.4;}
+.wsm-pct-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.wsm-pct{position:absolute;font-family:'Figtree',sans-serif;font-size:16px;font-weight:800;color:#7665ff;}
+.wsm-stats{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
+.wsm-stat{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 8px;}
+.wsm-stat-icon{font-size:18px;margin-bottom:6px;}
+.wsm-stat-val{font-family:'Figtree',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;}
+.wsm-stat-lbl{font-size:9px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1px;}
+.wsm-streak-row{margin-bottom:20px;}
+.wsm-streak{font-size:14px;font-weight:700;color:#ff9f43;background:rgba(255,159,67,0.12);border:1px solid rgba(255,159,67,0.25);border-radius:20px;padding:6px 16px;display:inline-block;}
+.wsm-done-btn{width:100%;padding:14px;border-radius:12px;background:#7665ff;border:none;color:#fff;font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
+.wsm-done-btn:hover{background:#8878ff;}
 
 /* PULSE FREE MODAL */
 .pfm-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);overflow-y:auto;}
@@ -5553,6 +5609,33 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <button class="celebration-btn" onclick="closeCelebration()">Hoàn thành ngày tập ✓</button>
 </div>
 <div id="workout-toast"></div>
+
+<!-- ── WORKOUT SUMMARY MODAL ─────────────────────────── -->
+<div id="workout-summary-modal" onclick="if(event.target===this)closeWorkoutSummary()">
+  <div class="wsm-card">
+    <div class="wsm-glow"></div>
+    <button class="wsm-close" onclick="closeWorkoutSummary()">✕</button>
+    <div class="wsm-icon">🏆</div>
+    <div class="wsm-title">Hoàn thành! 🎉</div>
+    <div class="wsm-subtitle">Xuất sắc! Mỗi buổi là 1 bước tiến.</div>
+    <div class="wsm-pct-ring">
+      <svg viewBox="0 0 80 80" width="80" height="80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(118,101,255,0.15)" stroke-width="6"/>
+        <circle class="wsm-ring-arc" cx="40" cy="40" r="34" fill="none" stroke="#7665ff" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="0"
+          transform="rotate(-90 40 40)"/>
+      </svg>
+      <span class="wsm-pct">100%</span>
+    </div>
+    <div class="wsm-stats">
+      <div class="wsm-stat"><div class="wsm-stat-icon">✅</div><div class="wsm-stat-val wsm-done">0/0</div><div class="wsm-stat-lbl">Bài tập</div></div>
+      <div class="wsm-stat"><div class="wsm-stat-icon">🏋️</div><div class="wsm-stat-val wsm-ton">0 kg</div><div class="wsm-stat-lbl">Tonnage</div></div>
+      <div class="wsm-stat"><div class="wsm-stat-icon">⏱</div><div class="wsm-stat-val wsm-dur">—</div><div class="wsm-stat-lbl">Thời gian</div></div>
+    </div>
+    <div class="wsm-streak-row"><span class="wsm-streak">—</span></div>
+    <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Đóng lại</button>
+  </div>
+</div>
 
 <!-- ── REST TIMER ─────────────────────────────────────── -->
 <div id="rest-timer-sheet">
