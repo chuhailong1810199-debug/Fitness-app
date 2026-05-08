@@ -4377,25 +4377,22 @@ body::before{display:none;}
 .header,.nav,.client-bar,.edit-mode-bar,.streak-badge,.month-summary,.cp-header,.cp-tabs{border-radius:18px;}
 .nav{
   position:fixed;bottom:0;left:0;right:0;
-  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
-  gap:8px;border-top:1px solid rgba(255,255,255,0.10);border-bottom:none;
+  display:flex;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  gap:6px;border-top:1px solid rgba(255,255,255,0.10);border-bottom:none;
   border-radius:20px 20px 0 0!important;
   background:rgba(13,13,13,0.92)!important;
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   z-index:100;margin-bottom:0;
-  overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none;
-  flex-wrap:nowrap;
   transform:translateY(0);
   will-change:transform;
 }
-.nav::-webkit-scrollbar{display:none;}
 .app-screen .app{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
 .nav-tab{
   flex:1;border-radius:999px;border:1px solid transparent;
-  color:var(--txt-muted);letter-spacing:1.4px;
-  padding:10px 14px;min-width:max-content;
-  scroll-snap-align:center;white-space:nowrap;
+  color:var(--txt-muted);letter-spacing:1px;
+  padding:10px 6px;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
 .stat{border-radius:16px;padding:16px 12px;flex:0 0 100%;}
