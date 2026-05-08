@@ -837,7 +837,19 @@ let _workoutLogging = false;
 let _sessionLogged = false; // prevent re-logging same session
 
 async function finishWorkout() {
-  if (!activeClient || _workoutLogging || _sessionLogged) return;
+  if (!activeClient || _workoutLogging) return;
+  // If already saved, still show summary with current state
+  if (_sessionLogged) {
+    const prog  = getProgram();
+    const day   = prog[activeDay];
+    const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
+    const clientState = exerciseState[activeClient.id] || {};
+    const dayPrefix = activeClient.id + '_' + activeDay + '_';
+    const doneN = Object.entries(clientState).filter(([k,v]) => v && k.startsWith(dayPrefix)).length;
+    const durationMs = window._workoutStartTime ? Date.now() - window._workoutStartTime : 0;
+    showWorkoutSummary({ doneN, total, tonnage: 0, durationMs, streak: 0 });
+    return;
+  }
   _workoutLogging = true;
   try {
     const prog  = getProgram();
@@ -918,12 +930,23 @@ async function finishWorkout() {
     _sessionLogged = true;
     updateFinishBtn();
     renderExercises();
-    await renderStats(); // updates sessions + streak
-    const hist = await getHistory();
-    const streak = calcStreak(hist);
+    // Show summary immediately — don't block on stats fetch
     const durationMs = window._workoutStartTime ? Date.now() - window._workoutStartTime : 0;
     window._workoutStartTime = null;
-    showWorkoutSummary({ doneN, total, tonnage: Math.round(totalVolume), durationMs, streak });
+    // Kick off stats + streak refresh in background, then update summary streak row
+    (async () => {
+      try {
+        await renderStats();
+        const hist = await getHistory();
+        const streak = calcStreak(hist);
+        // Update streak row if modal is still open
+        const el = document.getElementById('workout-summary-modal');
+        if (el && el.classList.contains('open')) {
+          el.querySelector('.wsm-streak').textContent = streak > 0 ? `${streak}-day streak` : '—';
+        }
+      } catch(e) { /* non-critical */ }
+    })();
+    showWorkoutSummary({ doneN, total, tonnage: Math.round(totalVolume), durationMs, streak: 0 });
   } finally {
     _workoutLogging = false;
   }
