@@ -944,10 +944,10 @@ function showWorkoutSummary({ doneN, total, tonnage, durationMs, streak }) {
   el.querySelector('.wsm-ton').textContent    = tonnage > 0 ? tonnage.toLocaleString() + ' kg' : '—';
   el.querySelector('.wsm-dur').textContent    = durStr;
   el.querySelector('.wsm-streak').textContent = streakStr;
-  el.querySelector('.wsm-title').textContent  = incomplete ? 'Buổi tập đã ghi lại 💪' : 'Hoàn thành! 🎉';
+  el.querySelector('.wsm-title').textContent  = incomplete ? 'Đã ghi lại' : 'Hoàn thành';
   el.querySelector('.wsm-subtitle').textContent = incomplete
-    ? `Còn ${total - doneN} bài chưa xong — không sao, tiếp tục thôi!`
-    : 'Xuất sắc! Mỗi buổi là 1 bước tiến.';
+    ? `Còn ${total - doneN} bài — tiếp tục buổi sau nhé.`
+    : 'Xuất sắc. Mỗi buổi là 1 bước tiến.';
   // Animate ring
   const circ = 2 * Math.PI * 34; // r=34 → 213.6
   const arc = el.querySelector('.wsm-ring-arc');
@@ -3735,26 +3735,57 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .slide-try-free:hover{background:oklch(68% .16 295 / .15);border-color:oklch(68% .16 295 / .8);}
 
 /* WORKOUT SUMMARY MODAL */
-#workout-summary-modal{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;}
+/* WORKOUT SUMMARY MODAL — minimalist glass */
+#workout-summary-modal{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,0.60);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  align-items:flex-end;justify-content:center;padding:0;
+}
 #workout-summary-modal.open{display:flex;}
-.wsm-card{position:relative;background:linear-gradient(160deg,#0e0a1f 0%,#0d0d0d 100%);border:1px solid rgba(118,101,255,0.3);border-radius:24px;padding:28px 24px 24px;width:100%;max-width:360px;text-align:center;overflow:hidden;}
-.wsm-glow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(118,101,255,0.25) 0%,transparent 70%);pointer-events:none;}
-.wsm-close{position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.35);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;}
-.wsm-close:hover{color:#fff;}
-.wsm-icon{font-size:36px;margin-bottom:8px;}
-.wsm-title{font-family:'Figtree',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;}
-.wsm-subtitle{font-size:13px;color:rgba(255,255,255,0.50);margin-bottom:20px;line-height:1.4;}
-.wsm-pct-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;}
-.wsm-pct{position:absolute;font-family:'Figtree',sans-serif;font-size:16px;font-weight:800;color:#7665ff;}
-.wsm-stats{display:flex;gap:8px;justify-content:center;margin-bottom:16px;}
-.wsm-stat{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 8px;}
-.wsm-stat-icon{font-size:18px;margin-bottom:6px;}
-.wsm-stat-val{font-family:'Figtree',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;}
-.wsm-stat-lbl{font-size:9px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1px;}
-.wsm-streak-row{margin-bottom:20px;}
-.wsm-streak{font-size:14px;font-weight:700;color:#ff9f43;background:rgba(255,159,67,0.12);border:1px solid rgba(255,159,67,0.25);border-radius:20px;padding:6px 16px;display:inline-block;}
-.wsm-done-btn{width:100%;padding:14px;border-radius:12px;background:#7665ff;border:none;color:#fff;font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s;}
-.wsm-done-btn:hover{background:#8878ff;}
+.wsm-card{
+  position:relative;
+  width:100%;max-width:480px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  border-bottom:none;
+  border-radius:24px 24px 0 0;
+  padding:32px 28px calc(32px + env(safe-area-inset-bottom));
+  backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  animation:wsmSlideUp .35s cubic-bezier(.32,1.2,.4,1) both;
+}
+@keyframes wsmSlideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.wsm-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 28px;}
+.wsm-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.45);font-size:14px;cursor:pointer;padding:6px 9px;border-radius:8px;line-height:1;transition:all .15s;}
+.wsm-close:hover{background:rgba(255,255,255,0.14);color:#fff;}
+.wsm-title{font-family:'Figtree',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-0.3px;}
+.wsm-subtitle{font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:28px;line-height:1.5;}
+.wsm-pct-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:28px;}
+.wsm-pct{position:absolute;font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.90);}
+.wsm-stats{display:flex;gap:10px;margin-bottom:16px;}
+.wsm-stat{
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;padding:14px 10px;
+}
+.wsm-stat-val{font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
+.wsm-stat-lbl{font-size:9px;color:rgba(255,255,255,0.30);text-transform:uppercase;letter-spacing:1.2px;}
+.wsm-streak-row{margin-bottom:24px;}
+.wsm-streak{
+  font-family:'Figtree',sans-serif;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,0.55);
+  letter-spacing:0.5px;
+}
+.wsm-done-btn{
+  width:100%;padding:15px;border-radius:14px;
+  background:rgba(118,101,255,0.85);
+  border:1px solid rgba(118,101,255,0.5);
+  color:#fff;font-family:'Figtree',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:background .15s;
+  backdrop-filter:blur(8px);
+}
+.wsm-done-btn:hover{background:rgba(136,120,255,0.9);}
 
 /* PULSE FREE MODAL */
 .pfm-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);overflow-y:auto;}
@@ -5613,24 +5644,23 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <!-- ── WORKOUT SUMMARY MODAL ─────────────────────────── -->
 <div id="workout-summary-modal" onclick="if(event.target===this)closeWorkoutSummary()">
   <div class="wsm-card">
-    <div class="wsm-glow"></div>
+    <div class="wsm-handle"></div>
     <button class="wsm-close" onclick="closeWorkoutSummary()">✕</button>
-    <div class="wsm-icon">🏆</div>
-    <div class="wsm-title">Hoàn thành! 🎉</div>
-    <div class="wsm-subtitle">Xuất sắc! Mỗi buổi là 1 bước tiến.</div>
+    <div class="wsm-title">Hoàn thành</div>
+    <div class="wsm-subtitle">Xuất sắc. Mỗi buổi là 1 bước tiến.</div>
     <div class="wsm-pct-ring">
-      <svg viewBox="0 0 80 80" width="80" height="80">
-        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(118,101,255,0.15)" stroke-width="6"/>
-        <circle class="wsm-ring-arc" cx="40" cy="40" r="34" fill="none" stroke="#7665ff" stroke-width="6"
+      <svg viewBox="0 0 80 80" width="72" height="72">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+        <circle class="wsm-ring-arc" cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="5"
           stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="0"
           transform="rotate(-90 40 40)"/>
       </svg>
       <span class="wsm-pct">100%</span>
     </div>
     <div class="wsm-stats">
-      <div class="wsm-stat"><div class="wsm-stat-icon">✅</div><div class="wsm-stat-val wsm-done">0/0</div><div class="wsm-stat-lbl">Bài tập</div></div>
-      <div class="wsm-stat"><div class="wsm-stat-icon">🏋️</div><div class="wsm-stat-val wsm-ton">0 kg</div><div class="wsm-stat-lbl">Tonnage</div></div>
-      <div class="wsm-stat"><div class="wsm-stat-icon">⏱</div><div class="wsm-stat-val wsm-dur">—</div><div class="wsm-stat-lbl">Thời gian</div></div>
+      <div class="wsm-stat"><div class="wsm-stat-val wsm-done">0/0</div><div class="wsm-stat-lbl">Bài tập</div></div>
+      <div class="wsm-stat"><div class="wsm-stat-val wsm-ton">—</div><div class="wsm-stat-lbl">Tonnage</div></div>
+      <div class="wsm-stat"><div class="wsm-stat-val wsm-dur">—</div><div class="wsm-stat-lbl">Thời gian</div></div>
     </div>
     <div class="wsm-streak-row"><span class="wsm-streak">—</span></div>
     <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Đóng lại</button>
