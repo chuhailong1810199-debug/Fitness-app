@@ -3688,7 +3688,7 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .pulse-dot-spinner::after{animation-delay:.4s;}
 
 /* NAV */
-.nav{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.12);justify-content:center;}
+.nav{display:flex;gap:0;justify-content:center;}
 .nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .nav-tab.active{color:oklch(68% .16 295);border-bottom-color:oklch(68% .16 295);}
 .header{margin-bottom:1rem;}
@@ -4334,8 +4334,26 @@ body::before{display:none;}
 .login-screen,.slides-screen,.baseline-screen,.celebration-screen,.cp-overlay,.pp-ba-overlay{background:var(--bg-1);}
 .header,.nav,.client-bar,.stats .stat,.wl-card,.month-summary,.streak-badge,.modal,.baseline-card,.cp-section,.cd-stat,.cd-card,.pp-upload-progress,.pp-empty,.login-card,.slide-visual,.signup-perk,.signup-icon,.done-strip,.quote-toast,.video-slot,.picker-item,.pp-card,.cp-meas-form,.add-form,.add-phase-form,.edit-mode-bar{background:var(--surface)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line)!important;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .header,.nav,.client-bar,.edit-mode-bar,.streak-badge,.month-summary,.cp-header,.cp-tabs{border-radius:18px;}
-.nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(13,13,13,0.75)!important;}
-.nav-tab{border-radius:999px;border:1px solid transparent;color:var(--txt-muted);letter-spacing:1.4px;}
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  gap:8px;border-top:1px solid rgba(255,255,255,0.10);border-bottom:none;
+  border-radius:20px 20px 0 0!important;
+  background:rgba(13,13,13,0.92)!important;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  z-index:100;margin-bottom:0;
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  flex-wrap:nowrap;
+}
+.nav::-webkit-scrollbar{display:none;}
+.app-screen .app{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
+.nav-tab{
+  flex:1;border-radius:999px;border:1px solid transparent;
+  color:var(--txt-muted);letter-spacing:1.4px;
+  padding:10px 14px;min-width:max-content;
+  scroll-snap-align:center;white-space:nowrap;
+}
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
 .stat{border-radius:16px;padding:16px 12px;flex:0 0 100%;}
 .stat::before{background:#fff;height:2px;opacity:0.3;}
@@ -4398,41 +4416,21 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 .signup-icon,.signup-perk-icon{background:linear-gradient(135deg,rgba(30,144,255,0.9),rgba(0,212,255,0.7))!important;color:#fff!important;}
 .loading{color:var(--txt-muted);text-align:center;padding:1rem 0;}
 @media (max-width: 900px){body{padding:0.8rem;}.app{max-width:100%;}}
+/* Client bar — horizontal scroll on all screens */
+.client-bar{
+  overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  flex-wrap:nowrap;
+  scroll-snap-type:x proximity;
+}
+.client-bar::-webkit-scrollbar{display:none;}
+.client-bar > *{flex:0 0 auto;scroll-snap-align:start;}
 @media (max-width: 700px){
-  .nav,.client-bar{
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  .nav::-webkit-scrollbar,.client-bar::-webkit-scrollbar{display:none;}
-  .nav{
-    flex-wrap:nowrap;
-    scroll-snap-type:x mandatory;
-    gap:8px;
-  }
-  .nav-tab{
-    flex:0 0 auto;
-    min-width:max-content;
-    padding:10px 16px;
-    scroll-snap-align:center;
-    white-space:nowrap;
-  }
-  .client-bar{
-    flex-wrap:nowrap;
-    gap:8px;
-    scroll-snap-type:x proximity;
-    padding:10px;
-  }
-  .client-bar > *{
-    flex:0 0 auto;
-    scroll-snap-align:start;
-  }
   .client-select{min-width:170px;max-width:58vw;}
 }
 @media (max-width: 520px){
   .stat{flex:0 0 100%;}
-  .nav-tab{font-size:12px;letter-spacing:1px;}
+  .nav-tab{font-size:12px;letter-spacing:1px;padding:10px 12px;}
   .client-label{display:none;}
   .client-select{min-width:150px;max-width:52vw;}
   .stat-num{font-size:34px!important;}
