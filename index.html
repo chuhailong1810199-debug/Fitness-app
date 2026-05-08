@@ -2676,21 +2676,25 @@ function showPage(page) {
 }
 
 function initNavAutoHide() {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
+  // Các phần tử sẽ ẩn khi scroll xuống (trừ combined-card)
+  const hideEls = () => [
+    document.querySelector('.header'),
+    document.getElementById('client-bar'),
+    document.querySelector('.nav'),
+    document.querySelector('.ctrl-bar'),
+  ].filter(Boolean);
+
   let lastY = 0, ticking = false, hidden = false;
 
   const hide = () => {
     if (hidden) return;
     hidden = true;
-    nav.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
-    nav.style.transform  = 'translateY(calc(100% + env(safe-area-inset-bottom)))';
+    hideEls().forEach(el => el.classList.add('scroll-hidden'));
   };
   const show = () => {
     if (!hidden) return;
     hidden = false;
-    nav.style.transition = 'transform .25s cubic-bezier(.4,0,.2,1)';
-    nav.style.transform  = 'translateY(0)';
+    hideEls().forEach(el => el.classList.remove('scroll-hidden'));
   };
 
   window.addEventListener('scroll', () => {
@@ -2699,19 +2703,18 @@ function initNavAutoHide() {
     requestAnimationFrame(() => {
       const y = window.scrollY;
       const delta = y - lastY;
-      if (delta > 6 && y > 80) hide();       // scroll xuống > 6px → ẩn
-      else if (delta < -6) show();            // scroll lên > 6px → hiện
+      if (delta > 8 && y > 60) hide();
+      else if (delta < -8 || y < 20) show();
       lastY = y;
       ticking = false;
     });
   }, { passive: true });
 
-  // Khi touch mạnh lên (fling up) → luôn hiện
+  // Vuốt mạnh lên → luôn hiện
   let touchStartY = 0;
   window.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
   window.addEventListener('touchend', e => {
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (dy > 40) show(); // vuốt mạnh lên → show
+    if (e.changedTouches[0].clientY - touchStartY > 50) show();
   }, { passive: true });
 }
 
@@ -4375,26 +4378,28 @@ body::before{display:none;}
 .login-screen,.slides-screen,.baseline-screen,.celebration-screen,.cp-overlay,.pp-ba-overlay{background:var(--bg-1);}
 .header,.nav,.client-bar,.stats .stat,.wl-card,.month-summary,.streak-badge,.modal,.baseline-card,.cp-section,.cd-stat,.cd-card,.pp-upload-progress,.pp-empty,.login-card,.slide-visual,.signup-perk,.signup-icon,.done-strip,.quote-toast,.video-slot,.picker-item,.pp-card,.cp-meas-form,.add-form,.add-phase-form,.edit-mode-bar{background:var(--surface)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line)!important;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .header,.nav,.client-bar,.edit-mode-bar,.streak-badge,.month-summary,.cp-header,.cp-tabs{border-radius:18px;}
-.nav{
-  position:fixed;bottom:0;left:0;right:0;
-  display:flex;
-  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-  gap:6px;border-top:1px solid rgba(255,255,255,0.10);border-bottom:none;
-  border-radius:20px 20px 0 0!important;
-  background:rgba(13,13,13,0.92)!important;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  z-index:100;margin-bottom:0;
-  transform:translateY(0);
-  will-change:transform;
-}
-.app-screen .app{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
-.nav-tab{
-  flex:1;border-radius:999px;border:1px solid transparent;
-  color:var(--txt-muted);letter-spacing:1px;
-  padding:10px 6px;text-align:center;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+.nav{padding:4px;gap:6px;border-bottom:none;position:sticky;top:10px;z-index:20;background:rgba(13,13,13,0.75)!important;}
+.nav-tab{border-radius:999px;border:1px solid transparent;color:var(--txt-muted);letter-spacing:1.4px;}
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
+.app-screen .app{padding-bottom:0;}
+
+/* Scroll-hide: ẩn khi scroll xuống, trừ combined-card */
+.scroll-hidden{
+  overflow:hidden;
+  max-height:0!important;
+  opacity:0;
+  margin-top:0!important;
+  margin-bottom:0!important;
+  padding-top:0!important;
+  padding-bottom:0!important;
+  border:none!important;
+  pointer-events:none;
+  transition:max-height .3s ease, opacity .25s ease, margin .3s ease, padding .3s ease;
+}
+.header,.client-bar,.nav,.ctrl-bar{
+  transition:max-height .3s ease, opacity .25s ease, margin .3s ease, padding .3s ease;
+  overflow:hidden;
+}
 .stat{border-radius:16px;padding:16px 12px;flex:0 0 100%;}
 .stat::before{background:#fff;height:2px;opacity:0.3;}
 .stat-num{font-size:clamp(26px,5vw,36px)!important;color:#fff;text-shadow:none;}
