@@ -346,7 +346,6 @@ async function loadApp() {
   await loadStrengthHistory();
   renderExercises();
   initDaySwipe();
-  initPageSwipe();
   await renderStats();
   subscribeProgram();
   // Show intro slides after login (once per session)
@@ -2653,50 +2652,16 @@ function centerActiveNavTab() {
   active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 }
 
-const PAGE_ORDER = ['workout', 'progress', 'log'];
-let _currentPageIdx = 0;
-
-function showPage(page, direction) {
-  const tabMap = { workout: 0, progress: 1, log: 2 };
-  const newIdx = tabMap[page] ?? 0;
-
+function showPage(page) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-tab')[newIdx]?.classList.add('active');
-  centerActiveNavTab();
-
-  const PAGE_IDS = ['workout-page', 'progress-page', 'log-page'];
-
-  if (direction && newIdx !== _currentPageIdx) {
-    // Animate outgoing page out first
-    const outEl = document.getElementById(PAGE_IDS[_currentPageIdx]);
-    if (outEl) {
-      outEl.classList.add('page-exit');
-      outEl.addEventListener('animationend', () => {
-        outEl.classList.remove('page-exit');
-        // hide it
-        if (PAGE_IDS[_currentPageIdx] === 'workout-page') outEl.classList.add('hidden');
-        else outEl.classList.remove('active');
-      }, { once: true });
-    }
-
-    // Show incoming page with enter animation
-    const inEl = document.getElementById(PAGE_IDS[newIdx]);
-    if (inEl) {
-      const enterClass = direction === 'left' ? 'page-enter-right' : 'page-enter-left';
-      if (page === 'workout') inEl.classList.remove('hidden');
-      else inEl.classList.add('active');
-      inEl.classList.add(enterClass);
-      inEl.addEventListener('animationend', () => inEl.classList.remove(enterClass), { once: true });
-    }
-  } else {
-    // No animation
-    document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
-    document.getElementById('progress-page').classList.toggle('active', page === 'progress');
-    document.getElementById('log-page').classList.toggle('active', page === 'log');
+  const tabMap = { workout: 0, progress: 1, log: 2 };
+  if (tabMap[page] !== undefined) {
+    document.querySelectorAll('.nav-tab')[tabMap[page]]?.classList.add('active');
   }
-
-  _currentPageIdx = newIdx;
-
+  centerActiveNavTab();
+  document.getElementById('workout-page').classList.toggle('hidden', page !== 'workout');
+  document.getElementById('progress-page').classList.toggle('active', page === 'progress');
+  document.getElementById('log-page').classList.toggle('active', page === 'log');
   if (page === 'progress') {
     checkCheckpointReminder();
     renderProgressData();
@@ -2707,47 +2672,6 @@ function showPage(page, direction) {
   if (page === 'log') {
     renderWorkoutLog();
   }
-}
-
-function initPageSwipe() {
-  const appEl = document.getElementById('app-screen');
-  if (!appEl) return;
-
-  // Elements where horizontal touch should NOT trigger page swipe
-  const PAGE_IGNORE = '.nav, .client-bar, .combined-card, #exercise-list, .exercise-card, .exercise-node, .exercise-flow, .swipe-wrap, .stats, .modal, .modal-overlay, input, textarea, select, button, .stat-dots, .day-nav-inner, .rest-timer-overlay, .pfm-overlay, .add-day-modal, .add-exercise-modal, .add-phase-modal';
-
-  let psX = 0, psY = 0, psIgnored = false, psMoved = false;
-
-  appEl.addEventListener('touchstart', e => {
-    psIgnored = !!e.target.closest(PAGE_IGNORE);
-    if (psIgnored) return;
-    psX = e.touches[0].clientX;
-    psY = e.touches[0].clientY;
-    psMoved = false;
-  }, { passive: true });
-
-  appEl.addEventListener('touchmove', e => {
-    if (psIgnored) return;
-    const dx = e.touches[0].clientX - psX;
-    const dy = e.touches[0].clientY - psY;
-    if (!psMoved && Math.abs(dy) > Math.abs(dx) + 5) { psIgnored = true; return; }
-    psMoved = true;
-  }, { passive: true });
-
-  appEl.addEventListener('touchend', e => {
-    if (psIgnored || !psMoved) return;
-    const dx = e.changedTouches[0].clientX - psX;
-    if (Math.abs(dx) < 60) return;
-
-    if (dx < 0 && _currentPageIdx < PAGE_ORDER.length - 1) {
-      // swipe left → next page
-      showPage(PAGE_ORDER[_currentPageIdx + 1], 'left');
-    } else if (dx > 0 && _currentPageIdx > 0) {
-      // swipe right → previous page
-      showPage(PAGE_ORDER[_currentPageIdx - 1], 'right');
-    }
-    psIgnored = true;
-  }, { passive: true });
 }
 
 function showScreen(name) {
@@ -3015,7 +2939,6 @@ window.submitPulseFreeForm = submitPulseFreeForm;
 window._openEditClientModal = openEditClientModal;
 window._saveClientInfo = saveClientInfo;
 window._showPage = showPage;
-window._initPageSwipe = initPageSwipe;
 window._setDay = setDay;
 window._openModal = openModal;
 window._closeModal = closeModal;
@@ -4047,13 +3970,6 @@ h1 span{color:#7665ff;}
 .progress-page{display:none;}.progress-page.active{display:block;}
 .log-page{display:none;}.log-page.active{display:block;}
 .workout-page.hidden{display:none;}
-/* Page swipe animations */
-@keyframes slideInFromRight{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes slideInFromLeft{from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes fadeSlideOut{from{opacity:1}to{opacity:0}}
-.page-enter-right{animation:slideInFromRight .22s cubic-bezier(.25,.46,.45,.94) both;}
-.page-enter-left{animation:slideInFromLeft .22s cubic-bezier(.25,.46,.45,.94) both;}
-.page-exit{animation:fadeSlideOut .15s ease both;}
 
 /* CLIENT SWITCH TRANSITION */
 .app-content{transition:opacity 0.18s ease,transform 0.18s ease;}
