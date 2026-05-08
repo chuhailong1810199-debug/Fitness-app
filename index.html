@@ -959,6 +959,13 @@ function showWorkoutSummary({ doneN, total, tonnage, durationMs, streak }) {
 
 function closeWorkoutSummary() {
   document.getElementById('workout-summary-modal')?.classList.remove('open');
+  document.querySelectorAll('.wsm-stat.tip-open').forEach(el => el.classList.remove('tip-open'));
+}
+
+function wsmTip(el) {
+  const isOpen = el.classList.contains('tip-open');
+  document.querySelectorAll('.wsm-stat.tip-open').forEach(e => e.classList.remove('tip-open'));
+  if (!isOpen) el.classList.add('tip-open');
 }
 
 // ── REST TIMER ──────────────────────────────────────────────────────
@@ -3763,13 +3770,32 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .wsm-pct{position:absolute;font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.90);}
 .wsm-stats{display:flex;gap:10px;margin-bottom:16px;}
 .wsm-stat{
-  flex:1;
+  flex:1;position:relative;
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
   border-radius:14px;padding:14px 10px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .15s;
 }
+.wsm-stat:active{background:rgba(255,255,255,0.09);}
 .wsm-stat-val{font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
 .wsm-stat-lbl{font-size:9px;color:rgba(255,255,255,0.30);text-transform:uppercase;letter-spacing:1.2px;}
+/* Tooltip */
+.wsm-tip{
+  display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:rgba(20,20,30,0.96);border:1px solid rgba(255,255,255,0.12);
+  backdrop-filter:blur(12px);border-radius:10px;
+  padding:8px 12px;width:160px;
+  font-size:11px;line-height:1.5;color:rgba(255,255,255,0.70);
+  text-align:center;z-index:10;pointer-events:none;
+  animation:tipIn .15s ease both;
+}
+.wsm-tip::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(20,20,30,0.96);
+}
+.wsm-stat.tip-open .wsm-tip{display:block;}
+@keyframes tipIn{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .wsm-streak-row{margin-bottom:24px;}
 .wsm-streak{
   font-family:'Figtree',sans-serif;font-size:12px;font-weight:600;
@@ -5658,9 +5684,21 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <span class="wsm-pct">100%</span>
     </div>
     <div class="wsm-stats">
-      <div class="wsm-stat"><div class="wsm-stat-val wsm-done">0/0</div><div class="wsm-stat-lbl">Bài tập</div></div>
-      <div class="wsm-stat"><div class="wsm-stat-val wsm-ton">—</div><div class="wsm-stat-lbl">Khối lượng</div></div>
-      <div class="wsm-stat"><div class="wsm-stat-val wsm-dur">—</div><div class="wsm-stat-lbl">Thời gian</div></div>
+      <div class="wsm-stat" onclick="wsmTip(this)">
+        <div class="wsm-stat-val wsm-done">0/0</div>
+        <div class="wsm-stat-lbl">Bài tập</div>
+        <div class="wsm-tip">Số bài hoàn thành / tổng số bài trong buổi hôm nay.</div>
+      </div>
+      <div class="wsm-stat" onclick="wsmTip(this)">
+        <div class="wsm-stat-val wsm-ton">—</div>
+        <div class="wsm-stat-lbl">Khối lượng</div>
+        <div class="wsm-tip">Tổng kg đã nâng = sets × reps × kg, cộng tất cả bài lại.</div>
+      </div>
+      <div class="wsm-stat" onclick="wsmTip(this)">
+        <div class="wsm-stat-val wsm-dur">—</div>
+        <div class="wsm-stat-lbl">Thời gian</div>
+        <div class="wsm-tip">Tính từ lúc tick bài đầu tiên đến khi bấm Hoàn thành.</div>
+      </div>
     </div>
     <div class="wsm-streak-row"><span class="wsm-streak">—</span></div>
     <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Đóng lại</button>
