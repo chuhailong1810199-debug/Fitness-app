@@ -130,16 +130,16 @@ function sortPhases(phases) {
   return [...phases].sort((a, b) => phaseRank(a) - phaseRank(b));
 }
 const COMPLIMENTS = [
-  'Xuất sắc! Cơ thể đang phản ứng rất tốt với chương trình.',
-  'Tuyệt vời! Kết quả rõ ràng sau những tuần kiên trì.',
-  'Đang đúng hướng! Tiếp tục duy trì phong độ này.',
-  'Impressive! Tiến độ vượt kỳ vọng.',
-  'Làm tốt lắm! Số liệu cho thấy cơ thể đang thay đổi tích cực.',
+  'Outstanding! Your body is responding really well to the program.',
+  'Amazing! Clear results after weeks of consistency.',
+  'On track! Keep maintaining this momentum.',
+  'Impressive! Progress exceeding expectations.',
+  'Great work! Numbers show your body is changing positively.',
 ];
 const ADVICE = [
-  'Chưa đạt kỳ vọng. Hãy review lại nutrition và giấc ngủ.',
-  'Kết quả chưa như ý. Kiểm tra lại compliance với lịch tập.',
-  'Cần điều chỉnh. Trao đổi với coach về diet và recovery.',
+  'Below expectations. Review nutrition and sleep quality.',
+  'Results not where we want them. Check compliance with the training schedule.',
+  'Adjustments needed. Talk to your coach about diet and recovery.',
 ];
 
 // ── IN-APP BROWSER DETECTION ───────────────────────────
@@ -166,7 +166,7 @@ auth.getRedirectResult().then(result => {
   // Ignore no-auth-event (normal on desktop/first load)
   if (e.code && e.code !== 'auth/no-auth-event') {
     setLoginLoading(false);
-    alert('Đăng nhập thất bại: ' + e.code + '\n' + e.message);
+    alert('Sign-in failed: ' + e.code + '\n' + e.message);
   }
 });
 
@@ -193,7 +193,7 @@ onAuthStateChanged(auth, async user => {
 async function loginWithGoogle() {
   const ua = navigator.userAgent || '';
   if (ua.includes('Instagram') || ua.includes('FBAN') || ua.includes('FBAV')) {
-    alert('Vui lòng mở bằng Safari hoặc Chrome để đăng nhập.\n\nTrên iPhone: Nhấn "..." góc trên phải → "Open in Safari"');
+    alert('Please open in Safari or Chrome to sign in.\n\niPhone: tap "..." top-right → "Open in Safari"');
     return;
   }  try {
     setLoginLoading(true);
@@ -202,7 +202,7 @@ async function loginWithGoogle() {
     await signInWithPopup(auth, provider);
   } catch(e) {
     setLoginLoading(false);
-    alert('Đăng nhập thất bại: ' + e.code + '\n' + e.message);
+    alert('Sign-in failed: ' + e.code + '\n' + e.message);
   }
 }
 
@@ -213,7 +213,7 @@ async function logout() {
 
 function setLoginLoading(on) {
   const btn = document.getElementById('google-login-btn');
-  if (btn) btn.textContent = on ? 'Đang đăng nhập...' : 'Đăng nhập với Google';
+  if (btn) btn.textContent = on ? 'Signing in...' : 'Sign in with Google';
 }
 
 // ── USER PROFILE ───────────────────────────────────────
@@ -447,7 +447,7 @@ async function saveClientInfo() {
   const email = document.getElementById('edit-client-email').value.trim().toLowerCase();
   const level = document.getElementById('edit-client-level').value;
   const goal  = document.getElementById('edit-client-goal').value.trim();
-  if (!name || !email) return alert('Vui lòng điền đầy đủ Name và Gmail.');
+  if (!name || !email) return alert('Please fill in Name and Gmail.');
 
   const oldEmail = activeClient.email;
   await updateDoc(doc(db, 'clients', activeClient.id), { name, email, level, goal });
@@ -513,9 +513,9 @@ let _pendingAIProgram  = null;
 // Pulse step animation helpers
 function _pulseResetModal(clientName) {
   document.getElementById('pulse-steps-list').innerHTML = '';
-  document.getElementById('pulse-current-text').textContent = `Đang phân tích hồ sơ ${clientName || ''}...`;
+  document.getElementById('pulse-current-text').textContent = `Analysing ${clientName || ''} profile...`;
   document.getElementById('pulse-current-step').style.display = 'flex';
-  document.getElementById('pulse-subtitle').textContent = clientName ? `Đang tạo chương trình cho ${clientName}` : 'AI Program Generator';
+  document.getElementById('pulse-subtitle').textContent = clientName ? `Building program for ${clientName}` : 'AI Program Generator';
 }
 
 function _pulseCompleteStep(icon, text) {
@@ -560,11 +560,11 @@ async function launchPulse() {
 
     // Animate fake steps while waiting (real steps returned after)
     const fakeSteps = [
-      { icon:'📖', text:`Đọc hồ sơ ${activeClient.name}...` },
-      { icon:'📋', text:'Phân tích baseline assessment...' },
-      { icon:'📊', text:'Xem checkpoint & tiến độ...' },
-      { icon:'🏋️', text:'Phân tích lịch sử tập luyện...' },
-      { icon:'🎨', text:'Học phong cách coaching...' },
+      { icon:'📖', text:`Reading ${activeClient.name}'s profile...` },
+      { icon:'📋', text:'Analysing baseline assessment...' },
+      { icon:'📊', text:'Reviewing checkpoints & progress...' },
+      { icon:'🏋️', text:'Analysing training history...' },
+      { icon:'🎨', text:'Learning coaching style...' },
     ];
     let stepIdx = 0;
     const stepInterval = setInterval(() => {
@@ -580,8 +580,8 @@ async function launchPulse() {
 
     // Complete remaining steps
     fakeSteps.forEach(s => _pulseCompleteStep(s.icon, s.text));
-    _pulseCompleteStep('⚡', 'Pulse đang generate chương trình...');
-    _pulseSetCurrent('Hoàn thành! ✨');
+    _pulseCompleteStep('⚡', 'Pulse generating program...');
+    _pulseSetCurrent('Done! ✨');
 
     await new Promise(r => setTimeout(r, 700));
 
@@ -592,7 +592,7 @@ async function launchPulse() {
     document.getElementById('pulse-current-step').innerHTML = `
       <div style="text-align:center;width:100%;padding:8px 0;">
         <div style="font-size:22px;margin-bottom:8px;">❌</div>
-        <div style="color:#ff6b6b;font-size:12px;margin-bottom:4px;">Pulse thất bại: ${err.message}</div>
+        <div style="color:#ff6b6b;font-size:12px;margin-bottom:4px;">Pulse failed: ${err.message}</div>
       </div>`;
     actions.style.display = 'flex';
   } finally {
@@ -619,9 +619,9 @@ async function openAIReviewModal(clientId, clientData) {
 
   // Animate steps
   const steps = [
-    { icon:'📖', text:`Đọc hồ sơ ${clientData.name}...` },
+    { icon:'📖', text:`Reading ${clientData.name}'s profile...` },
     { icon:'🎯', text:`Goal: ${clientData.goal}` },
-    { icon:'⚡', text:'Pulse đang tạo chương trình...' },
+    { icon:'⚡', text:'Pulse building program...' },
   ];
   let si = 0;
   const iv = setInterval(() => {
@@ -643,7 +643,7 @@ async function openAIReviewModal(clientId, clientData) {
     document.getElementById('pulse-current-step').innerHTML = `
       <div style="text-align:center;width:100%;padding:8px 0;">
         <div style="font-size:22px;margin-bottom:8px;">❌</div>
-        <div style="color:#ff6b6b;font-size:12px;">Generate thất bại: ${err.message}</div>
+        <div style="color:#ff6b6b;font-size:12px;">Generation failed: ${err.message}</div>
       </div>`;
     actions.style.display = 'flex';
   }
@@ -659,8 +659,8 @@ function renderAIProgramPreview(program, clientName) {
   const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
 
   let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
-    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Chương trình được tạo bởi Pulse</div>
-    <div style="font-size:13px;font-weight:700;color:#fff;">${clientName || ''} — ${days.length} ngày · ${totalEx} bài tập</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px;">Program generated by Pulse</div>
+    <div style="font-size:13px;font-weight:700;color:#fff;">${clientName || ''} — ${days.length} days · ${totalEx} exercises</div>
   </div>`;
 
   for (const day of days) {
@@ -768,12 +768,12 @@ function toggleResetOptions() {
   const isOpen = opts.classList.contains('open');
   opts.classList.toggle('open', !isOpen);
   const btn = document.querySelector('#reset-collapsed .reset-btn');
-  if (btn) btn.textContent = isOpen ? 'Reset ↓' : 'Đóng ✕';
+  if (btn) btn.textContent = isOpen ? 'Reset ↓' : 'Close ✕';
 }
 
 async function resetAssessment() {
   if (!activeClient) return;
-  if (!confirm('Reset toàn bộ số đo (baseline + tất cả checkpoint)?\nHành động này không thể hoàn tác.')) return;
+  if (!confirm('Reset all measurements (baseline + all checkpoints)?\nThis cannot be undone.')) return;
   await deleteDoc(doc(db, 'clients', activeClient.id, 'assessment', 'baseline'));
   const cpSnap = await getDocs(collection(db, 'clients', activeClient.id, 'checkpoints'));
   for (const d of cpSnap.docs) await deleteDoc(d.ref);
@@ -823,7 +823,7 @@ async function checkCheckpointReminder() {
   const dismissed = localStorage.getItem('cp_dismissed_' + activeClient.id);
   if (dismissed && (new Date() - new Date(dismissed)) / (24*60*60*1000) < 3) return;
   document.getElementById('cp-sub-text').textContent =
-    'Bạn đã tập được ' + Math.floor(weeksSince) + ' tuần kể từ lần đo baseline. Đã đến lúc đo lại InBody!';
+    'You\'ve been training for ' + Math.floor(weeksSince) + ' weeks since your baseline. Time to re-measure!';
   document.getElementById('checkpoint-banner').classList.remove('hidden');
 }
 
@@ -933,21 +933,21 @@ function showWorkoutSummary({ doneN, total, tonnage, durationMs, streak }) {
   const mins = Math.round(durationMs / 60000);
   const pct  = total > 0 ? Math.round(doneN / total * 100) : 100;
   const incomplete = total > 0 && doneN < total;
-  const durStr = mins > 0 ? `${mins} phút` : '—';
-  const streakStr = streak > 0 ? `🔥 ${streak} ngày liên tiếp` : '—';
+  const durStr = mins > 0 ? `${mins} min` : '—';
+  const streakStr = streak > 0 ? `${streak}-day streak` : '—';
 
   const el = document.getElementById('workout-summary-modal');
   if (!el) return;
 
   el.querySelector('.wsm-pct').textContent    = pct + '%';
-  el.querySelector('.wsm-done').textContent   = `${doneN}/${total} bài tập`;
+  el.querySelector('.wsm-done').textContent   = `${doneN}/${total} exercises`;
   el.querySelector('.wsm-ton').textContent    = tonnage > 0 ? tonnage.toLocaleString() + ' kg' : '—';
   el.querySelector('.wsm-dur').textContent    = durStr;
   el.querySelector('.wsm-streak').textContent = streakStr;
-  el.querySelector('.wsm-title').textContent  = incomplete ? 'Đã ghi lại' : 'Hoàn thành';
+  el.querySelector('.wsm-title').textContent  = incomplete ? 'Session saved' : 'Complete';
   el.querySelector('.wsm-subtitle').textContent = incomplete
-    ? `Còn ${total - doneN} bài — tiếp tục buổi sau nhé.`
-    : 'Xuất sắc. Mỗi buổi là 1 bước tiến.';
+    ? `${total - doneN} exercises left — finish next time.`
+    : 'Great work. Every session counts.';
   // Animate ring
   const circ = 2 * Math.PI * 34; // r=34 → 213.6
   const arc = el.querySelector('.wsm-ring-arc');
@@ -1064,7 +1064,7 @@ function updateFinishBtn() {
   const btn = document.querySelector('.finish-btn');
   if (!btn) return;
   if (_sessionLogged) {
-    btn.textContent = 'Đã ghi buổi tập ✓';
+    btn.textContent = 'Session saved ✓';
     btn.disabled = true;
     btn.style.opacity = '0.45';
     btn.style.cursor = 'default';
@@ -1137,7 +1137,7 @@ async function uploadVideo(vKey, slot, input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 100 * 1024 * 1024) {
-    alert('Video quá lớn (>100MB). Hãy chọn video ngắn hơn.');
+    alert('Video too large (>100MB). Please choose a shorter video.');
     input.value = '';
     return;
   }
@@ -1160,7 +1160,7 @@ async function uploadVideo(vKey, slot, input) {
       if (bar) bar.style.width = pct + '%';
       if (pctEl) pctEl.textContent = pct + '%';
     },
-    err => { alert('Upload thất bại: ' + err.message); renderExercises(); },
+    err => { alert('Upload failed: ' + err.message); renderExercises(); },
     async () => {
       const url = await getDownloadURL(task.snapshot.ref);
       localStorage.setItem(getVideoUrlKey(vKey, slot), url);
@@ -1176,7 +1176,7 @@ async function uploadVideo(vKey, slot, input) {
 }
 
 async function deleteVideo(vKey, slot) {
-  if (!confirm('Xoá video này?')) return;
+  if (!confirm('Delete this video?')) return;
   try {
     await deleteObject(ref(storage, getVideoRefPath(vKey, slot)));
   } catch(e) { /* already deleted */ }
@@ -1296,7 +1296,7 @@ function blCalc() {
   const a = parseFloat(document.getElementById('bl-age').value);
   if (!w || !h) { document.getElementById('bl-calc').style.display = 'none'; return; }
   const bmi = w / ((h/100)**2);
-  const cat = bmi < 18.5 ? 'Thấp' : bmi < 25 ? 'OK' : bmi < 30 ? 'Cao' : 'Béo phì';
+  const cat = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese';
   const bmr = blGenderVal === 'male' ? 10*w+6.25*h-5*(a||28)+5 : 10*w+6.25*h-5*(a||28)-161;
   document.getElementById('bl-bmi').textContent  = bmi.toFixed(1);
   document.getElementById('bl-tdee').textContent = Math.round(bmr*1.375).toLocaleString();
@@ -1316,7 +1316,7 @@ async function openBaselineScreen() {
     blCalc();
   }
   document.getElementById('baseline-greeting-text').textContent =
-    'Xin chào ' + activeClient.name.split(' ')[0] + '! Cập nhật số đo baseline của bạn.';
+    'Hey ' + activeClient.name.split(' ')[0] + '! Update your baseline measurements.';
   document.getElementById('baseline-screen').classList.remove('hidden');
 }
 
@@ -1325,7 +1325,7 @@ async function checkAndShowBaseline() {
   const skipped = sessionStorage.getItem('bl_skipped_' + activeClient.id);
   if (!bl && !skipped) {
     document.getElementById('baseline-greeting-text').textContent =
-      'Xin chào ' + activeClient.name.split(' ')[0] + '! Nhập số đo ban đầu để app track tiến độ.';
+      'Hey ' + activeClient.name.split(' ')[0] + '! Enter your starting measurements to track progress.';
     document.getElementById('baseline-screen').classList.remove('hidden');
   }
 }
@@ -1347,7 +1347,7 @@ function renderCompliment(bl, cps) {
   const wrap = document.getElementById('progress-banner-wrap');
   if (!bl) {
     wrap.innerHTML = `<div class="no-baseline-prompt">
-      <div class="no-baseline-text">Chưa có baseline. Nhập số đo ban đầu để track tiến độ theo thời gian.</div>
+      <div class="no-baseline-text">No baseline yet. Enter your starting measurements to track progress over time.</div>
       <button class="no-baseline-btn" onclick="openBaselineScreen()">+ Add Baseline</button>
     </div>`;
     return;
@@ -1364,7 +1364,7 @@ function renderCompliment(bl, cps) {
     : ADVICE[Math.floor(Math.random() * ADVICE.length)];
   wrap.innerHTML = `<div class="compliment-banner ${isGood?'good':'bad'}">
     <div class="compliment-icon">${isGood ? '🏆' : '💡'}</div>
-    <div><div class="compliment-title">${isGood ? 'Tiến độ tốt!' : 'Cần điều chỉnh'}</div>
+    <div><div class="compliment-title">${isGood ? 'Good progress!' : 'Needs adjustment'}</div>
     <div class="compliment-sub">${msg}</div></div></div>`;
 }
 
@@ -1382,16 +1382,16 @@ function renderDeltaCards(bl, cps) {
     return `<div class="delta-card">
       <div class="delta-val">${nv}<span class="delta-unit"> ${unit}</span></div>
       <div class="delta-lbl">${lbl}</div>
-      <div class="delta-change ${cls}">${arrow} ${sign}${Math.abs(diff)} ${unit} so với baseline</div>
+      <div class="delta-change ${cls}">${arrow} ${sign}${Math.abs(diff)} ${unit} vs baseline</div>
     </div>`;
   }
   wrap.innerHTML = `
-    <div class="delta-section-label">Checkpoint #${cps.length} — Tuần ${cps.length*4}</div>
+    <div class="delta-section-label">Checkpoint #${cps.length} — Week ${cps.length*4}</div>
     <div class="delta-grid">
-      ${card('Cân nặng',     bl.weight, last.weight, 'kg',    true)}
+      ${card('Weight',     bl.weight, last.weight, 'kg',    true)}
       ${card('Body fat %',   bl.pbf,    last.pbf,    '%',     true)}
-      ${card('Khối lượng cơ',bl.smm,    last.smm,    'kg',    false)}
-      ${bl.vfl != null && last.vfl != null ? card('Mỡ nội tạng', bl.vfl, last.vfl, 'level', true) : ''}
+      ${card('Lean mass',bl.smm,    last.smm,    'kg',    false)}
+      ${bl.vfl != null && last.vfl != null ? card('Visceral fat', bl.vfl, last.vfl, 'level', true) : ''}
     </div>`;
 }
 
@@ -1423,25 +1423,25 @@ function renderCharts(bl, cps) {
   const smmColor  = !hasCP ? 'rgba(255,255,255,0.60)' : latestSMM > bl.smm ? '#ffffff' : '#ff4444';
 
   const waiting = `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:8px;font-style:italic">
-    Đang chờ checkpoint T4 — biểu đồ sẽ cập nhật sau khi bạn nhập số đo mới.</div>`;
+    Waiting for Week 4 checkpoint — chart will update once you enter new measurements.</div>`;
 
   let html = `<div class="chart-card">
-    <div class="chart-title">Cân nặng & Body fat</div>
+    <div class="chart-title">Weight & Body Fat</div>
     ${!hasCP ? waiting : ''}
     <div class="chart-legend">
-      <div class="chart-legend-item"><div class="chart-legend-line" style="background:${wColor}"></div>Cân nặng (kg)</div>
+      <div class="chart-legend-item"><div class="chart-legend-line" style="background:${wColor}"></div>Weight (kg)</div>
       ${bfArr ? `<div class="chart-legend-item"><div class="chart-legend-line dashed" style="border-color:${bfColor}"></div>Body fat %</div>` : ''}
     </div>
-    <div class="chart-wrap"><canvas id="wc" role="img" aria-label="Biểu đồ cân nặng và body fat"></canvas></div>
+    <div class="chart-wrap"><canvas id="wc" role="img" aria-label="Weight and body fat chart"></canvas></div>
   </div>`;
   if (smmArr) {
     html += `<div class="chart-card">
-      <div class="chart-title">Khối lượng cơ (SMM)</div>
+      <div class="chart-title">Lean Mass (SMM)</div>
       ${!hasCP ? waiting : ''}
       <div class="chart-legend">
         <div class="chart-legend-item"><div class="chart-legend-line" style="background:${smmColor}"></div>SMM (kg)</div>
       </div>
-      <div class="chart-wrap"><canvas id="sc" role="img" aria-label="Biểu đồ khối lượng cơ"></canvas></div>
+      <div class="chart-wrap"><canvas id="sc" role="img" aria-label="Lean mass chart"></canvas></div>
     </div>`;
   }
   wrap.innerHTML = html;
@@ -1449,7 +1449,7 @@ function renderCharts(bl, cps) {
   const ptW = weights.map((v,i) => v == null ? 0 : i === 0 ? 7 : 5);
   const pcW = weights.map((v,i) => i === 0 ? '#ffffff' : wColor);
   const wDS = [{
-    label:'Cân nặng', data:weights, borderColor:wColor,
+    label:'Weight', data:weights, borderColor:wColor,
     backgroundColor: hasCP ? wColor+'18' : 'transparent',
     yAxisID:'y', tension:0.35, pointRadius:ptW, pointBackgroundColor:pcW,
     fill:hasCP, borderWidth:2, spanGaps:true, borderDash: hasCP ? [] : [5,4],
@@ -1899,7 +1899,7 @@ function renderExercises() {
         const coachUrl  = getVideoUrl(vKey, 'coach');
         const clientUrl = getVideoUrl(vKey, 'client');
         html += `<div class="swipe-wrap" data-pi="${pi}" data-ei="${ei}" id="swipe-wrap_${key}">
-          <div class="swipe-delete-bg"><span class="swipe-delete-icon">🗑</span><span>Xoá</span></div>
+          <div class="swipe-delete-bg"><span class="swipe-delete-icon">🗑</span><span>Delete</span></div>
           <div class="exercise-card${done?' done-card':''}" id="card_${key}"
           onpointerdown="lpDown(event,${pi},${ei})" onpointerup="lpUp()" onpointercancel="lpUp()" onpointermove="lpMove(event)">
           <div class="exercise-header">
@@ -1987,8 +1987,8 @@ function renderExercises() {
   const dayDoneKeys = doneKeys.filter(k => k.startsWith(activeClient.id+'_'+activeDay+'_'));
   if (dayDoneKeys.length > 0 && !showDoneExercises) {
     const strip = `<div class="done-strip" onclick="toggleDoneExercises()">
-      <span class="done-strip-label">✓ Đã hoàn thành</span>
-      <span class="done-strip-count">${dayDoneKeys.length} bài ↓ xem lại</span>
+      <span class="done-strip-label">✓ Done</span>
+      <span class="done-strip-count">${dayDoneKeys.length} exercises ↓ review</span>
     </div>`;
     list.innerHTML = strip + html;
   } else {
@@ -2152,11 +2152,11 @@ function showMovePicker(pi, ei) {
   ).join('');
 
   overlay.innerHTML = `<div style="width:100%;background:oklch(11% .02 295);border-radius:20px 20px 0 0;padding:24px 20px 32px;display:flex;flex-direction:column;gap:10px;">
-    <div style="font-size:11px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1px;">Di chuyển bài tập</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.40);text-transform:uppercase;letter-spacing:1px;">Move exercise</div>
     <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">${exName}</div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Chọn phase đích</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Select target phase</div>
     ${phaseButtons}
-    <button onclick="document.getElementById('lp-overlay').remove()" style="padding:14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.50);font-family:'Figtree',sans-serif;font-size:14px;cursor:pointer;margin-top:4px;">Huỷ</button>
+    <button onclick="document.getElementById('lp-overlay').remove()" style="padding:14px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.50);font-family:'Figtree',sans-serif;font-size:14px;cursor:pointer;margin-top:4px;">Cancel</button>
   </div>`;
 
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -2365,12 +2365,12 @@ async function renderStats() {
 async function resetSessions() {
   if (!activeClient) return;
   const count = document.getElementById('sessions').textContent;
-  if (!confirm(`Reset ${count} session của ${activeClient.name} về 0?\nHành động này không thể hoàn tác.`)) return;
+  if (!confirm(`Reset ${count} sessions for ${activeClient.name} to 0?\nThis cannot be undone.`)) return;
   try {
     const snap = await getDocs(collection(db, 'clients', activeClient.id, 'workoutHistory'));
     await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
     await renderStats();
-  } catch(e) { alert('Lỗi: ' + e.message); }
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function recoverLegacySessions() {
@@ -2381,14 +2381,14 @@ async function recoverLegacySessions() {
     const v = d.data();
     return v.date && v.done !== undefined && v.total !== undefined && !v.name && !v.email;
   });
-  if (legacy.length === 0) { alert('Không tìm thấy session cũ nào.'); return; }
-  if (!confirm(`Tìm thấy ${legacy.length} session cũ bị lưu sai chỗ.\nChuyển về ${activeClient.name}?`)) return;
+  if (legacy.length === 0) { alert('No legacy sessions found.'); return; }
+  if (!confirm(`Found ${legacy.length} legacy sessions stored incorrectly.\nMove to ${activeClient.name}?`)) return;
   for (const d of legacy) {
     await addDoc(collection(db, 'clients', activeClient.id, 'workoutHistory'), d.data());
     await deleteDoc(d.ref);
   }
   await renderStats();
-  alert(`Đã recover ${legacy.length} session cho ${activeClient.name} ✓`);
+  alert(`Recovered ${legacy.length} sessions for ${activeClient.name} ✓`);
 }
 
 // ── PROGRESS PAGE ──────────────────────────────────────
@@ -2737,7 +2737,7 @@ function initNavAutoHide() {
     getEls().forEach(el => el.classList.remove('scroll-hidden'));
   };
 
-  // Scroll xuống → ẩn ngay
+  // Scroll down → hide
   window.addEventListener('scroll', () => {
     if (ticking) return;
     ticking = true;
@@ -2749,7 +2749,7 @@ function initNavAutoHide() {
     });
   }, { passive: true });
 
-  // Chỉ hiện lại khi fling mạnh lên (velocity > ngưỡng)
+  // Only show again on strong fling up
   let touchStartY = 0, touchStartT = 0;
   window.addEventListener('touchstart', e => {
     touchStartY = e.touches[0].clientY;
@@ -2759,7 +2759,7 @@ function initNavAutoHide() {
     const dy = e.changedTouches[0].clientY - touchStartY;
     const dt = Date.now() - touchStartT;
     const velocity = dy / dt; // px/ms
-    // Fling mạnh lên: distance > 80px VÀ velocity > 0.6 px/ms
+    // Strong fling up: distance > 80px AND velocity > 0.5 px/ms
     if (dy > 80 && velocity > 0.5) show();
   }, { passive: true });
 }
@@ -2858,7 +2858,7 @@ async function openUpdateModal() {
   const cps = await getCPs();
   const n   = cps.length + 1;
   document.getElementById('update-modal-sub').textContent =
-    'Checkpoint #'+n+' — Tuần '+(n*4)+'. Nhập số đo mới từ InBody để so sánh với baseline.';
+    'Checkpoint #'+n+' — Week '+(n*4)+'. Enter new measurements from InBody to compare with baseline.';
   if (cps.length > 0) {
     const last = cps[cps.length-1];
     ['weight','pbf','smm','vfl','waist','hip'].forEach(k => {
@@ -2886,7 +2886,7 @@ function openPulseFreeModal() {
   document.getElementById('pfm-loading-phase').style.display = 'none';
   document.getElementById('pfm-result-phase').style.display = 'none';
   document.getElementById('pfm-form-error').style.display = 'none';
-  document.getElementById('pfm-subtitle').textContent = 'Nhận chương trình 1 tuần miễn phí';
+  document.getElementById('pfm-subtitle').textContent = 'Get your free 1-week program';
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden';
 }
@@ -2923,26 +2923,26 @@ async function submitPulseFreeForm() {
   const errEl = document.getElementById('pfm-form-error');
 
   // Validate
-  if (!name) { errEl.textContent = 'Vui lòng nhập tên của bạn.'; errEl.style.display='block'; return; }
-  if (!email || !email.includes('@')) { errEl.textContent = 'Vui lòng nhập email hợp lệ.'; errEl.style.display='block'; return; }
-  if (!goal) { errEl.textContent = 'Vui lòng chọn mục tiêu tập luyện.'; errEl.style.display='block'; return; }
-  if (!level) { errEl.textContent = 'Vui lòng chọn trình độ.'; errEl.style.display='block'; return; }
-  if (!sessions) { errEl.textContent = 'Vui lòng chọn số buổi tập mỗi tuần.'; errEl.style.display='block'; return; }
+  if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display='block'; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display='block'; return; }
+  if (!goal) { errEl.textContent = 'Please select a training goal.'; errEl.style.display='block'; return; }
+  if (!level) { errEl.textContent = 'Please select your level.'; errEl.style.display='block'; return; }
+  if (!sessions) { errEl.textContent = 'Please select sessions per week.'; errEl.style.display='block'; return; }
   errEl.style.display = 'none';
 
   // Switch to loading phase
   document.getElementById('pfm-form-phase').style.display = 'none';
   document.getElementById('pfm-loading-phase').style.display = 'block';
   document.getElementById('pfm-steps-list').innerHTML = '';
-  document.getElementById('pfm-subtitle').textContent = `Đang tạo chương trình cho ${name}...`;
-  _pfmSetCurrent('Khởi động Pulse...');
+  document.getElementById('pfm-subtitle').textContent = `Building program for ${name}...`;
+  _pfmSetCurrent('Starting Pulse...');
 
   // Animate fake steps while waiting
   const fakeSteps = [
-    { icon:'📝', text:`Lưu thông tin ${name}...` },
-    { icon:'🎯', text:`Phân tích mục tiêu: ${goal.split('—')[0].trim()}` },
-    { icon:'🎨', text:'Học phong cách coaching...' },
-    { icon:'⚡', text:'Pulse đang tạo chương trình 1 tuần...' },
+    { icon:'📝', text:`Saving info for ${name}...` },
+    { icon:'🎯', text:`Analysing goal: ${goal.split('—')[0].trim()}` },
+    { icon:'🎨', text:'Learning coaching style...' },
+    { icon:'⚡', text:'Pulse building your 1-week program...' },
   ];
   let stepIdx = 0;
   const stepInterval = setInterval(() => {
@@ -2961,26 +2961,26 @@ async function submitPulseFreeForm() {
 
     clearInterval(stepInterval);
     fakeSteps.forEach(s => _pfmCompleteStep(s.icon, s.text));
-    _pfmCompleteStep('✅', 'Chương trình của bạn đã sẵn sàng!');
-    _pfmSetCurrent('Hoàn thành! ✨');
+    _pfmCompleteStep('✅', 'Your program is ready!');
+    _pfmSetCurrent('Done! ✨');
 
     await new Promise(r => setTimeout(r, 700));
 
     // Show result
-    document.getElementById('pfm-result-title').textContent = `Chương trình 1 tuần của ${name} đã sẵn sàng!`;
+    document.getElementById('pfm-result-title').textContent = `${name}'s 1-week program is ready!`;
     renderFreeProgramPreview(result.data.program);
     document.getElementById('pfm-loading-phase').style.display = 'none';
     document.getElementById('pfm-result-phase').style.display = 'block';
-    document.getElementById('pfm-subtitle').textContent = 'Chương trình cá nhân hoá bởi Pulse AI';
+    document.getElementById('pfm-subtitle').textContent = 'Personalised by Pulse AI';
 
   } catch (err) {
     clearInterval(stepInterval);
     document.getElementById('pfm-current-step').innerHTML = `
       <div style="text-align:center;width:100%;padding:12px 0;">
         <div style="font-size:28px;margin-bottom:8px;">❌</div>
-        <div style="color:#ff6b6b;font-size:13px;font-weight:600;margin-bottom:6px;">Pulse gặp lỗi</div>
+        <div style="color:#ff6b6b;font-size:13px;font-weight:600;margin-bottom:6px;">Pulse error</div>
         <div style="color:rgba(255,255,255,0.4);font-size:11px;">${err.message}</div>
-        <button onclick="openPulseFreeModal()" style="margin-top:14px;padding:8px 18px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;">← Thử lại</button>
+        <button onclick="openPulseFreeModal()" style="margin-top:14px;padding:8px 18px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;">← Try again</button>
       </div>`;
   }
 }
@@ -2992,8 +2992,8 @@ function renderFreeProgramPreview(program) {
   const totalEx = days.reduce((s, d) => s + (program[d].phases || []).reduce((ps, ph) => ps + (ph.exercises || []).length, 0), 0);
 
   let html = `<div style="padding:14px 0 10px;border-bottom:1px solid #1a1a2e;margin-bottom:14px;">
-    <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} ngày tập · ${totalEx} bài tập</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Chương trình cá nhân hoá bởi ⚡ Pulse AI</div>
+    <div style="font-size:12px;font-weight:700;color:#fff;">${days.length} training days · ${totalEx} exercises</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Personalised by ⚡ Pulse AI</div>
   </div>`;
 
   for (const day of days) {
@@ -3035,16 +3035,16 @@ window._closeModal = closeModal;
 
 // ── QUOTES ────────────────────────────────────────────
 const WORKOUT_QUOTES = [
-  { icon: '🔥', text: 'Tốt lắm! Mỗi rep đều có giá trị.' },
-  { icon: '💪', text: 'Không có gì dễ dàng, nhưng bạn đang làm được!' },
-  { icon: '⚡', text: 'Cơ thể bạn đang thay đổi từng ngày.' },
-  { icon: '🎯', text: 'Tập trung. Mỗi set đưa bạn đến mục tiêu.' },
-  { icon: '🚀', text: 'Consistency beats intensity — bạn đang làm đúng rồi!' },
-  { icon: '🌟', text: 'Người ta nghỉ. Bạn tập. Đó là sự khác biệt.' },
-  { icon: '💥', text: 'Đau rát là tiến bộ — embrace it!' },
-  { icon: '🏅', text: 'Mỗi bài hoàn thành là 1 bước tới phiên bản tốt hơn.' },
-  { icon: '⚔️', text: 'Kỷ luật hôm nay, kết quả ngày mai.' },
-  { icon: '🎖️', text: 'Coach tự hào về bạn. Tiếp tục!' },
+  { icon: '🔥', text: 'Every rep counts. Keep going.' },
+  { icon: "💪", text: "Nothing worth having comes easy — but you're doing it." },
+  { icon: '⚡', text: 'Your body is changing every single day.' },
+  { icon: '🎯', text: 'Focus. Every set brings you closer.' },
+  { icon: '🚀', text: 'Consistency beats intensity — you\'re doing it right.' },
+  { icon: '🌟', text: 'Others rest. You train. That\'s the difference.' },
+  { icon: '💥', text: 'The burn is progress — embrace it.' },
+  { icon: '🏅', text: 'Every exercise done is one step to a better you.' },
+  { icon: '⚔️', text: 'Discipline today, results tomorrow.' },
+  { icon: '🎖️', text: 'Your coach is proud of you. Keep going.' },
 ];
 let _quoteTimer = null;
 
@@ -3064,10 +3064,10 @@ function showCelebration(totalEx) {
   document.getElementById('cel-day').textContent = activeDay;
   // Random celebration message
   const msgs = [
-    'Bạn đã hoàn thành tất cả bài tập hôm nay. Tuyệt vời!',
-    'Xuất sắc! Không bỏ lỡ một bài nào. Consistency is key!',
-    'Hôm nay bạn đã chiến thắng chính mình. Tốt lắm!',
-    'Workout hoàn hảo! Cơ thể bạn cảm ơn bạn tối nay.',
+    'You completed every exercise today. Outstanding!',
+    'Perfect session! Not a single exercise missed.',
+    'Today you beat your own limits. Well done!',
+    'Perfect workout! Your body thanks you tonight.',
   ];
   document.getElementById('cel-sub').textContent = msgs[Math.floor(Math.random()*msgs.length)];
   screen.classList.add('show');
@@ -3128,7 +3128,7 @@ window._addDay = addDay;
 window._finishWorkout = finishWorkout;
 window.__finishWorkout = finishWorkout;
 
-// ── EXERCISE LIBRARY CACHE (Bước 6) ───────────────────
+// ── EXERCISE LIBRARY CACHE (Step 6) ───────────────────
 async function loadExerciseCache() {
   if (_exerciseCacheLoaded) return;
   try {
@@ -3172,8 +3172,8 @@ function renderPickerResults() {
   if (diff) list = list.filter(e => (e.difficulty || '').toLowerCase() === diff.toLowerCase());
 
   const wrap = document.getElementById('picker-results');
-  if (!_exerciseCacheLoaded) { wrap.innerHTML = '<div class="picker-loading">Đang tải thư viện...</div>'; return; }
-  if (list.length === 0)     { wrap.innerHTML = '<div class="picker-loading">Không tìm thấy bài tập nào.</div>'; return; }
+  if (!_exerciseCacheLoaded) { wrap.innerHTML = '<div class="picker-loading">Loading library...</div>'; return; }
+  if (list.length === 0)     { wrap.innerHTML = '<div class="picker-loading">No exercises found.</div>'; return; }
 
   const diffColor = { beginner:'#d9d9d9', intermediate:'#e09535', advanced:'#ffffff' };
   const muscleRole = (ms) => {
@@ -3210,17 +3210,17 @@ function selectExercise(name) {
   closeExercisePicker();
 }
 
-// ── COACH DASHBOARD (Bước 5) ───────────────────────────
+// ── COACH DASHBOARD (Step 5) ───────────────────────────
 async function renderCoachDashboard() {
   const wrap = document.getElementById('coach-dashboard');
   if (!wrap) return;
   if (userRole !== 'coach') { wrap.style.display = 'none'; return; }
-  if (!activeClient) { wrap.innerHTML = '<div class="cd-empty">Chọn client để xem dashboard.</div>'; return; }
+  if (!activeClient) { wrap.innerHTML = '<div class="cd-empty">Select a client to view the dashboard.</div>'; return; }
   wrap.style.display = 'block';
 
   const hist = await getHistory();
   if (hist.length === 0) {
-    wrap.innerHTML = '<div class="cd-empty">Chưa có buổi tập nào được ghi nhận.</div>';
+    wrap.innerHTML = '<div class="cd-empty">No sessions recorded yet.</div>';
     return;
   }
 
@@ -3267,19 +3267,19 @@ async function renderCoachDashboard() {
   wrap.innerHTML = `
     <div class="cd-section-title">Coach Dashboard — ${activeClient.name}</div>
     <div class="cd-stats-row">
-      <div class="cd-stat"><div class="cd-stat-num">${hist.length}</div><div class="cd-stat-lbl">Tổng buổi</div></div>
-      <div class="cd-stat"><div class="cd-stat-num">${thisWeek}</div><div class="cd-stat-lbl">Tuần này</div></div>
-      <div class="cd-stat"><div class="cd-stat-num" style="color:${wowColor}">${wowLabel}</div><div class="cd-stat-lbl">So tuần trước</div></div>
+      <div class="cd-stat"><div class="cd-stat-num">${hist.length}</div><div class="cd-stat-lbl">Total sessions</div></div>
+      <div class="cd-stat"><div class="cd-stat-num">${thisWeek}</div><div class="cd-stat-lbl">This week</div></div>
+      <div class="cd-stat"><div class="cd-stat-num" style="color:${wowColor}">${wowLabel}</div><div class="cd-stat-lbl">vs last week</div></div>
     </div>
 
     <div class="cd-card">
-      <div class="cd-card-title">Buổi tập / tuần (6 tuần gần nhất)</div>
+      <div class="cd-card-title">Sessions / week (last 6 weeks)</div>
       <div style="position:relative;height:140px"><canvas id="dash-vol-chart"></canvas></div>
     </div>
 
     ${top5.length > 0 ? `
     <div class="cd-card">
-      <div class="cd-card-title">Top 5 nhóm cơ tập nhiều nhất</div>
+      <div class="cd-card-title">Top 5 most trained muscle groups</div>
       <div class="cd-muscle-list">
         ${top5.map(([m, v], i) => `
           <div class="cd-muscle-row">
@@ -3291,9 +3291,9 @@ async function renderCoachDashboard() {
     </div>` : ''}
 
     <div class="cd-card">
-      <div class="cd-card-title">Lịch sử tập (10 buổi gần nhất)</div>
+      <div class="cd-card-title">Training history (last 10 sessions)</div>
       <table class="cd-hist-table">
-        <thead><tr><th>Ngày</th><th>Ca</th><th>Bài</th><th>Vol</th></tr></thead>
+        <thead><tr><th>Date</th><th>Day</th><th>Exs</th><th>Vol</th></tr></thead>
         <tbody>
           ${recent.map(s => {
             const d = s.date?.toDate ? s.date.toDate() : new Date(s.date);
@@ -3318,7 +3318,7 @@ async function renderCoachDashboard() {
       data: {
         labels: weeks.map(w => w.label),
         datasets: [{
-          label: 'Buổi tập',
+          label: 'Sessions',
           data: weeks.map(w => w.sessions),
           backgroundColor: weeks.map((w, i) => i === weeks.length-1 ? '#ffffff' : 'rgba(255,255,255,0.40)'),
           borderRadius: 4,
@@ -4332,7 +4332,7 @@ h1 span{color:#7665ff;}
 .celebration-btn:hover{background:rgba(255,255,255,0.88)!important;transform:translateY(-1px);}
 .confetti{position:absolute;pointer-events:none;}
 
-/* ── COACH DASHBOARD (Bước 5) ─────────────────────── */
+/* ── COACH DASHBOARD (Step 5) ─────────────────────── */
 .cd-section-title{font-family:'Figtree',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#1e90ff;margin:16px 0 10px;}
 .cd-stats-row{display:flex;gap:8px;margin-bottom:12px;}
 .cd-stat{flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center;}
@@ -4353,7 +4353,7 @@ h1 span{color:#7665ff;}
 
 /* ── LEADS VIEWER (FTN-32) ───────────────────────── */
 
-/* ── EXERCISE PICKER (Bước 6) ─────────────────────── */
+/* ── EXERCISE PICKER (Step 6) ─────────────────────── */
 .picker-modal{max-height:85vh;overflow:hidden;display:flex;flex-direction:column;}
 .picker-results{overflow-y:auto;flex:1;max-height:380px;display:flex;flex-direction:column;gap:6px;}
 .picker-loading{color:rgba(255,255,255,0.60);font-size:13px;padding:20px;text-align:center;}
@@ -4505,7 +4505,7 @@ body::before{display:none;}
 .nav-tab.active{color:#fff;border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);box-shadow:none;}
 .app-screen .app{padding-bottom:0;}
 
-/* Scroll-hide: ẩn khi scroll xuống, trừ combined-card */
+/* Scroll-hide: hide on scroll down, keep combined-card */
 .scroll-hidden{
   overflow:hidden;
   max-height:0!important;
@@ -4748,7 +4748,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="slide-body">
       <div class="slide-badge">⚡ Pulse</div>
       <div class="slide-title">TRAIN.<br/>TRACK.<br/><span>CONQUER.</span></div>
-      <div class="slide-desc">Chương trình tập luyện cá nhân hóa, theo dõi tiến độ real-time cùng HLV của bạn.</div>
+      <div class="slide-desc">Personalised training program. Track progress in real-time with your coach.</div>
       <div class="slide-coach">Your coach — <strong>Long Chu</strong></div>
       <div class="slide-dots">
         <div class="slide-dot on"></div>
@@ -4786,7 +4786,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="slide-body">
       <div class="slide-badge">📈 Progress Tracking</div>
       <div class="slide-title">BASELINE<br/>→ <span>RESULTS.</span></div>
-      <div class="slide-desc">Đo lường từ ngày đầu. Checkpoint mỗi 4 tuần. Biểu đồ tiến độ rõ ràng từng giai đoạn.</div>
+      <div class="slide-desc">Measured from day one. Checkpoint every 4 weeks. Clear progress charts at every stage.</div>
       <div class="slide-dots">
         <div class="slide-dot"></div>
         <div class="slide-dot on"></div>
@@ -4807,11 +4807,11 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   </div>
   <div class="login-tagline">Train with precision</div>
   <div class="login-card">
-    <div class="login-title">Đăng nhập</div>
-    <div class="login-sub">Sử dụng Gmail của bạn để truy cập chương trình tập luyện cá nhân.</div>
+    <div class="login-title">Sign In</div>
+    <div class="login-sub">Use your Gmail to access your personalised training program.</div>
     <button class="google-btn" id="google-login-btn" onclick="loginWithGoogle()">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-      <span id="google-login-btn-text">Đăng nhập với Google</span>
+      <span id="google-login-btn-text">Sign in with Google</span>
     </button>
   </div>
 </div>
@@ -4849,21 +4849,21 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       </div>
       <div class="signup-headline">Start Your<br><span>Journey</span></div>
-      <div class="signup-sub">Đăng ký để được coach xây dựng chương trình tập luyện cá nhân hoá dành riêng cho bạn.</div>
+      <div class="signup-sub">Sign up to have your coach build a personalised training program just for you.</div>
 
       <div class="signup-perks">
-        <div class="signup-perk"><div class="signup-perk-icon">🎯</div>Program thiết kế riêng theo goal & level của bạn</div>
-        <div class="signup-perk"><div class="signup-perk-icon">📊</div>Theo dõi tiến độ & số liệu mỗi tuần</div>
-        <div class="signup-perk"><div class="signup-perk-icon">💬</div>Hỗ trợ trực tiếp từ coach</div>
+        <div class="signup-perk"><div class="signup-perk-icon">🎯</div>Program designed specifically for your goal & level</div>
+        <div class="signup-perk"><div class="signup-perk-icon">📊</div>Track progress & metrics every week</div>
+        <div class="signup-perk"><div class="signup-perk-icon">💬</div>Direct support from your coach</div>
       </div>
     </div>
 
     <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:.5rem;">
       <a class="signup-cta" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank">
-        Đăng Ký Ngay →
+        Get Started →
       </a>
       <div id="no-client-debug"></div>
-      <button class="signup-logout" onclick="logout()">Đăng xuất</button>
+      <button class="signup-logout" onclick="logout()">Sign out</button>
     </div>
   </div>
 </div>
@@ -4948,16 +4948,16 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- PROGRESS PAGE -->
   <div class="progress-page" id="progress-page">
-    <!-- COACH DASHBOARD (Bước 5) -->
+    <!-- COACH DASHBOARD (Step 5) -->
     <div id="coach-dashboard" style="display:none"></div>
 
     <div class="checkpoint-banner hidden" id="checkpoint-banner">
       <div class="cp-icon">📋</div>
       <div class="cp-body">
-        <div class="cp-title">Checkpoint — Đã 4 tuần rồi!</div>
-        <div class="cp-sub" id="cp-sub-text">Đã đến lúc đo lại InBody!</div>
-        <button class="cp-btn" onclick="openUpdateModal()">Nhập số đo mới →</button>
-        <button class="cp-dismiss" onclick="dismissCheckpoint()">Nhắc sau</button>
+        <div class="cp-title">Checkpoint — 4 weeks already!</div>
+        <div class="cp-sub" id="cp-sub-text">Time to re-measure with InBody!</div>
+        <button class="cp-btn" onclick="openUpdateModal()">Enter new measurements →</button>
+        <button class="cp-dismiss" onclick="dismissCheckpoint()">Remind me later</button>
       </div>
     </div>
     <div class="reset-bar" id="reset-collapsed" onclick="toggleResetOptions()">
@@ -4967,11 +4967,11 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="reset-options" id="reset-options">
       <button class="reset-option-btn" onclick="resetAssessment()">
         <span class="reset-option-icon">📊</span>
-        <div><div class="reset-option-title">Assessment data</div><div class="reset-option-sub">Xóa toàn bộ baseline & số đo</div></div>
+        <div><div class="reset-option-title">Assessment data</div><div class="reset-option-sub">Delete all baseline & measurements</div></div>
       </button>
       <button class="reset-option-btn" onclick="resetSessions()">
         <span class="reset-option-icon">🏋️</span>
-        <div><div class="reset-option-title">Workout history</div><div class="reset-option-sub">Reset sessions về 0</div></div>
+        <div><div class="reset-option-title">Workout history</div><div class="reset-option-sub">Reset sessions to 0</div></div>
       </button>
     </div>
     <div id="progress-banner-wrap"></div>
@@ -5023,49 +5023,49 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="baseline-screen hidden" id="baseline-screen">
   <div class="baseline-top">
     <div class="baseline-title">Your <span>Baseline</span></div>
-    <div class="baseline-greeting" id="baseline-greeting-text">Nhập số đo ban đầu.</div>
+    <div class="baseline-greeting" id="baseline-greeting-text">Enter your starting measurements.</div>
   </div>
   <div class="baseline-card">
-    <div class="baseline-section">Thông số cơ bản</div>
+    <div class="baseline-section">Basic metrics</div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Cân nặng (kg)</label><input class="baseline-input" id="bl-weight" type="number" placeholder="72" oninput="blCalc()"></div>
-      <div class="baseline-group"><label class="baseline-label">Chiều cao (cm)</label><input class="baseline-input" id="bl-height" type="number" placeholder="170" oninput="blCalc()"></div>
+      <div class="baseline-group"><label class="baseline-label">Weight (kg)</label><input class="baseline-input" id="bl-weight" type="number" placeholder="72" oninput="blCalc()"></div>
+      <div class="baseline-group"><label class="baseline-label">Height (cm)</label><input class="baseline-input" id="bl-height" type="number" placeholder="170" oninput="blCalc()"></div>
     </div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Tuổi</label><input class="baseline-input" id="bl-age" type="number" placeholder="28" oninput="blCalc()"></div>
-      <div class="baseline-group"><label class="baseline-label">Giới tính</label>
+      <div class="baseline-group"><label class="baseline-label">Age</label><input class="baseline-input" id="bl-age" type="number" placeholder="28" oninput="blCalc()"></div>
+      <div class="baseline-group"><label class="baseline-label">Gender</label>
         <div class="baseline-chip-row">
-          <div class="baseline-chip sel" id="bl-male" onclick="blGender('male')">Nam</div>
-          <div class="baseline-chip" id="bl-female" onclick="blGender('female')">Nữ</div>
+          <div class="baseline-chip sel" id="bl-male" onclick="blGender('male')">Male</div>
+          <div class="baseline-chip" id="bl-female" onclick="blGender('female')">Female</div>
         </div>
       </div>
     </div>
     <div class="baseline-calc" id="bl-calc" style="display:none">
       <div class="baseline-calc-item"><div class="baseline-calc-val" id="bl-bmi">—</div><div class="baseline-calc-lbl">BMI</div></div>
       <div class="baseline-calc-item"><div class="baseline-calc-val" id="bl-tdee">—</div><div class="baseline-calc-lbl">TDEE kcal</div></div>
-      <div class="baseline-calc-item"><div class="baseline-calc-val" id="bl-cat">—</div><div class="baseline-calc-lbl">Phân loại</div></div>
+      <div class="baseline-calc-item"><div class="baseline-calc-val" id="bl-cat">—</div><div class="baseline-calc-lbl">Category</div></div>
     </div>
   </div>
   <div class="baseline-card">
-    <div class="baseline-section">Số đo vòng <span class="baseline-opt">— optional</span></div>
+    <div class="baseline-section">Body measurements <span class="baseline-opt">— optional</span></div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Vòng eo (cm)</label><input class="baseline-input" id="bl-waist" type="number" placeholder="80"></div>
-      <div class="baseline-group"><label class="baseline-label">Vòng hông (cm)</label><input class="baseline-input" id="bl-hip" type="number" placeholder="95"></div>
+      <div class="baseline-group"><label class="baseline-label">Waist (cm)</label><input class="baseline-input" id="bl-waist" type="number" placeholder="80"></div>
+      <div class="baseline-group"><label class="baseline-label">Hip (cm)</label><input class="baseline-input" id="bl-hip" type="number" placeholder="95"></div>
     </div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Vòng ngực (cm)</label><input class="baseline-input" id="bl-chest" type="number" placeholder="98"></div>
-      <div class="baseline-group"><label class="baseline-label">Vòng đùi (cm)</label><input class="baseline-input" id="bl-thigh" type="number" placeholder="58"></div>
+      <div class="baseline-group"><label class="baseline-label">Chest (cm)</label><input class="baseline-input" id="bl-chest" type="number" placeholder="98"></div>
+      <div class="baseline-group"><label class="baseline-label">Thigh (cm)</label><input class="baseline-input" id="bl-thigh" type="number" placeholder="58"></div>
     </div>
   </div>
   <div class="baseline-card">
     <div class="baseline-section">InBody / Body fat <span class="baseline-opt">— optional</span></div>
     <div class="baseline-row">
       <div class="baseline-group"><label class="baseline-label">Body fat % (PBF)</label><input class="baseline-input" id="bl-pbf" type="number" placeholder="22.0" step="0.1"></div>
-      <div class="baseline-group"><label class="baseline-label">Cơ bắp SMM (kg)</label><input class="baseline-input" id="bl-smm" type="number" placeholder="28.5" step="0.1"></div>
+      <div class="baseline-group"><label class="baseline-label">Lean mass SMM (kg)</label><input class="baseline-input" id="bl-smm" type="number" placeholder="28.5" step="0.1"></div>
     </div>
   </div>
   <button class="baseline-save-btn" onclick="saveBaseline()">Save Baseline →</button>
-  <div class="baseline-skip" onclick="skipBaseline()">Bỏ qua, nhập sau</div>
+  <div class="baseline-skip" onclick="skipBaseline()">Skip, enter later</div>
 </div>
 
 <!-- EXERCISE INFO MODAL -->
@@ -5102,19 +5102,19 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="modal-overlay" id="update-modal" onclick="if(event.target===this)closeModal('update-modal')">
   <div class="modal">
     <div class="modal-title">Checkpoint Update</div>
-    <div class="modal-sub" id="update-modal-sub">Nhập số đo mới từ InBody.</div>
+    <div class="modal-sub" id="update-modal-sub">Enter new measurements from InBody.</div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Cân nặng (kg) *</label><input class="baseline-input" id="up-weight" type="number" placeholder="70" step="0.1"></div>
+      <div class="baseline-group"><label class="baseline-label">Weight (kg) *</label><input class="baseline-input" id="up-weight" type="number" placeholder="70" step="0.1"></div>
       <div class="baseline-group"><label class="baseline-label">Body fat % (PBF)</label><input class="baseline-input" id="up-pbf" type="number" placeholder="21.0" step="0.1"></div>
     </div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Cơ bắp SMM (kg)</label><input class="baseline-input" id="up-smm" type="number" placeholder="29.0" step="0.1"></div>
-      <div class="baseline-group"><label class="baseline-label">Mỡ nội tạng</label><input class="baseline-input" id="up-vfl" type="number" placeholder="7"></div>
+      <div class="baseline-group"><label class="baseline-label">Lean mass SMM (kg)</label><input class="baseline-input" id="up-smm" type="number" placeholder="29.0" step="0.1"></div>
+      <div class="baseline-group"><label class="baseline-label">Visceral fat</label><input class="baseline-input" id="up-vfl" type="number" placeholder="7"></div>
     </div>
-    <div class="baseline-section" style="margin-top:8px">Số đo vòng <span class="baseline-opt">— optional</span></div>
+    <div class="baseline-section" style="margin-top:8px">Body measurements <span class="baseline-opt">— optional</span></div>
     <div class="baseline-row">
-      <div class="baseline-group"><label class="baseline-label">Vòng eo (cm)</label><input class="baseline-input" id="up-waist" type="number" placeholder="79"></div>
-      <div class="baseline-group"><label class="baseline-label">Vòng hông (cm)</label><input class="baseline-input" id="up-hip" type="number" placeholder="94"></div>
+      <div class="baseline-group"><label class="baseline-label">Waist (cm)</label><input class="baseline-input" id="up-waist" type="number" placeholder="79"></div>
+      <div class="baseline-group"><label class="baseline-label">Hip (cm)</label><input class="baseline-input" id="up-hip" type="number" placeholder="94"></div>
     </div>
     <div class="form-actions" style="margin-top:14px">
       <button class="btn-save" onclick="saveCheckpoint()">Save Update</button>
@@ -5127,7 +5127,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="modal-overlay" id="edit-client-modal" onclick="if(event.target===this)closeModal('edit-client-modal')">
   <div class="modal">
     <div class="modal-title">Edit Client Info</div>
-    <div class="modal-sub">Cập nhật thông tin đăng nhập và profile của khách.</div>
+    <div class="modal-sub">Update client login info and profile.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="edit-client-name" placeholder="Thai Son"></div>
       <div class="form-group"><label class="form-label">Gmail</label><input class="form-input" id="edit-client-email" type="email" placeholder="client@gmail.com"></div>
@@ -5149,7 +5149,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="modal-overlay" id="add-client-modal" onclick="if(event.target===this)closeModal('add-client-modal')">
   <div class="modal">
     <div class="modal-title">Add New Client</div>
-    <div class="modal-sub">Client sẽ dùng Gmail để login. AI sẽ tự động generate program sau khi tạo.</div>
+    <div class="modal-sub">Client will use Gmail to log in. AI will auto-generate a program after creation.</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="new-client-name" placeholder="Thai Son"></div>
       <div class="form-group"><label class="form-label">Gmail</label><input class="form-input" id="new-client-email" type="email" placeholder="client@gmail.com"></div>
@@ -5158,15 +5158,15 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
           <option>Beginner</option><option>Intermediate</option><option selected>Advanced</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="new-client-goal" placeholder="Giảm cân / Tăng cơ / Sức bền"></div>
+      <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="new-client-goal" placeholder="Weight loss / Muscle gain / Endurance"></div>
       <div class="form-group"><label class="form-label">Sessions/Week</label>
         <select class="form-select" id="new-client-sessions">
-          <option value="3" selected>3 ngày (Mon / Wed / Fri)</option>
-          <option value="4">4 ngày (Mon / Tue / Thu / Fri)</option>
-          <option value="5">5 ngày (Mon–Fri)</option>
+          <option value="3" selected>3 days (Mon / Wed / Fri)</option>
+          <option value="4">4 days (Mon / Tue / Thu / Fri)</option>
+          <option value="5">5 days (Mon–Fri)</option>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Notes / Chấn thương</label><input class="form-input" id="new-client-notes" placeholder="Đau lưng thấp, không squat nặng..."></div>
+      <div class="form-group"><label class="form-label">Notes / Injuries</label><input class="form-input" id="new-client-notes" placeholder="Lower back pain, no heavy squats..."></div>
       <div class="form-group"><label class="form-label">Age <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label><input class="form-input" id="new-client-age" type="number" min="14" max="80" placeholder="e.g. 28"></div>
       <div class="form-group"><label class="form-label">Gender <span style="font-weight:400;opacity:.5;font-size:10px">(optional)</span></label>
         <select class="form-select" id="new-client-gender">
@@ -5205,7 +5205,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <div id="pulse-steps-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
       <div id="pulse-current-step" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:oklch(68% .16 295 / .08);border:1px solid oklch(68% .16 295 / .25);border-radius:10px;">
         <div class="pulse-dot-spinner"><span></span></div>
-        <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pulse-current-text">Khởi động Pulse...</div>
+        <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pulse-current-text">Starting Pulse...</div>
       </div>
     </div>
 
@@ -5231,7 +5231,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
           <div style="width:36px;height:36px;background:oklch(68% .16 295);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px oklch(68% .16 295 / .45);">⚡</div>
           <div>
             <div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px;">Pulse Free</div>
-            <div id="pfm-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);">Nhận chương trình 1 tuần miễn phí</div>
+            <div id="pfm-subtitle" style="font-size:11px;color:rgba(255,255,255,0.4);">Get your free 1-week program</div>
           </div>
         </div>
         <button class="pfm-close-btn" onclick="closePulseFreeModal()">×</button>
@@ -5240,70 +5240,70 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <!-- PHASE 1: Form -->
       <div id="pfm-form-phase" style="padding:22px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:20px;">
-          Điền thông tin bên dưới — Pulse sẽ tạo <strong style="color:#fff;">chương trình tập 1 tuần</strong> cá nhân hoá hoàn toàn miễn phí.
+          Fill in below — Pulse will create a <strong style="color:#fff;">personalised 1-week program</strong> completely free.
         </div>
 
         <div style="display:flex;flex-direction:column;gap:14px;">
           <div>
-            <label class="pfm-label">Tên của bạn *</label>
-            <input class="pfm-input" id="pfm-name" type="text" placeholder="Ví dụ: Nguyễn Văn A">
+            <label class="pfm-label">Your name *</label>
+            <input class="pfm-input" id="pfm-name" type="text" placeholder="e.g. John Smith">
           </div>
           <div>
             <label class="pfm-label">Email *</label>
             <input class="pfm-input" id="pfm-email" type="email" placeholder="email@gmail.com">
           </div>
           <div>
-            <label class="pfm-label">Mục tiêu *</label>
+            <label class="pfm-label">Goal *</label>
             <select class="pfm-select" id="pfm-goal">
-              <option value="">— Chọn mục tiêu —</option>
-              <option value="Giảm mỡ, cải thiện vóc dáng">🔥 Giảm mỡ, cải thiện vóc dáng</option>
-              <option value="Tăng cơ, tăng sức mạnh">💪 Tăng cơ, tăng sức mạnh</option>
-              <option value="Cải thiện tư thế, phục hồi">🧘 Cải thiện tư thế, phục hồi</option>
+              <option value="">— Select goal —</option>
+              <option value="Fat loss, body recomposition">🔥 Fat loss, body recomposition</option>
+              <option value="Muscle gain, strength">💪 Muscle gain, strength</option>
+              <option value="Posture improvement, recovery">🧘 Posture improvement, recovery</option>
             </select>
           </div>
           <div class="pfm-row">
             <div>
-              <label class="pfm-label">Trình độ *</label>
+              <label class="pfm-label">Level *</label>
               <select class="pfm-select" id="pfm-level">
-                <option value="">— Chọn —</option>
-                <option value="Beginner">🌱 Mới bắt đầu</option>
-                <option value="Intermediate">🔥 Trung cấp</option>
-                <option value="Advanced">⚡ Nâng cao</option>
+                <option value="">— Select —</option>
+                <option value="Beginner">🌱 Beginner</option>
+                <option value="Intermediate">🔥 Intermediate</option>
+                <option value="Advanced">⚡ Advanced</option>
               </select>
             </div>
             <div>
-              <label class="pfm-label">Số buổi/tuần *</label>
+              <label class="pfm-label">Sessions/week *</label>
               <select class="pfm-select" id="pfm-sessions">
                 <option value="">—</option>
-                <option value="3">3 buổi</option>
-                <option value="4">4 buổi</option>
-                <option value="5">5 buổi</option>
-                <option value="6">6 buổi</option>
+                <option value="3">3 sessions</option>
+                <option value="4">4 sessions</option>
+                <option value="5">5 sessions</option>
+                <option value="6">6 sessions</option>
               </select>
             </div>
           </div>
           <div class="pfm-row">
             <div>
-              <label class="pfm-label">Giới tính</label>
+              <label class="pfm-label">Gender</label>
               <select class="pfm-select" id="pfm-gender">
-                <option value="">— Không bắt buộc —</option>
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
+                <option value="">— Optional —</option>
+                <option value="Nam">Male</option>
+                <option value="Female">Female</option>
               </select>
             </div>
             <div>
-              <label class="pfm-label">Cân nặng (kg)</label>
-              <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="Ví dụ: 68">
+              <label class="pfm-label">Weight (kg)</label>
+              <input class="pfm-input" id="pfm-weight" type="number" min="30" max="200" placeholder="e.g. 68">
             </div>
           </div>
           <div>
-            <label class="pfm-label">Giới hạn / Chấn thương (nếu có)</label>
+            <label class="pfm-label">Limitations / Injuries (if any)</label>
             <div id="pfm-limitations" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="lower_back_pain" style="accent-color:#7665ff;"> Đau lưng dưới</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="lower_back_pain" style="accent-color:#7665ff;"> Lower back pain</label>
               <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="shoulder_pain" style="accent-color:#7665ff;"> Đau vai</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="ankle_pain" style="accent-color:#7665ff;"> Đau mắt cá chân</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="neck_stiffness" style="accent-color:#7665ff;"> Cứng cổ</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="knee_pain" style="accent-color:#7665ff;"> Đau đầu gối</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="ankle_pain" style="accent-color:#7665ff;"> Ankle pain</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="neck_stiffness" style="accent-color:#7665ff;"> Neck stiffness</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;user-select:none;"><input type="checkbox" value="knee_pain" style="accent-color:#7665ff;"> Knee pain</label>
             </div>
           </div>
         </div>
@@ -5311,21 +5311,21 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div id="pfm-form-error" style="display:none;color:#ff6b6b;font-size:12px;margin-top:12px;padding:10px 14px;background:rgba(255,107,107,.08);border-radius:8px;border:1px solid rgba(255,107,107,.2);"></div>
 
         <button class="pfm-submit" id="pfm-submit-btn" onclick="submitPulseFreeForm()" style="margin-top:20px;">
-          ⚡ Generate chương trình
+          ⚡ Generate program
         </button>
 
         <div style="font-size:11px;color:rgba(255,255,255,0.28);text-align:center;margin-top:12px;line-height:1.6;">
-          Thông tin của bạn được bảo mật.<br>Coach Long Chu có thể liên hệ để tư vấn thêm.
+          Your info is private.<br>Coach Long Chu may reach out to offer additional guidance.
         </div>
       </div>
 
       <!-- PHASE 2: Pulse Generating -->
       <div id="pfm-loading-phase" style="display:none;padding:22px;">
-        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Pulse đang phân tích và tạo chương trình cho bạn...</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Pulse is analysing and building your program...</div>
         <div id="pfm-steps-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
         <div id="pfm-current-step" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:oklch(68% .16 295 / .08);border:1px solid oklch(68% .16 295 / .25);border-radius:10px;">
           <div class="pulse-dot-spinner"><span></span></div>
-          <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pfm-current-text">Khởi động Pulse...</div>
+          <div style="color:rgba(255,255,255,0.75);font-size:12px;font-weight:500;" id="pfm-current-text">Starting Pulse...</div>
         </div>
       </div>
 
@@ -5336,8 +5336,8 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
           <div class="pfm-success-badge">
             <div style="font-size:22px;">✅</div>
             <div>
-              <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Chương trình của bạn đã sẵn sàng!</div>
-              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1 tuần tập luyện — được tạo bởi Pulse AI</div>
+              <div style="font-size:13px;font-weight:700;color:#44cc88;" id="pfm-result-title">Your program is ready!</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;">1-week training plan — created by Pulse AI</div>
             </div>
           </div>
         </div>
@@ -5348,16 +5348,16 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <!-- CTA -->
         <div style="padding:16px 22px 22px;border-top:1px solid #1a1a2e;display:flex;flex-direction:column;gap:10px;margin-top:8px;">
           <div style="text-align:center;">
-            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">Muốn có full 4-week program tối ưu riêng?</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Đăng ký để coach Long Chu thiết kế chương trình chuyên sâu, theo dõi sát sao tiến trình của bạn.</div>
+            <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">Want a full personalised 4-week program?</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">Sign up for coach Long Chu to design an in-depth program and closely track your progress.</div>
           </div>
           <a class="pfm-cta-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSeMJ11udwoqW2Hj3n3jzlJSNWSBTSn9gbDrIS-aZ7SWb0ZGVw/viewform" target="_blank">
-            📋 Đăng ký Full Program →
+            📋 Sign up Full Program →
           </a>
           <a class="pfm-cta-primary" href="https://zalo.me/0902787150" target="_blank" style="background:linear-gradient(135deg,#0068ff,#00a6ff);">
-            💬 Chat với coach ngay
+            💬 Chat with coach
           </a>
-          <button class="pfm-cta-secondary" onclick="closePulseFreeModal()">Đóng</button>
+          <button class="pfm-cta-secondary" onclick="closePulseFreeModal()">Close</button>
         </div>
       </div>
 
@@ -5369,7 +5369,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="modal-overlay" id="add-day-modal" onclick="if(event.target===this)closeModal('add-day-modal')">
   <div class="modal">
     <div class="modal-title">Add Training Day</div>
-    <div class="modal-sub">Thêm ngày tập mới vào lịch.</div>
+    <div class="modal-sub">Add a new training day to the schedule.</div>
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Day</label>
       <select class="form-select" id="new-day-select">
@@ -5387,34 +5387,34 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 </div>
 
 
-<!-- EXERCISE PICKER MODAL (Bước 6) -->
+<!-- EXERCISE PICKER MODAL (Step 6) -->
 <div class="modal-overlay" id="exercise-picker-modal" onclick="if(event.target===this)closeExercisePicker()">
   <div class="modal picker-modal">
-    <div class="modal-title">Chọn bài tập</div>
-    <input class="form-input" id="picker-search" placeholder="Tìm tên bài tập..." oninput="renderPickerResults()" style="margin-bottom:10px">
+    <div class="modal-title">Select exercise</div>
+    <input class="form-input" id="picker-search" placeholder="Search exercises..." oninput="renderPickerResults()" style="margin-bottom:10px">
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <select class="form-select" id="picker-muscle" onchange="renderPickerResults()" style="flex:1">
-        <option value="">Tất cả cơ</option>
+        <option value="">All muscles</option>
         <option>Chest</option><option>Back</option><option>Shoulders</option>
         <option>Biceps</option><option>Triceps</option><option>Glutes</option>
         <option>Quads</option><option>Hamstrings</option><option>Core</option>
         <option>Calves</option><option>Traps</option><option>Lats</option>
       </select>
       <select class="form-select" id="picker-tool" onchange="renderPickerResults()" style="flex:1">
-        <option value="">Tất cả dụng cụ</option>
+        <option value="">All equipment</option>
         <option>Barbell</option><option>Dumbbell</option><option>Cable</option>
         <option>Machine</option><option>Bodyweight</option><option>Kettlebell</option>
         <option>Band</option><option>TRX</option>
       </select>
       <select class="form-select" id="picker-diff" onchange="renderPickerResults()" style="flex:1">
-        <option value="">Độ khó</option>
+        <option value="">Difficulty</option>
         <option value="beginner">Beginner</option>
         <option value="intermediate">Intermediate</option>
         <option value="advanced">Advanced</option>
       </select>
     </div>
-    <div class="picker-results" id="picker-results"><div class="picker-loading">Đang tải...</div></div>
-    <button class="modal-close" onclick="closeExercisePicker()" style="margin-top:12px">Đóng</button>
+    <div class="picker-results" id="picker-results"><div class="picker-loading">Loading...</div></div>
+    <button class="modal-close" onclick="closeExercisePicker()" style="margin-top:12px">Close</button>
   </div>
 </div>
 
@@ -5652,7 +5652,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 <div class="celebration-screen" id="celebration-screen">
   <div class="celebration-emoji">🏆</div>
   <div class="celebration-title">Workout Complete!</div>
-  <div class="celebration-sub" id="cel-sub">Bạn đã hoàn thành tất cả bài tập hôm nay. Tuyệt vời!</div>
+  <div class="celebration-sub" id="cel-sub">You completed every exercise today. Outstanding!</div>
   <div class="celebration-stats">
     <div class="cel-stat">
       <div class="cel-stat-num" id="cel-exercises">0</div>
@@ -5663,7 +5663,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       <div class="cel-stat-lbl">Session</div>
     </div>
   </div>
-  <button class="celebration-btn" onclick="closeCelebration()">Hoàn thành ngày tập ✓</button>
+  <button class="celebration-btn" onclick="closeCelebration()">Finish session ✓</button>
 </div>
 <div id="workout-toast"></div>
 
@@ -5672,8 +5672,8 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="wsm-card">
     <div class="wsm-handle"></div>
     <button class="wsm-close" onclick="closeWorkoutSummary()">✕</button>
-    <div class="wsm-title">Hoàn thành</div>
-    <div class="wsm-subtitle">Xuất sắc. Mỗi buổi là 1 bước tiến.</div>
+    <div class="wsm-title">Complete</div>
+    <div class="wsm-subtitle">Great work. Every session counts.</div>
     <div class="wsm-pct-ring">
       <svg viewBox="0 0 80 80" width="72" height="72">
         <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
@@ -5686,22 +5686,22 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     <div class="wsm-stats">
       <div class="wsm-stat" onclick="wsmTip(this)">
         <div class="wsm-stat-val wsm-done">0/0</div>
-        <div class="wsm-stat-lbl">Bài tập</div>
-        <div class="wsm-tip">Số bài hoàn thành / tổng số bài trong buổi hôm nay.</div>
+        <div class="wsm-stat-lbl">Exercises</div>
+        <div class="wsm-tip">Exercises completed vs total for today's session.</div>
       </div>
       <div class="wsm-stat" onclick="wsmTip(this)">
         <div class="wsm-stat-val wsm-ton">—</div>
-        <div class="wsm-stat-lbl">Khối lượng</div>
-        <div class="wsm-tip">Tổng kg đã nâng = sets × reps × kg, cộng tất cả bài lại.</div>
+        <div class="wsm-stat-lbl">Volume</div>
+        <div class="wsm-tip">Total weight lifted = sets × reps × kg, summed across all exercises.</div>
       </div>
       <div class="wsm-stat" onclick="wsmTip(this)">
         <div class="wsm-stat-val wsm-dur">—</div>
-        <div class="wsm-stat-lbl">Thời gian</div>
-        <div class="wsm-tip">Tính từ lúc tick bài đầu tiên đến khi bấm Hoàn thành.</div>
+        <div class="wsm-stat-lbl">Duration</div>
+        <div class="wsm-tip">Measured from your first tick to pressing Complete.</div>
       </div>
     </div>
     <div class="wsm-streak-row"><span class="wsm-streak">—</span></div>
-    <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Đóng lại</button>
+    <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Close</button>
   </div>
 </div>
 
