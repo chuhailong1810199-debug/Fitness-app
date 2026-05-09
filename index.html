@@ -3738,7 +3738,7 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* USER AVATAR */
-.user-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.user-bar{display:flex;align-items:center;gap:10px;margin-bottom:0;}
 .user-bar > div{min-width:0;}
 .user-avatar{width:32px;height:32px;border-radius:50%;background:oklch(18% .04 295);color:#fff;font-family:'Figtree',sans-serif;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;border:1.5px solid oklch(68% .16 295 / 0.55);}
 .user-logout{font-size:11px;color:rgba(255,255,255,0.22);background:none;border:none;cursor:pointer;font-family:'Figtree',sans-serif;text-transform:uppercase;letter-spacing:.5px;}
@@ -3876,7 +3876,9 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .nav{display:flex;gap:0;justify-content:center;}
 .nav-tab{flex:1;max-width:120px;padding:10px;text-align:center;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,0.60);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .nav-tab.active{color:oklch(68% .16 295);border-bottom-color:oklch(68% .16 295);}
-.header{margin-bottom:1rem;}
+.header{margin-bottom:.5rem;padding:6px 10px;}
+@keyframes heartbeat{0%,100%{transform:scale(1);}14%{transform:scale(1.08);}28%{transform:scale(1);}42%{transform:scale(1.05);}70%{transform:scale(1);}}
+.pulse-logo-anim{animation:heartbeat 2.4s ease-in-out infinite;transform-origin:center;}
 h1{font-family:'Figtree',sans-serif;font-size:28px;font-weight:800;text-transform:none;letter-spacing:1px;color:#fff;}
 h1 span{color:#7665ff;}
 .user-bar h1{overflow:visible;text-overflow:clip;white-space:nowrap;max-width:none;flex-shrink:0;}
@@ -4928,14 +4930,14 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="header">
     <div class="user-bar">
       <div style="display:flex;align-items:center;gap:8px;flex:1">
-        <img src="images/pulse-logo.png" alt="Pulse" style="height:88px;width:auto;object-fit:contain;">
+        <img src="images/pulse-logo.png" alt="Pulse" class="pulse-logo-anim" style="height:60px;width:auto;object-fit:contain;">
       </div>
       <span class="user-role-badge" id="role-badge"></span>
       <div class="user-avatar" id="user-avatar" title="Profile">?</div>
       <button class="user-logout" onclick="logout()">Sign out</button>
     </div>
-    <p class="subtitle" id="date-display"></p>
   </div>
+  <p class="subtitle" id="date-display" style="margin-bottom:.75rem;padding-left:4px;"></p>
 
   <!-- COACH: client selector -->
   <div class="client-bar" id="client-bar" style="display:none">
