@@ -1,6 +1,7 @@
 {
   "routes": [
     { "src": "/migrate", "dest": "/migrate.html" },
+    { "src": "/manifest.json", "dest": "/manifest.json", "headers": { "Content-Type": "application/manifest+json" } },
     { "src": "/", "dest": "/landing.html" },
     { "handle": "filesystem" }
   ]
