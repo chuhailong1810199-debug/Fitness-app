@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Pulse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -3689,7 +3689,7 @@ document.dispatchEvent(new Event('app-ready'));
 *{box-sizing:border-box;margin:0;padding:0;}
 /* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
 input,select,textarea{font-size:16px;}
-body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;background-color:#0d0d0d;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:40px 40px;background-attachment:fixed;color:#ffffff;padding:1rem;min-height:100vh;}
+body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;background-color:#0d0d0d;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:40px 40px;background-attachment:fixed;color:#ffffff;padding:1rem;padding-left:max(1rem, env(safe-area-inset-left));padding-right:max(1rem, env(safe-area-inset-right));padding-top:max(1rem, env(safe-area-inset-top));min-height:100vh;}
 .hidden{display:none!important;}
 .app{max-width:500px;margin:0 auto;}
 
@@ -4928,7 +4928,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
   <div class="header">
     <div class="user-bar">
       <div style="display:flex;align-items:center;gap:8px;flex:1">
-        <img src="images/pulse-logo.png" alt="Pulse" style="height:44px;width:auto;object-fit:contain;">
+        <img src="images/pulse-logo.png" alt="Pulse" style="height:88px;width:auto;object-fit:contain;">
       </div>
       <span class="user-role-badge" id="role-badge"></span>
       <div class="user-avatar" id="user-avatar" title="Profile">?</div>
