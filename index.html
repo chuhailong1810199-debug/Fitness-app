@@ -3754,30 +3754,55 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 /* LOGIN */
 
 /* INTRO SLIDES */
-.slides-screen{position:fixed;inset:0;background:#080a12;z-index:300;}
-.slides-screen.hidden{display:none;}
-.slide{display:none;position:absolute;inset:0;flex-direction:column;justify-content:flex-end;padding:0 0 56px;}
+@keyframes slide-fade-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slide-glow-pulse{0%,100%{box-shadow:0 0 40px 8px oklch(51% .23 295/0.18)}50%{box-shadow:0 0 60px 16px oklch(51% .23 295/0.32)}}
+.slides-screen{position:fixed;inset:0;background:oklch(9% 0 0);z-index:300;overflow:hidden;}
+.slides-screen.hidden{display:none!important;}
+.slide{display:none;position:absolute;inset:0;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 0 env(safe-area-inset-bottom,24px);}
 .slide.active{display:flex;}
-/* bg decoration per slide */
+/* backgrounds */
 .slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-.slide-video-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(to bottom,rgba(8,10,18,0.45) 0%,rgba(8,10,18,0.30) 40%,rgba(8,10,18,0.82) 100%);}
-.slide-bg{position:absolute;inset:0;pointer-events:none;z-index:2;}
-.slide-bg-glow{position:absolute;border-radius:50%;filter:blur(80px);}
-/* content layer */
-.slide-body{position:relative;z-index:3;padding:0 28px;}
-.slide-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:11px;color:oklch(68% .16 295);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:18px;background:oklch(51% .23 295/0.12);border:1px solid oklch(51% .23 295/0.25);border-radius:999px;padding:5px 12px;}
-.slide-title{font-family:'Figtree',sans-serif;font-size:clamp(44px,11vw,64px);font-weight:900;text-transform:uppercase;color:#fff;line-height:1.0;letter-spacing:-0.5px;margin-bottom:16px;}
-.slide-title span{color:oklch(68% .16 295);}
-.slide-desc{font-size:14px;color:rgba(255,255,255,0.50);line-height:1.75;margin-bottom:32px;max-width:300px;}
-.slide-coach{font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:28px;letter-spacing:.3px;}
-.slide-coach strong{color:rgba(255,255,255,0.80);}
-.slide-dots{display:flex;gap:7px;margin-bottom:22px;}
-.slide-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:all .25s;}
-.slide-dot.on{background:oklch(68% .16 295);width:18px;border-radius:3px;}
-.slide-next{width:100%;padding:16px;border-radius:999px;background:#fff;color:#080a12;border:none;font-family:'Figtree',sans-serif;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-bottom:14px;}
-.slide-next:hover{background:rgba(255,255,255,0.88);transform:translateY(-1px);}
-.slide-skip{text-align:center;font-size:12px;color:rgba(255,255,255,0.25);cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;padding:6px;}
-.slide-skip:hover{color:rgba(255,255,255,0.55);}
+.slide-video-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(to bottom,oklch(9% 0 0/0.30) 0%,oklch(9% 0 0/0.15) 30%,oklch(9% 0 0/0.72) 65%,oklch(9% 0 0/0.97) 100%);}
+/* ambient glow orb */
+.slide-orb{position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,oklch(51% .23 295/0.22) 0%,transparent 70%);filter:blur(48px);z-index:2;bottom:-60px;left:50%;transform:translateX(-50%);pointer-events:none;}
+/* glass card */
+.slide-body{
+  position:relative;z-index:3;
+  width:calc(100% - 32px);max-width:420px;
+  background:oklch(100% 0 0/0.04);
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  border:1px solid oklch(100% 0 0/0.10);
+  border-radius:24px;
+  padding:28px 24px 24px;
+  margin-bottom:16px;
+  animation:slide-fade-up .45s cubic-bezier(0.22,1,0.36,1) both;
+}
+/* progress tabs */
+.slide-tabs{display:flex;gap:5px;margin-bottom:22px;}
+.slide-tab{height:3px;border-radius:99px;background:oklch(100% 0 0/0.15);transition:all .3s cubic-bezier(0.22,1,0.36,1);flex:1;}
+.slide-tab.on{background:oklch(68% .16 295);box-shadow:0 0 8px oklch(68% .16 295/0.6);}
+/* badge */
+.slide-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:oklch(68% .16 295);text-transform:uppercase;letter-spacing:2.5px;font-weight:700;margin-bottom:14px;background:oklch(51% .23 295/0.10);border:1px solid oklch(51% .23 295/0.20);border-radius:999px;padding:4px 10px;}
+/* title */
+.slide-title{font-size:clamp(36px,9vw,54px);font-weight:900;text-transform:uppercase;color:#fff;line-height:1.0;letter-spacing:-0.5px;margin-bottom:12px;}
+.slide-title span{background:linear-gradient(135deg,oklch(75% .18 295),oklch(55% .25 295));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* desc */
+.slide-desc{font-size:13.5px;color:oklch(70% 0 0);line-height:1.72;margin-bottom:20px;max-width:320px;}
+.slide-coach{font-size:12px;color:oklch(55% 0 0);margin-bottom:20px;letter-spacing:.3px;}
+.slide-coach strong{color:oklch(80% 0 0);}
+/* CTA button */
+.slide-next{
+  width:100%;padding:14px;border-radius:999px;
+  background:linear-gradient(135deg,oklch(55% .24 295) 0%,oklch(45% .26 295) 100%);
+  border:1px solid oklch(65% .20 295/0.4);
+  color:#fff;font-family:'Figtree',sans-serif;font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1.8px;cursor:pointer;
+  transition:all .22s cubic-bezier(0.22,1,0.36,1);
+  animation:slide-glow-pulse 2.6s ease-in-out infinite;
+}
+.slide-next:hover{transform:translateY(-2px);filter:brightness(1.15);}
+.slide-skip{text-align:center;font-size:11px;color:oklch(45% 0 0);cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;padding:8px 0 0;display:block;}
+.slide-skip:hover{color:oklch(65% 0 0);}
 
 .login-screen{position:fixed;inset:0;background:#0a0e1a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
 .pwa-screen{position:fixed;inset:0;background:#120828;z-index:250;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:0;}
@@ -4682,30 +4707,10 @@ body::before{display:none;}
 .stat-num{font-size:clamp(26px,5vw,36px)!important;color:#fff;text-shadow:none;}
 .stat-label,.subtitle,.form-label,.cp-label,.baseline-label,.progress-label,.wl-stat-lbl,.month-title,.cd-stat-lbl,.cd-card-title,.cp-subsection-title,.slide-desc,.login-sub{color:var(--txt-muted)!important;}
 h1,.login-logo,.signup-logo,.intro-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:800;}
-.slide-badge{font-family:'Figtree',sans-serif!important;color:oklch(68% .16 295)!important;}
-.slide-title{font-family:'Figtree',sans-serif!important;color:#fff;font-weight:900!important;letter-spacing:-0.5px!important;}
-.slide-title span{color:oklch(68% .16 295)!important;}
+.slide-badge{font-family:'Figtree',sans-serif!important;}
+.slide-title{font-family:'Figtree',sans-serif!important;font-weight:900!important;}
 .celebration-title,.baseline-title,.modal-title,.cp-header-title,.section-title,.cd-section-title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;color:#fff;font-weight:700;}
 h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.modal-phase,.wl-day,.cd-section-title,.streak-num,.done-strip-count{color:#fff!important;}
-/* Slide buttons — slide 1 solid white, slide 2 glass */
-#slide-1 .slide-next{background:#fff!important;color:#080a12!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:800;letter-spacing:1.5px;}
-#slide-1 .slide-next:hover{background:rgba(255,255,255,0.88)!important;transform:translateY(-1px);}
-#slide-2 .slide-next{
-  background:oklch(51% .23 295 / 0.18)!important;
-  color:#fff!important;
-  border:1px solid oklch(68% .16 295 / 0.45)!important;
-  border-radius:999px!important;
-  backdrop-filter:blur(20px)!important;
-  -webkit-backdrop-filter:blur(20px)!important;
-  box-shadow:inset 0 1px 0 oklch(80% .10 295 / 0.20), 0 0 24px oklch(51% .23 295 / 0.15)!important;
-  font-weight:800;letter-spacing:1.5px;
-}
-#slide-2 .slide-next:hover{
-  background:oklch(51% .23 295 / 0.30)!important;
-  border-color:oklch(68% .16 295 / 0.65)!important;
-  box-shadow:inset 0 1px 0 oklch(80% .10 295 / 0.25), 0 0 32px oklch(51% .23 295 / 0.25)!important;
-  transform:translateY(-2px);
-}
 .google-btn,.btn-save,.baseline-save-btn,.celebration-btn,.intro-enter,.cp-save-btn,.pp-upload-label{background:#ffffff!important;color:#0d0d0d!important;border:none!important;border-radius:999px!important;box-shadow:none;font-weight:700;letter-spacing:0.5px;}
 .finish-btn{background:linear-gradient(135deg,#7665ff,#9b8dff)!important;color:#fff!important;border:none!important;border-radius:999px!important;font-weight:800;letter-spacing:2px;}
 .google-btn:hover,.finish-btn:hover,.btn-save:hover,.baseline-save-btn:hover,.celebration-btn:hover,.intro-enter:hover,.cp-save-btn:hover,.pp-upload-label:hover{transform:translateY(-1px);background:rgba(255,255,255,0.88)!important;}
@@ -4784,7 +4789,18 @@ h1 span,.login-logo span,.cp-header-title span,.empty-sub strong,.client-badge,.
 // Slides work immediately — no module dependency
 function nextSlide() {
   document.getElementById('slide-1').classList.remove('active');
-  document.getElementById('slide-2').classList.add('active');
+  const s2 = document.getElementById('slide-2');
+  s2.classList.add('active');
+  // Re-trigger animation on glass card
+  const body = s2.querySelector('.slide-body');
+  if (body) { body.style.animation='none'; body.offsetHeight; body.style.animation=''; }
+}
+function nextSlide2() {
+  document.getElementById('slide-2').classList.remove('active');
+  const s3 = document.getElementById('slide-3');
+  s3.classList.add('active');
+  const body = s3.querySelector('.slide-body');
+  if (body) { body.style.animation='none'; body.offsetHeight; body.style.animation=''; }
 }
 function skipSlides() {
   document.getElementById('slides-screen').classList.add('hidden');
@@ -4896,68 +4912,59 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
 
   <!-- Slide 1 -->
   <div class="slide active" id="slide-1">
-    <!-- Video background -->
     <video class="slide-video" autoplay muted loop playsinline>
       <source src="hero-video.mp4" type="video/mp4">
     </video>
     <div class="slide-video-overlay"></div>
-    <!-- Bezier decoration on top -->
-    <div class="slide-bg">
-      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.5;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
-        <path d="M 100 0 C 110 200, 220 320, 200 800" stroke="oklch(68% .16 295 / 0.25)" stroke-width="1.2" stroke-linecap="round"/>
-        <path d="M 300 0 C 290 200, 180 320, 200 800" stroke="oklch(68% .16 295 / 0.25)" stroke-width="1.2" stroke-linecap="round"/>
-        <path d="M 200 0 L 200 800" stroke="oklch(68% .16 295 / 0.12)" stroke-width="0.8"/>
-        <circle cx="200" cy="400" r="3" fill="oklch(72% .18 295 / 0.7)"/>
-      </svg>
-    </div>
-    <!-- Content -->
+    <div class="slide-orb"></div>
     <div class="slide-body">
-      <div class="slide-badge">⚡ Pulse</div>
-      <div class="slide-title">TRAIN.<br/>TRACK.<br/><span>CONQUER.</span></div>
-      <div class="slide-desc">Personalised training program. Track progress in real-time with your coach.</div>
-      <div class="slide-coach">Your coach — <strong>Long Chu</strong></div>
-      <div class="slide-dots">
-        <div class="slide-dot on"></div>
-        <div class="slide-dot"></div>
+      <div class="slide-tabs">
+        <div class="slide-tab on"></div>
+        <div class="slide-tab"></div>
+        <div class="slide-tab"></div>
       </div>
+      <div class="slide-badge">⚡ Pulse by Long Chu</div>
+      <div class="slide-title">TRAIN.<br/>TRACK.<br/><span>CONQUER.</span></div>
+      <div class="slide-desc">Chương trình cá nhân hoá. Theo dõi tiến độ theo thời gian thực cùng coach của bạn.</div>
       <button class="slide-next" onclick="nextSlide()">TIẾP THEO →</button>
     </div>
   </div>
 
   <!-- Slide 2 -->
   <div class="slide" id="slide-2">
-    <!-- Photo background -->
     <img class="slide-video" src="/images/z7771642425935_3e0da1fbd1c44b46e46fb67b0cb4605b.jpg" style="object-position:center 30%;" alt="">
-    <!-- Multi-layer mask: dark base + violet tint + bottom fade for text -->
-    <div style="position:absolute;inset:0;z-index:1;background:
-      linear-gradient(to bottom,
-        rgba(8,6,18,0.55) 0%,
-        rgba(8,6,18,0.30) 35%,
-        rgba(8,6,18,0.70) 70%,
-        rgba(8,6,18,0.95) 100%),
-      linear-gradient(160deg, oklch(30% .18 295/0.25) 0%, transparent 55%);
-    "></div>
-    <!-- Subtle circuit overlay on top -->
-    <div class="slide-bg" style="z-index:2;">
-      <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:0.25;" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice">
-        <line x1="80"  y1="0" x2="80"  y2="800" stroke="oklch(68% .16 295/0.30)" stroke-width="1"/>
-        <line x1="320" y1="0" x2="320" y2="800" stroke="oklch(68% .16 295/0.30)" stroke-width="1"/>
-        <circle cx="80"  cy="300" r="4" fill="none" stroke="oklch(68% .16 295/0.60)" stroke-width="1.2"/>
-        <circle cx="80"  cy="300" r="1.5" fill="oklch(72% .18 295/0.8)"/>
-        <circle cx="320" cy="300" r="4" fill="none" stroke="oklch(68% .16 295/0.60)" stroke-width="1.2"/>
-        <circle cx="320" cy="300" r="1.5" fill="oklch(72% .18 295/0.8)"/>
-      </svg>
-    </div>
-    <!-- Content -->
+    <div class="slide-video-overlay" style="background:linear-gradient(to bottom,oklch(9% 0 0/0.35) 0%,oklch(9% 0 0/0.15) 30%,oklch(9% 0 0/0.75) 65%,oklch(9% 0 0/0.97) 100%);"></div>
+    <div class="slide-orb" style="background:radial-gradient(circle,oklch(45% .20 295/0.28) 0%,transparent 70%);"></div>
     <div class="slide-body">
+      <div class="slide-tabs">
+        <div class="slide-tab"></div>
+        <div class="slide-tab on"></div>
+        <div class="slide-tab"></div>
+      </div>
       <div class="slide-badge">📈 Progress Tracking</div>
       <div class="slide-title">BASELINE<br/>→ <span>RESULTS.</span></div>
-      <div class="slide-desc">Measured from day one. Checkpoint every 4 weeks. Clear progress charts at every stage.</div>
-      <div class="slide-dots">
-        <div class="slide-dot"></div>
-        <div class="slide-dot on"></div>
+      <div class="slide-desc">Đo lường từ ngày đầu. Checkpoint mỗi 4 tuần. Biểu đồ tiến độ rõ ràng từng giai đoạn.</div>
+      <button class="slide-next" onclick="nextSlide2()">TIẾP THEO →</button>
+    </div>
+  </div>
+
+  <!-- Slide 3 -->
+  <div class="slide" id="slide-3">
+    <div style="position:absolute;inset:0;background:oklch(9% 0 0);z-index:0;"></div>
+    <!-- Animated grid like landing page -->
+    <div style="position:absolute;inset:0;background-image:linear-gradient(oklch(100% 0 0/0.025) 1px,transparent 1px),linear-gradient(90deg,oklch(100% 0 0/0.025) 1px,transparent 1px);background-size:40px 40px;z-index:1;pointer-events:none;"></div>
+    <div class="slide-orb" style="width:420px;height:420px;bottom:-80px;background:radial-gradient(circle,oklch(51% .23 295/0.20) 0%,transparent 70%);"></div>
+    <div class="slide-body">
+      <div class="slide-tabs">
+        <div class="slide-tab"></div>
+        <div class="slide-tab"></div>
+        <div class="slide-tab on"></div>
       </div>
-      <button class="slide-next" onclick="skipSlides()">BẮT ĐẦU →</button>
+      <div class="slide-badge">🏁 Sẵn sàng</div>
+      <div class="slide-title">BẮT ĐẦU<br/><span>NGAY HÔM NAY.</span></div>
+      <div class="slide-desc">Coach Long Chu sẽ đồng hành cùng bạn từng bước. Chương trình của bạn đang chờ.</div>
+      <div class="slide-coach">Your coach — <strong>Long Chu</strong></div>
+      <button class="slide-next" onclick="skipSlides()" style="animation:slide-glow-pulse 2s ease-in-out infinite;">VÀO APP →</button>
     </div>
   </div>
 
