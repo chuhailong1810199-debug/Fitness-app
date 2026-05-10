@@ -356,8 +356,8 @@ async function loadApp() {
   initNavAutoHide();
   await renderStats();
   subscribeProgram();
-  // Show intro slides after login (once per session)
-  if (!sessionStorage.getItem('slides-seen')) {
+  // Show intro slides for clients on every login (coaches skip)
+  if (userRole === 'client') {
     const slidesEl = document.getElementById('slides-screen');
     if (slidesEl) {
       slidesEl.classList.remove('hidden');
@@ -4776,7 +4776,6 @@ function nextSlide() {
   document.getElementById('slide-2').classList.add('active');
 }
 function skipSlides() {
-  sessionStorage.setItem('slides-seen','1');
   document.getElementById('slides-screen').classList.add('hidden');
   // User is already logged in (slides show post-login), go straight to app
   showScreen('app');
