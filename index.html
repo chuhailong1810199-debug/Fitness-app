@@ -268,6 +268,22 @@ async function loadUserProfile(user) {
     }
   }
 
+  // For clients: show slides immediately, load app in background
+  if (userRole === 'client') {
+    const slidesEl = document.getElementById('slides-screen');
+    if (slidesEl) {
+      ['login-screen','loading-screen','app-screen','no-client-screen'].forEach(id => {
+        document.getElementById(id)?.classList.add('hidden');
+      });
+      slidesEl.classList.remove('hidden');
+      // Load app data in background so it's ready when slides finish
+      loadApp().then(() => {
+        // App is loaded; skipSlides() will call showScreen('app')
+        window._appLoaded = true;
+      });
+      return;
+    }
+  }
   await loadApp();
 }
 
@@ -356,15 +372,10 @@ async function loadApp() {
   initNavAutoHide();
   await renderStats();
   subscribeProgram();
-  // Show intro slides for clients on every login (coaches skip)
-  if (userRole === 'client') {
-    const slidesEl = document.getElementById('slides-screen');
-    if (slidesEl) {
-      slidesEl.classList.remove('hidden');
-      return; // App will be shown when user finishes slides
-    }
+  if (userRole === 'coach') {
+    showScreen('app');
   }
-  showScreen('app');
+  // For clients: app stays hidden until skipSlides() is called
 }
 
 async function loadAllClients() {
@@ -4777,8 +4788,18 @@ function nextSlide() {
 }
 function skipSlides() {
   document.getElementById('slides-screen').classList.add('hidden');
-  // User is already logged in (slides show post-login), go straight to app
   showScreen('app');
+  // If app data is still loading, show a brief loading state
+  if (!window._appLoaded) {
+    document.getElementById('loading-screen')?.classList.remove('hidden');
+    document.getElementById('app-screen')?.classList.add('hidden');
+    const waitForApp = setInterval(() => {
+      if (window._appLoaded) {
+        clearInterval(waitForApp);
+        showScreen('app');
+      }
+    }, 100);
+  }
 }
 // All other functions are set by the module on window.*
 // Use a queue for calls that happen before module loads
