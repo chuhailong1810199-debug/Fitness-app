@@ -3756,6 +3756,49 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 /* INTRO SLIDES */
 @keyframes slide-fade-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slide-glow-pulse{0%,100%{box-shadow:0 0 40px 8px oklch(51% .23 295/0.18)}50%{box-shadow:0 0 60px 16px oklch(51% .23 295/0.32)}}
+/* PWA slide phone mockup */
+@keyframes sp-share-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes sp-sheet-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes sp-tap{0%,100%{transform:scale(1);opacity:1}40%{transform:scale(0.88);opacity:0.7}70%{transform:scale(1.04)}}
+@keyframes sp-done{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+@keyframes sp-highlight{0%,100%{background:oklch(51% .23 295/0.10)}50%{background:oklch(51% .23 295/0.28)}}
+.sp-phone{width:160px;height:290px;background:oklch(12% 0 0);border-radius:28px;border:1.5px solid oklch(100% 0 0/0.12);position:relative;overflow:hidden;margin:0 auto 0;flex-shrink:0;box-shadow:0 20px 60px oklch(0% 0 0/0.5),0 0 0 1px oklch(100% 0 0/0.05);}
+.sp-notch{width:52px;height:6px;background:oklch(8% 0 0);border-radius:3px;position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;}
+.sp-browser{display:flex;align-items:center;gap:6px;padding:22px 10px 6px;background:oklch(15% 0 0);border-bottom:1px solid oklch(100% 0 0/0.06);position:relative;z-index:3;}
+.sp-url{font-size:7.5px;color:oklch(60% 0 0);flex:1;font-family:'Figtree',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-share{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:sp-share-pulse 2s ease-in-out 0.6s infinite;}
+.sp-body{flex:1;background:oklch(10% 0 0);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.sp-screen-content{padding:10px;flex:1;}
+.sp-app-row{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+.sp-app-icon{width:28px;height:28px;border-radius:8px;overflow:hidden;background:oklch(18% 0 0);display:flex;align-items:center;justify-content:center;}
+.sp-app-icon img{width:22px;height:22px;object-fit:contain;}
+.sp-app-name{font-size:8px;color:oklch(80% 0 0);font-family:'Figtree',sans-serif;font-weight:700;}
+.sp-sheet{position:absolute;bottom:0;left:0;right:0;background:oklch(16% 0 0);border-radius:14px 14px 0 0;border-top:1px solid oklch(100% 0 0/0.12);padding:8px;z-index:10;animation:sp-sheet-up .4s cubic-bezier(0.22,1,0.36,1) 1.2s both;}
+.sp-sheet-handle{width:28px;height:2px;background:oklch(40% 0 0);border-radius:1px;margin:0 auto 8px;}
+.sp-row{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:8px;cursor:pointer;}
+.sp-row-ico{width:20px;height:20px;border-radius:6px;background:oklch(25% 0 0);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sp-row-lbl{font-size:7.5px;color:oklch(75% 0 0);font-family:'Figtree',sans-serif;}
+.sp-row-add{animation:sp-highlight 1.6s ease-in-out 2s infinite;}
+.sp-row-add .sp-row-ico{background:oklch(51% .23 295/0.25);}
+.sp-row-add .sp-row-lbl{color:oklch(80% .10 295);}
+.sp-tap{width:16px;height:16px;border-radius:50%;background:oklch(70% .18 295/0.5);position:absolute;right:28px;bottom:24px;z-index:20;animation:sp-tap .7s ease-in-out 3.2s 2;}
+.sp-done{position:absolute;inset:0;background:oklch(10% 0 0/0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;z-index:30;border-radius:14px 14px 0 0;animation:sp-done .4s ease 4.2s both;opacity:0;}
+.sp-done-ico{width:32px;height:32px;border-radius:50%;background:oklch(51% .23 295/0.15);display:flex;align-items:center;justify-content:center;}
+.sp-done-txt{font-size:7.5px;color:oklch(80% .10 295);text-align:center;font-family:'Figtree',sans-serif;font-weight:600;}
+/* PWA slide steps */
+.sp-steps{display:flex;flex-direction:column;gap:8px;margin:14px 0;}
+.sp-step{display:flex;align-items:center;gap:10px;}
+.sp-step-num{width:20px;height:20px;border-radius:50%;background:oklch(51% .23 295/0.12);border:1px solid oklch(51% .23 295/0.3);display:flex;align-items:center;justify-content:center;font-size:10px;color:oklch(68% .16 295);font-weight:700;flex-shrink:0;}
+.sp-step-txt{font-size:12px;color:oklch(70% 0 0);line-height:1.45;}
+.sp-step-txt strong{color:oklch(85% 0 0);}
+/* iOS tip inline */
+.sp-ios-tip{background:oklch(51% .23 295/0.08);border:1px solid oklch(51% .23 295/0.18);border-radius:12px;padding:10px 12px;margin-top:10px;display:none;}
+.sp-ios-tip.show{display:block;}
+.sp-ios-txt{font-size:11.5px;color:oklch(65% 0 0);line-height:1.65;}
+.sp-ios-txt strong{color:oklch(75% .12 295);}
+/* slide-btn-secondary */
+.slide-next-ghost{width:100%;padding:12px;border-radius:999px;background:oklch(100% 0 0/0.05);border:1px solid oklch(100% 0 0/0.10);color:oklch(65% 0 0);font-family:'Figtree',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;transition:all .2s;margin-top:8px;display:block;text-align:center;}
+.slide-next-ghost:hover{background:oklch(100% 0 0/0.08);color:oklch(80% 0 0);}
 .slides-screen{position:fixed;inset:0;background:oklch(9% 0 0);z-index:300;overflow:hidden;}
 .slides-screen.hidden{display:none!important;}
 .slide{display:none;position:absolute;inset:0;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 0 env(safe-area-inset-bottom,24px);}
@@ -4801,6 +4844,24 @@ function nextSlide2() {
   s3.classList.add('active');
   const body = s3.querySelector('.slide-body');
   if (body) { body.style.animation='none'; body.offsetHeight; body.style.animation=''; }
+  // Show Android "Thêm ngay" button if native prompt available
+  const pwaBtnEl = document.getElementById('pwa-slide-btn');
+  if (pwaBtnEl && _deferredInstallPrompt) pwaBtnEl.style.display = 'block';
+}
+function nextSlide3() {
+  document.getElementById('slide-3').classList.remove('active');
+  const s4 = document.getElementById('slide-4');
+  s4.classList.add('active');
+  const body = s4.querySelector('.slide-body');
+  if (body) { body.style.animation='none'; body.offsetHeight; body.style.animation=''; }
+}
+function pwaTapAddSlide() {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(() => nextSlide3());
+  } else {
+    nextSlide3();
+  }
 }
 function skipSlides() {
   document.getElementById('slides-screen').classList.add('hidden');
@@ -4922,6 +4983,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div class="slide-tab on"></div>
         <div class="slide-tab"></div>
         <div class="slide-tab"></div>
+        <div class="slide-tab"></div>
       </div>
       <div class="slide-badge">⚡ Pulse by Long Chu</div>
       <div class="slide-title">TRAIN.<br/>TRACK.<br/><span>CONQUER.</span></div>
@@ -4940,6 +5002,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
         <div class="slide-tab"></div>
         <div class="slide-tab on"></div>
         <div class="slide-tab"></div>
+        <div class="slide-tab"></div>
       </div>
       <div class="slide-badge">📈 Progress Tracking</div>
       <div class="slide-title">BASELINE<br/>→ <span>RESULTS.</span></div>
@@ -4948,14 +5011,80 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     </div>
   </div>
 
-  <!-- Slide 3 -->
+  <!-- Slide 3 — Add to Home Screen guide -->
   <div class="slide" id="slide-3">
     <div style="position:absolute;inset:0;background:oklch(9% 0 0);z-index:0;"></div>
-    <!-- Animated grid like landing page -->
+    <div style="position:absolute;inset:0;background-image:linear-gradient(oklch(100% 0 0/0.025) 1px,transparent 1px),linear-gradient(90deg,oklch(100% 0 0/0.025) 1px,transparent 1px);background-size:40px 40px;z-index:1;pointer-events:none;"></div>
+    <div class="slide-orb" style="width:360px;height:360px;bottom:-40px;background:radial-gradient(circle,oklch(45% .22 295/0.20) 0%,transparent 70%);"></div>
+    <!-- Phone mockup centered top -->
+    <div style="position:absolute;top:0;left:0;right:0;height:55%;display:flex;align-items:center;justify-content:center;z-index:3;">
+      <div class="sp-phone">
+        <div class="sp-notch"></div>
+        <div class="sp-browser">
+          <div class="sp-url">longchucoaching.com</div>
+          <div class="sp-share">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(68% .16 295)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </div>
+        </div>
+        <div class="sp-body">
+          <div class="sp-screen-content">
+            <div class="sp-app-row">
+              <div class="sp-app-icon"><img src="images/pulse-logo.png" alt="Pulse"></div>
+              <div class="sp-app-name">Pulse</div>
+            </div>
+          </div>
+          <div class="sp-sheet">
+            <div class="sp-sheet-handle"></div>
+            <div class="sp-row">
+              <div class="sp-row-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="oklch(68% .16 295)" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+              <div class="sp-row-lbl">Copy Link</div>
+            </div>
+            <div class="sp-row sp-row-add">
+              <div class="sp-row-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="oklch(68% .16 295)" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="9.5" y1="10.5" x2="14.5" y2="10.5"/></svg></div>
+              <div class="sp-row-lbl">Add to Home Screen</div>
+            </div>
+            <div class="sp-row">
+              <div class="sp-row-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="oklch(55% 0 0)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+              <div class="sp-row-lbl">Mail</div>
+            </div>
+            <div class="sp-tap"></div>
+            <div class="sp-done">
+              <div class="sp-done-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(68% .16 295)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="sp-done-txt">Đã thêm vào<br>màn hình chính!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Glass card -->
+    <div class="slide-body">
+      <div class="slide-tabs">
+        <div class="slide-tab"></div>
+        <div class="slide-tab"></div>
+        <div class="slide-tab on"></div>
+        <div class="slide-tab"></div>
+      </div>
+      <div class="slide-badge">📲 Cài đặt app</div>
+      <div class="slide-title" style="font-size:clamp(28px,7vw,42px);">THÊM VÀO<br/><span>MÀN HÌNH.</span></div>
+      <div class="sp-steps">
+        <div class="sp-step"><div class="sp-step-num">1</div><div class="sp-step-txt">Bấm nút <strong>Chia sẻ ↑</strong> ở thanh Safari bên dưới</div></div>
+        <div class="sp-step"><div class="sp-step-num">2</div><div class="sp-step-txt">Chọn <strong>Add to Home Screen</strong></div></div>
+        <div class="sp-step"><div class="sp-step-num">3</div><div class="sp-step-txt">Bấm <strong>Add</strong> ở góc trên phải — xong!</div></div>
+      </div>
+      <!-- Android: show native prompt button; iOS: show steps only -->
+      <button class="slide-next" id="pwa-slide-btn" onclick="pwaTapAddSlide()" style="display:none;">THÊM NGAY →</button>
+      <button class="slide-next-ghost" onclick="nextSlide3()">Bỏ qua →</button>
+    </div>
+  </div>
+
+  <!-- Slide 4 — Ready -->
+  <div class="slide" id="slide-4">
+    <div style="position:absolute;inset:0;background:oklch(9% 0 0);z-index:0;"></div>
     <div style="position:absolute;inset:0;background-image:linear-gradient(oklch(100% 0 0/0.025) 1px,transparent 1px),linear-gradient(90deg,oklch(100% 0 0/0.025) 1px,transparent 1px);background-size:40px 40px;z-index:1;pointer-events:none;"></div>
     <div class="slide-orb" style="width:420px;height:420px;bottom:-80px;background:radial-gradient(circle,oklch(51% .23 295/0.20) 0%,transparent 70%);"></div>
     <div class="slide-body">
       <div class="slide-tabs">
+        <div class="slide-tab"></div>
         <div class="slide-tab"></div>
         <div class="slide-tab"></div>
         <div class="slide-tab on"></div>
