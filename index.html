@@ -193,7 +193,7 @@ onAuthStateChanged(auth, async user => {
     // Hide slides, show login
     document.getElementById('slides-screen')?.classList.add('hidden');
     _authInitialized = true;
-    showScreen('login');
+    checkPWAPrompt(() => showScreen('login'));
   }
 });
 
@@ -2794,6 +2794,46 @@ function initNavAutoHide() {
   }, { passive: true });
 }
 
+// ── PWA ONBOARDING ─────────────────────────────────────
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+function checkPWAPrompt(onDone) {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                    || window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('pwa-prompt-dismissed');
+  if (!isStandalone && !dismissed) {
+    ['login-screen','loading-screen','app-screen','no-client-screen'].forEach(id => {
+      document.getElementById(id)?.classList.add('hidden');
+    });
+    document.getElementById('pwa-prompt-screen').classList.remove('hidden');
+    window._pwaDoneCallback = onDone;
+  } else {
+    onDone();
+  }
+}
+
+function pwaTapAdd() {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') pwaDismiss(false);
+    });
+  } else {
+    const tip = document.getElementById('pwa-ios-tip');
+    if (tip) tip.classList.toggle('visible');
+  }
+}
+
+function pwaDismiss(save = true) {
+  if (save) localStorage.setItem('pwa-prompt-dismissed', '1');
+  document.getElementById('pwa-prompt-screen').classList.add('hidden');
+  if (window._pwaDoneCallback) window._pwaDoneCallback();
+}
+
 function showScreen(name) {
   ['login-screen','loading-screen','app-screen','no-client-screen'].forEach(id => {
     const el = document.getElementById(id);
@@ -3729,6 +3769,44 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .slide-skip:hover{color:rgba(255,255,255,0.55);}
 
 .login-screen{position:fixed;inset:0;background:#0a0e1a;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
+.pwa-screen{position:fixed;inset:0;background:#120828;z-index:250;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:0;}
+.pwa-logo-wrap{margin-bottom:1.5rem;}
+.pwa-logo-wrap img{height:56px;width:auto;object-fit:contain;}
+.pwa-headline{font-family:'Figtree',sans-serif;font-size:20px;font-weight:700;color:#fff;text-align:center;margin-bottom:6px;}
+.pwa-sub{font-size:13px;color:#a78bfa;text-align:center;margin-bottom:1.5rem;}
+.pwa-phone{width:160px;height:290px;background:#1a1030;border:2px solid #3a2d6e;border-radius:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;margin-bottom:1.5rem;flex-shrink:0;}
+.pwa-notch{width:52px;height:16px;background:#120828;border-radius:0 0 10px 10px;margin:0 auto;}
+.pwa-browser{background:#1e1545;padding:5px 8px;display:flex;align-items:center;gap:6px;}
+.pwa-url{flex:1;background:#2a1f5e;border-radius:5px;padding:3px 7px;font-size:8px;color:#a78bfa;overflow:hidden;white-space:nowrap;}
+.pwa-share-btn{width:16px;height:16px;flex-shrink:0;animation:pwaSharePulse 5s ease infinite;}
+.pwa-content{flex:1;background:#120828;position:relative;display:flex;align-items:center;justify-content:center;}
+.pwa-app-preview{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.pwa-icon-box{width:48px;height:48px;background:#2d1f6e;border-radius:11px;display:flex;align-items:center;justify-content:center;}
+.pwa-icon-label{color:#a78bfa;font-size:8px;}
+.pwa-sheet{position:absolute;bottom:0;left:0;right:0;background:#1e1545;border-radius:14px 14px 0 0;padding:8px 0 4px;transform:translateY(100%);animation:pwaSheetUp 5s ease infinite;}
+.pwa-sheet-handle{width:28px;height:3px;background:#3a2d6e;border-radius:2px;margin:0 auto 6px;}
+.pwa-sheet-row{display:flex;align-items:center;gap:8px;padding:6px 12px;}
+.pwa-sheet-ico{width:24px;height:24px;border-radius:7px;background:#2a1f5e;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pwa-sheet-lbl{font-size:8px;color:#e2d9ff;}
+.pwa-sheet-add{animation:pwaHighlight 5s ease infinite;}
+.pwa-sheet-add .pwa-sheet-lbl{color:#fff;font-weight:600;}
+.pwa-tap{width:18px;height:18px;background:rgba(127,119,221,.45);border-radius:50%;position:absolute;bottom:50px;left:50%;margin-left:-9px;opacity:0;animation:pwaTap 5s ease infinite;}
+.pwa-done{position:absolute;inset:0;background:#120828;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;opacity:0;animation:pwaDone 5s ease infinite;}
+.pwa-done-ico{width:36px;height:36px;background:#2d1f6e;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.pwa-done-txt{color:#a78bfa;font-size:7px;text-align:center;}
+.pwa-toolbar{background:#1a1030;border-top:1px solid #2a1f5e;padding:5px 0;display:flex;justify-content:center;gap:22px;}
+.pwa-tb-btn{width:18px;height:18px;display:flex;align-items:center;justify-content:center;}
+.pwa-actions{display:flex;gap:10px;margin-bottom:12px;}
+.pwa-btn-add{background:#7F77DD;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:600;font-family:'Figtree',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.pwa-btn-later{background:transparent;color:#a78bfa;border:1.5px solid #3a2d6e;border-radius:12px;padding:13px 20px;font-size:15px;font-family:'Figtree',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.pwa-hint{font-size:11px;color:#4a3870;text-align:center;}
+.pwa-ios-tip{background:#1e1545;border:1px solid #3a2d6e;border-radius:12px;padding:12px 16px;margin-top:12px;font-size:12px;color:#c4b5fd;line-height:1.7;text-align:center;display:none;}
+.pwa-ios-tip.visible{display:block;}
+@keyframes pwaSharePulse{0%,5%{transform:scale(1);}15%{transform:scale(1.4);}20%{transform:scale(1);}100%{transform:scale(1);}}
+@keyframes pwaSheetUp{0%,10%{transform:translateY(100%);}25%,72%{transform:translateY(0);}82%,100%{transform:translateY(100%);}}
+@keyframes pwaHighlight{0%,35%{background:#2a1f5e;}47%,65%{background:#7F77DD;}75%,100%{background:#2a1f5e;}}
+@keyframes pwaTap{0%,30%{opacity:0;transform:scale(.5);}40%{opacity:1;transform:scale(1);}50%{opacity:0;transform:scale(1.5);}100%{opacity:0;}}
+@keyframes pwaDone{0%,67%{opacity:0;}74%,90%{opacity:1;}96%,100%{opacity:0;}}
 .login-logo{font-family:'Figtree',sans-serif;font-size:52px;font-weight:800;text-transform:none;color:#fff;margin-bottom:.25rem;letter-spacing:1px;}
 .login-logo span{color:#7665ff;}
 .login-tagline{font-size:11px;color:rgba(255,255,255,0.60);margin-bottom:3rem;text-align:center;text-transform:uppercase;letter-spacing:4px;font-weight:500;}
@@ -4718,6 +4796,8 @@ function _q(fn, args) {
 // We use _q() which only calls window[fn] AFTER module is ready
 // Important: these are defined on window with DIFFERENT internal name to avoid conflict
 window.loginWithGoogle   = function() { _q('_loginWithGoogle',[]); };
+window.pwaTapAdd  = pwaTapAdd;
+window.pwaDismiss = pwaDismiss;
 window.logout            = function() { _q('_logout',[]); };
 window.showPage          = function(p){ _q('_showPage',[p]); };
 window.switchClient           = function(id){ _q('_switchClient',[id]); };
@@ -4861,6 +4941,65 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
     </div>
   </div>
 
+</div>
+
+<!-- PWA ONBOARDING SCREEN -->
+<div id="pwa-prompt-screen" class="pwa-screen hidden">
+  <div class="pwa-logo-wrap"><img src="images/pulse-logo.png" alt="Pulse"></div>
+  <div class="pwa-headline">Thêm Pulse vào màn hình chính</div>
+  <div class="pwa-sub">Mở nhanh hơn · Không cần App Store · Như app thật</div>
+  <div class="pwa-phone">
+    <div class="pwa-notch"></div>
+    <div class="pwa-browser">
+      <div class="pwa-url">fitness-app-azure-eight.vercel.app</div>
+      <div class="pwa-share-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </div>
+    </div>
+    <div class="pwa-content">
+      <div class="pwa-app-preview">
+        <div class="pwa-icon-box">
+          <svg width="26" height="13" viewBox="0 0 80 40" fill="none"><path d="M8 32 C8 20 20 8 30 8 C42 8 50 18 50 18 C50 18 58 8 70 8 C78 8 78 20 70 32" stroke="#a78bfa" stroke-width="5" stroke-linecap="round" fill="none"/><circle cx="50" cy="18" r="4" fill="#7F77DD"/></svg>
+        </div>
+        <div class="pwa-icon-label">Pulse</div>
+      </div>
+      <div class="pwa-sheet">
+        <div class="pwa-sheet-handle"></div>
+        <div class="pwa-sheet-row">
+          <div class="pwa-sheet-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+          <div class="pwa-sheet-lbl">Copy link</div>
+        </div>
+        <div class="pwa-sheet-row pwa-sheet-add">
+          <div class="pwa-sheet-ico" style="background:rgba(255,255,255,.15)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="9.5" y1="10.5" x2="14.5" y2="10.5"/></svg></div>
+          <div class="pwa-sheet-lbl">Add to Home Screen</div>
+        </div>
+        <div class="pwa-sheet-row">
+          <div class="pwa-sheet-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div class="pwa-sheet-lbl">Mail</div>
+        </div>
+        <div class="pwa-tap"></div>
+      </div>
+      <div class="pwa-done">
+        <div class="pwa-done-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="pwa-done-txt">Đã thêm vào<br>màn hình chính!</div>
+      </div>
+    </div>
+    <div class="pwa-toolbar">
+      <div class="pwa-tb-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5a4a8a" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="pwa-tb-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5a4a8a" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="pwa-tb-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5a4a8a" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+    </div>
+  </div>
+  <div class="pwa-actions">
+    <button class="pwa-btn-add" onclick="pwaTapAdd()">Thêm ngay</button>
+    <button class="pwa-btn-later" onclick="pwaDismiss()">Để sau</button>
+  </div>
+  <div class="pwa-hint">Chỉ hiện 1 lần &nbsp;·&nbsp; Không cần cài từ App Store</div>
+  <div class="pwa-ios-tip" id="pwa-ios-tip">
+    1. Bấm nút <strong style="color:#7F77DD">Chia sẻ</strong> ở thanh Safari bên dưới<br>
+    2. Cuộn xuống chọn <strong style="color:#7F77DD">Add to Home Screen</strong><br>
+    3. Bấm <strong style="color:#7F77DD">Add</strong> ở góc trên bên phải
+  </div>
 </div>
 
 <!-- LOGIN SCREEN -->
