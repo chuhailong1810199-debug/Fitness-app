@@ -734,6 +734,24 @@ function getProgram() {
   return activeClient?.program || {};
 }
 
+// ── SESSION LABEL HELPERS ──────────────────────────────
+// Returns "Session 1", "Session 2", etc. based on position in program
+function getSessionLabel(dayKey) {
+  const avail = DAYS.filter(d => getProgram()[d]);
+  const idx = avail.indexOf(dayKey);
+  return `Session ${idx >= 0 ? idx + 1 : '?'}`;
+}
+// Returns "SESSION 1 — Subtitle" (strips SESSION A/B/C prefix from stored label)
+function getSessionHeader(dayKey) {
+  const prog = getProgram();
+  const avail = DAYS.filter(d => prog[d]);
+  const idx = avail.indexOf(dayKey);
+  const n = idx >= 0 ? idx + 1 : '?';
+  const label = prog[dayKey]?.label || '';
+  const sub = label.replace(/^SESSION\s+[A-Za-z0-9]+\s*[—\-–]\s*/i, '').trim();
+  return sub ? `SESSION ${n} — ${sub}` : `SESSION ${n}`;
+}
+
 async function saveProgramToFirestore() {
   if (!activeClient) return;
   await updateDoc(doc(db, 'clients', activeClient.id), {
@@ -1560,7 +1578,7 @@ function renderDayTabs() {
     `<div class="day-nav-inner">
        <button class="day-chev${hasPrev?'':' invis'}" onclick="swipeDayNav('right')" aria-label="Previous day">‹</button>
        <div class="day-nav-center">
-         <span class="day-nav-name">${activeDay}</span>
+         <span class="day-nav-name">${getSessionLabel(activeDay)}</span>
          <span class="day-nav-pos">${idx + 1} / ${avail.length}</span>
        </div>
        <button class="day-chev${hasNext?'':' invis'}" onclick="swipeDayNav('left')" aria-label="Next day">›</button>
@@ -1877,7 +1895,7 @@ function renderExercises() {
   const sortedPhases = sortPhases(day.phases);
 
   // ── VIEW / EDIT MODE ──────────────────────────────────────────────────────
-  let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${day.label || activeDay}</div>`;
+  let html = `<div style="font-size:13px;color:rgba(255,255,255,0.60);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:1rem;">${getSessionHeader(activeDay)}</div>`;
 
   sortedPhases.forEach((phase) => {
     const pi = day.phases.indexOf(phase); // always use original Firestore index
