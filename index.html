@@ -2796,19 +2796,20 @@ function initNavAutoHide() {
     getEls().forEach(el => el.classList.remove('scroll-hidden'));
   };
 
-  // Scroll down → hide
+  // Scroll down → hide | Scroll up → show
   window.addEventListener('scroll', () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
       if (y - lastY > 8 && y > 60) hide();
+      else if (lastY - y > 8) show();
       lastY = y;
       ticking = false;
     });
   }, { passive: true });
 
-  // Only show again on strong fling up
+  // Mobile: also show on strong fling up
   let touchStartY = 0, touchStartT = 0;
   window.addEventListener('touchstart', e => {
     touchStartY = e.touches[0].clientY;
@@ -2817,8 +2818,7 @@ function initNavAutoHide() {
   window.addEventListener('touchend', e => {
     const dy = e.changedTouches[0].clientY - touchStartY;
     const dt = Date.now() - touchStartT;
-    const velocity = dy / dt; // px/ms
-    // Strong fling up: distance > 80px AND velocity > 0.5 px/ms
+    const velocity = dy / dt;
     if (dy > 80 && velocity > 0.5) show();
   }, { passive: true });
 }
