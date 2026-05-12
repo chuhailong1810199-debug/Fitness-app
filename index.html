@@ -13,8 +13,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="dns-prefetch" href="https://firestore.googleapis.com"/>
+<link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com"/>
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- Chart.js loaded lazily when Progress tab is first opened -->
 <script>
   // Block pinch-to-zoom on iOS Safari (ignores user-scalable=no since iOS 10)
   document.addEventListener('touchmove', function(e) {
@@ -363,6 +367,16 @@ async function loadApp() {
     await checkAndShowBaseline();
   }
 
+  // ── Show cached program instantly while Firestore loads ──
+  if (activeClient) {
+    const cached = loadProgramCache(activeClient.id);
+    if (cached && Object.keys(cached).length > 0) {
+      activeClient.program = cached;
+      const days = Object.keys(cached);
+      if (days.length > 0 && !cached[activeDay]) activeDay = days[0];
+    }
+  }
+
   updateDateDisplay();
   renderDayTabs();
   await hydrateExerciseLoadsForActiveDay();
@@ -407,6 +421,7 @@ function subscribeProgram() {
     const clientObj = clientsData.find(c => c.id === listenId);
     if (!clientObj) return;
     clientObj.program = data.program || {};
+    saveProgramCache(listenId, clientObj.program);
     // Only re-render if this client is still active
     if (activeClient && activeClient.id === listenId) {
       activeClient.program = clientObj.program;
@@ -732,6 +747,28 @@ async function approveGeneratedProgram() {
 // ── PROGRAM (Firestore) ────────────────────────────────
 function getProgram() {
   return activeClient?.program || {};
+}
+
+// ── CHART.JS LAZY LOADER ───────────────────────────────
+let _chartJsLoading = null;
+function ensureChartJS() {
+  if (window.Chart) return Promise.resolve();
+  if (_chartJsLoading) return _chartJsLoading;
+  _chartJsLoading = new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.onload = resolve;
+    document.head.appendChild(s);
+  });
+  return _chartJsLoading;
+}
+
+// ── PROGRAM CACHE (localStorage) ───────────────────────
+function saveProgramCache(clientId, program) {
+  try { localStorage.setItem('pulse_prog_' + clientId, JSON.stringify(program)); } catch(e) {}
+}
+function loadProgramCache(clientId) {
+  try { const d = localStorage.getItem('pulse_prog_' + clientId); return d ? JSON.parse(d) : null; } catch(e) { return null; }
 }
 
 // ── SESSION LABEL HELPERS ──────────────────────────────
@@ -2764,11 +2801,13 @@ function showPage(page) {
   document.getElementById('progress-page').classList.toggle('active', page === 'progress');
   document.getElementById('log-page').classList.toggle('active', page === 'log');
   if (page === 'progress') {
-    checkCheckpointReminder();
-    renderProgressData();
-    renderProgressPage();
-    renderCoachDashboard();
-    renderProgressPhotos();
+    ensureChartJS().then(() => {
+      checkCheckpointReminder();
+      renderProgressData();
+      renderProgressPage();
+      renderCoachDashboard();
+      renderProgressPhotos();
+    });
   }
   if (page === 'log') {
     renderWorkoutLog();
