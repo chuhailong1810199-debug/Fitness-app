@@ -2784,6 +2784,7 @@ function initNavAutoHide() {
   ].filter(Boolean);
 
   let lastY = 0, ticking = false, hidden = false;
+  const isTouch = 'ontouchstart' in window;
 
   const hide = () => {
     if (hidden) return;
@@ -2796,20 +2797,20 @@ function initNavAutoHide() {
     getEls().forEach(el => el.classList.remove('scroll-hidden'));
   };
 
-  // Scroll down → hide | Scroll up → show
+  // Scroll down → hide | Scroll up → show (desktop only; mobile uses touch fling)
   window.addEventListener('scroll', () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
       if (y - lastY > 8 && y > 60) hide();
-      else if (lastY - y > 8) show();
+      else if (!isTouch && lastY - y > 8) show();
       lastY = y;
       ticking = false;
     });
   }, { passive: true });
 
-  // Mobile: also show on strong fling up
+  // Mobile: show on strong fling up
   let touchStartY = 0, touchStartT = 0;
   window.addEventListener('touchstart', e => {
     touchStartY = e.touches[0].clientY;
