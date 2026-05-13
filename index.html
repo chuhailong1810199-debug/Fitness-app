@@ -924,6 +924,8 @@ async function finishWorkout() {
     return;
   }
   _workoutLogging = true;
+  // Pre-compute summary data so it's always available even if Firestore write fails
+  let _summaryData = null;
   try {
     const prog  = getProgram();
     const day   = prog[activeDay];
@@ -1003,25 +1005,33 @@ async function finishWorkout() {
     _sessionLogged = true;
     updateFinishBtn();
     renderExercises();
-    // Show summary immediately — don't block on stats fetch
     const durationMs = window._workoutStartTime ? Date.now() - window._workoutStartTime : 0;
     window._workoutStartTime = null;
-    // Kick off stats + streak refresh in background, then update summary streak row
+    _summaryData = { doneN, total, tonnage: Math.round(totalVolume), durationMs, streak: 0 };
+    // Refresh streak in background
     (async () => {
       try {
         await renderStats();
         const hist = await getHistory();
         const streak = calcStreak(hist);
-        // Update streak row if modal is still open
         const el = document.getElementById('workout-summary-modal');
         if (el && el.classList.contains('open')) {
           el.querySelector('.wsm-streak').textContent = streak > 0 ? `${streak}-day streak` : '—';
         }
       } catch(e) { /* non-critical */ }
     })();
-    showWorkoutSummary({ doneN, total, tonnage: Math.round(totalVolume), durationMs, streak: 0 });
+  } catch(e) {
+    console.error('[finishWorkout]', e);
+    // Still show summary even if Firestore write failed
+    const prog = getProgram(), day = prog[activeDay];
+    const total = day ? day.phases.reduce((a,p) => a + p.exercises.length, 0) : 0;
+    const clientState = exerciseState[activeClient.id] || {};
+    const dayPrefix = activeClient.id + '_' + activeDay + '_';
+    const doneN = Object.entries(clientState).filter(([k,v]) => v && k.startsWith(dayPrefix)).length;
+    _summaryData = { doneN, total, tonnage: 0, durationMs: 0, streak: 0 };
   } finally {
     _workoutLogging = false;
+    if (_summaryData) showWorkoutSummary(_summaryData);
   }
 }
 
@@ -1040,12 +1050,52 @@ function showWorkoutSummary({ doneN, total, tonnage, durationMs, streak }) {
   el.querySelector('.wsm-ton').textContent    = tonnage > 0 ? tonnage.toLocaleString() + ' kg' : '—';
   el.querySelector('.wsm-dur').textContent    = durStr;
   el.querySelector('.wsm-streak').textContent = streakStr;
-  el.querySelector('.wsm-title').textContent  = incomplete ? 'Session saved' : 'Complete';
+  el.querySelector('.wsm-title').textContent  = incomplete ? 'Session saved' : 'Session Complete';
   el.querySelector('.wsm-subtitle').textContent = incomplete
     ? `${total - doneN} exercises left — finish next time.`
     : 'Great work. Every session counts.';
+
+  // ── Exercise breakdown table ──────────────────────────
+  const tableWrap = document.getElementById('wsm-table-wrap');
+  if (tableWrap && activeClient) {
+    const prog = getProgram();
+    const day  = prog[activeDay];
+    const clientState = exerciseState[activeClient.id] || {};
+    if (day && day.phases) {
+      let rows = '';
+      day.phases.forEach((phase, pi) => {
+        phase.exercises.forEach((ex, ei) => {
+          const key   = activeClient.id + '_' + activeDay + '_' + pi + '_' + ei;
+          const done  = !!(clientState[key]);
+          const perSet = (setLoads[key] || []).filter(v => Number.isFinite(v) && v > 0);
+          const loadKg = perSet.length > 0 ? Math.max(...perSet) : parseFloat(exerciseLoads[key]);
+          const kgStr  = Number.isFinite(loadKg) && loadKg > 0
+            ? (perSet.length > 1 ? perSet.join('/') + ' kg' : loadKg + ' kg')
+            : '—';
+          rows += `<tr class="${done ? 'wsm-row-done' : 'wsm-row-skip'}">
+            <td class="wsm-td-name">${done ? '✓' : '·'} ${ex.name}</td>
+            <td class="wsm-td-sets">${ex.setsReps || '—'}</td>
+            <td class="wsm-td-kg">${kgStr}</td>
+          </tr>`;
+        });
+      });
+      tableWrap.innerHTML = `
+        <div class="wsm-table-title">Exercise Log</div>
+        <table class="wsm-table">
+          <thead><tr>
+            <th class="wsm-th-name">Exercise</th>
+            <th class="wsm-th-sets">Sets×Reps</th>
+            <th class="wsm-th-kg">Weight</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    } else {
+      tableWrap.innerHTML = '';
+    }
+  }
+
   // Animate ring
-  const circ = 2 * Math.PI * 34; // r=34 → 213.6
+  const circ = 2 * Math.PI * 34;
   const arc = el.querySelector('.wsm-ring-arc');
   if (arc) { arc.style.strokeDashoffset = circ; requestAnimationFrame(() => { arc.style.transition='stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)'; arc.style.strokeDashoffset = circ * (1 - pct/100); }); }
 
@@ -3997,6 +4047,8 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .wsm-card{
   position:relative;
   width:100%;max-width:480px;
+  max-height:88vh;
+  overflow-y:auto;
   background:rgba(255,255,255,0.07);
   border:1px solid rgba(255,255,255,0.12);
   border-bottom:none;
@@ -4047,6 +4099,19 @@ body{font-family:"Figtree",-apple-system,BlinkMacSystemFont,sans-serif;backgroun
   color:rgba(255,255,255,0.55);
   letter-spacing:0.5px;
 }
+/* Exercise breakdown table */
+.wsm-table-wrap{width:100%;margin:12px 0 4px;}
+.wsm-table-title{font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.wsm-table{width:100%;border-collapse:collapse;font-size:12px;}
+.wsm-table th{color:rgba(255,255,255,0.35);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px;padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.08);text-align:left;}
+.wsm-th-sets,.wsm-th-kg{text-align:center;}
+.wsm-table td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.wsm-td-name{color:rgba(255,255,255,0.85);font-weight:500;}
+.wsm-td-sets,.wsm-td-kg{text-align:center;color:rgba(255,255,255,0.50);font-variant-numeric:tabular-nums;}
+.wsm-row-done .wsm-td-name{color:rgba(255,255,255,0.90);}
+.wsm-row-skip .wsm-td-name{color:rgba(255,255,255,0.30);text-decoration:line-through;}
+.wsm-row-done .wsm-td-kg{color:#7665ff;font-weight:600;}
+
 .wsm-done-btn{
   width:100%;padding:15px;border-radius:14px;
   background:rgba(118,101,255,0.85);
@@ -6114,6 +6179,7 @@ window.selectExercise      = function(n){ _q('_selectExercise',[n]); };
       </div>
     </div>
     <div class="wsm-streak-row"><span class="wsm-streak">—</span></div>
+    <div class="wsm-table-wrap" id="wsm-table-wrap"></div>
     <button class="wsm-done-btn" onclick="closeWorkoutSummary()">Close</button>
   </div>
 </div>
