@@ -1337,9 +1337,11 @@
     <defs>
       <filter id="dg2"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
-    <!-- Base rail left & right -->
-    <line class="div-path div-path-d1" x1="0" y1="45" x2="440" y2="45" stroke="oklch(68% .16 295 / 0.13)" stroke-width="1"/>
-    <line class="div-path div-path-d1" x1="760" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.13)" stroke-width="1"/>
+    <!-- Full-width continuous rail (background) -->
+    <line x1="0" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.10)" stroke-width="1"/>
+    <!-- Bright rail left & right -->
+    <line class="div-path div-path-d1" x1="0" y1="45" x2="440" y2="45" stroke="oklch(68% .16 295 / 0.18)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="760" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.18)" stroke-width="1"/>
     <!-- EKG spike — glowing -->
     <polyline class="div-path div-path-d2 div-glow-pulse"
       points="440,45 490,45 520,18 545,72 570,45 620,45 640,45 660,45 680,45 700,30 720,58 740,45 760,45"
@@ -1512,9 +1514,11 @@
     <defs>
       <filter id="dg4"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
-    <!-- Rail left & right -->
-    <line class="div-path div-path-d1" x1="0"   y1="45" x2="490" y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
-    <line class="div-path div-path-d1" x1="710" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.12)" stroke-width="1"/>
+    <!-- Full-width continuous rail (background) -->
+    <line x1="0" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.10)" stroke-width="1"/>
+    <!-- Bright rail left & right -->
+    <line class="div-path div-path-d1" x1="0"   y1="45" x2="490" y2="45" stroke="oklch(68% .16 295 / 0.16)" stroke-width="1"/>
+    <line class="div-path div-path-d1" x1="710" y1="45" x2="1200" y2="45" stroke="oklch(68% .16 295 / 0.16)" stroke-width="1"/>
     <!-- Expanding arcs (left side, opening rightward) -->
     <path class="div-path div-path-d2 div-glow-pulse" d="M 510 20 Q 555 45 510 70" stroke="oklch(72% .18 295 / 0.55)" stroke-width="1.4" filter="url(#dg4)"/>
     <path class="div-path div-path-d2" d="M 538 28 Q 568 45 538 62" stroke="oklch(68% .16 295 / 0.30)" stroke-width="1"/>
