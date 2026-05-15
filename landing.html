@@ -319,11 +319,8 @@
     .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
     .btn-hero { padding: 15px 36px; font-size: 13px; letter-spacing: 1.4px; }
 
-    /* Mobile: skip video, use dark gradient bg */
-    @media (max-width: 768px) {
-      .hero-video { display: none; }
-      .hero { background: radial-gradient(ellipse 120% 80% at 50% 0%, oklch(16% 0.04 295), oklch(9% 0 0) 70%); }
-    }
+    /* Mobile: dark fallback bg color (video still plays) */
+    .hero { background: oklch(11% 0.01 295); }
 
     /* ── Sections base ────────────────────────────────── */
     section { padding: 108px 40px; text-align: center; }
