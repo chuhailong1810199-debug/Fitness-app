@@ -804,11 +804,13 @@
       .feat-sticky-col { display: none; }
       .feat-scroll-panel {
         min-height: auto; padding: 32px 0 12px;
-        flex-direction: column; align-items: flex-start;
+        flex-direction: column; align-items: center;
       }
-      .feat-scroll-panel .feat-info { display: block; margin-bottom: 24px; }
-      .feat-info .feat-num, .feat-info .feat-title { text-align: left; }
-      .feat-desc { max-width: 100%; font-size: 14px; }
+      .feat-scroll-panel .feat-info {
+        display: block; margin-bottom: 24px;
+        text-align: center; width: 100%;
+      }
+      .feat-desc { max-width: 340px; font-size: 14px; margin: 0 auto; text-align: center; }
       .feat-mock { max-width: 420px; width: 100%; }
     }
     @media (max-width: 480px) {
