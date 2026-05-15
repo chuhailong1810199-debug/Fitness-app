@@ -360,33 +360,64 @@
       min-width: 0;
       overflow: hidden;
     }
+    /* Cert slider — swipeable, 2 cards visible */
     .cert-slider {
       display: flex;
       flex-direction: row;
-      align-items: flex-start;
       gap: 12px;
       margin-top: 20px;
-      width: 100%;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+    .cert-slider::-webkit-scrollbar { display: none; }
     .cert-card {
+      flex: 0 0 calc(50% - 6px);
+      scroll-snap-align: start;
+      height: 170px;
       border-radius: var(--r-md);
       overflow: hidden;
       border: 1px solid var(--border);
-      flex: 1;
-      max-width: 160px;
       transition: border-color 0.2s var(--ease);
       position: relative;
+      background: oklch(14% 0.015 295);
     }
     .cert-card:hover { border-color: var(--border-md); }
-    .cert-card img { width: 100%; height: auto; display: block; filter: brightness(0.72); }
+    .cert-card img { width: 100%; height: 100%; display: block; object-fit: contain; filter: brightness(0.82); padding: 6px; box-sizing: border-box; }
     .cert-card::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(8, 6, 20, 0.32);
+      background: rgba(8, 6, 20, 0.18);
       pointer-events: none;
     }
-    .cert-card:hover img { filter: brightness(0.85); }
+    .cert-card:hover img { filter: brightness(0.95); }
+
+    /* Photos row — same height as cert cards, 3 visible */
+    .cert-photos {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .cert-photos::-webkit-scrollbar { display: none; }
+    .cert-photo-item {
+      flex: 0 0 calc(33.33% - 8px);
+      scroll-snap-align: start;
+      height: 170px;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s var(--ease), transform 0.25s var(--ease);
+      cursor: pointer;
+    }
+    .cert-photo-item:hover { border-color: var(--border-md); transform: scale(1.02); }
+    .cert-photo-item img { width: 100%; height: 100%; display: block; object-fit: cover; filter: brightness(0.72); transition: filter 0.25s var(--ease); }
+    .cert-photo-item:hover img { filter: brightness(0.90); }
     .cred-grid {
       margin-top: 20px;
       display: flex;
@@ -426,15 +457,6 @@
     .cred-divider { margin: 20px 0; width: 100%; }
     .cred-divider svg { display: block; width: 100%; height: 28px; }
 
-    /* Mosaic embedded inside credentials card — bleed to edges */
-    .credentials .mosaic {
-      margin: 28px -28px -28px;
-      border-radius: 0 0 var(--r-lg) var(--r-lg);
-      overflow: hidden;
-    }
-    .credentials .mosaic-btn:nth-child(1) { min-height: 180px; }
-    .credentials .mosaic-btn:nth-child(6),
-    .credentials .mosaic-btn:nth-child(7) { min-height: 130px; }
 
     /* ── Mosaic ──────────────────────────────────────── */
     .mosaic { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
@@ -1246,11 +1268,23 @@
       <article class="credentials">
         <h3 class="service-title">Credentials & Track Record</h3>
         <p class="about-copy">I coach hybrid athletes who need to get strong without losing endurance. Programs blend race conditioning, structured lifting, and week-to-week accountability in Pulse.</p>
+        <!-- Cert slider — swipe left/right -->
         <div class="cert-slider">
           <div class="cert-card"><img src="/images/nasm-cert.jpg" alt="NASM International Certified Personal Trainer"/></div>
           <div class="cert-card"><img src="/images/eleiko-cert.png" alt="Eleiko Weightlifting Level 1"/></div>
         </div>
-        <!-- Diamond + scatter dots separator -->
+
+        <!-- Photos — same height as certs, 3 visible, swipeable -->
+        <div class="cert-photos" aria-label="Coach photos">
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/about-me.jpg" aria-label="Long Chu portrait"><img src="/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/hyrox-sg-farmers.jpg" aria-label="Hyrox farmers carry"><img src="/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/hyrox-sg-finish.jpg" aria-label="Hyrox Singapore finish"><img src="/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Hyrox Bangkok finish"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Hyrox Bangkok indoor"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
+          <button class="cert-photo-item" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Boxing training"><img src="/images/boxing-venum.jpg" alt="Boxing training" loading="lazy"/></button>
+        </div>
+
+        <!-- Diamond divider -->
         <div class="cred-divider" aria-hidden="true">
           <svg viewBox="0 0 400 28" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             <defs><filter id="cdg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
@@ -1269,21 +1303,12 @@
           </svg>
         </div>
 
+        <!-- Stats — bottom of card -->
         <div class="cred-grid">
           <div class="cred-item reveal reveal-delay-1"><strong>HYROX</strong><span>Singapore & Bangkok finisher</span></div>
           <div class="cred-item reveal reveal-delay-2"><strong>8+ YRS</strong><span>Strength and body recomposition coaching</span></div>
           <div class="cred-item reveal reveal-delay-3"><strong>1:1</strong><span>Weekly check-ins with precise training edits</span></div>
           <div class="cred-item reveal reveal-delay-4"><strong>APP-LED</strong><span>Tracking, messaging, and progression in Pulse</span></div>
-        </div>
-
-        <!-- Photos bleed into bottom of card -->
-        <div class="mosaic" aria-label="Coach portfolio gallery">
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/about-me.jpg" aria-label="Open about me photo"><img src="/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-finish.jpg" aria-label="Open Hyrox Singapore finish photo"><img src="/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-farmers.jpg" aria-label="Open Hyrox farmers carry photo"><img src="/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
-          <button class="mosaic-btn" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
         </div>
       </article>
     </div>
