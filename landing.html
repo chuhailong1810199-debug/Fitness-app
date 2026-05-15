@@ -345,9 +345,7 @@
     /* ── About ─────────────────────────────────────────── */
     #about { background: var(--bg); }
     .about-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 20px;
+      display: block;
       margin-top: 44px;
       margin-bottom: 44px;
       text-align: left;
@@ -357,13 +355,15 @@
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
       padding: 28px;
+      max-width: 900px;
+      margin: 0 auto;
       min-width: 0;
       overflow: hidden;
     }
     .cert-slider {
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      flex-direction: row;
+      align-items: flex-start;
       gap: 12px;
       margin-top: 20px;
       width: 100%;
@@ -372,8 +372,8 @@
       border-radius: var(--r-md);
       overflow: hidden;
       border: 1px solid var(--border);
-      width: 100%;
-      max-width: 200px;
+      flex: 1;
+      max-width: 160px;
       transition: border-color 0.2s var(--ease);
       position: relative;
     }
@@ -425,6 +425,16 @@
     }
     .cred-divider { margin: 20px 0; width: 100%; }
     .cred-divider svg { display: block; width: 100%; height: 28px; }
+
+    /* Mosaic embedded inside credentials card — bleed to edges */
+    .credentials .mosaic {
+      margin: 28px -28px -28px;
+      border-radius: 0 0 var(--r-lg) var(--r-lg);
+      overflow: hidden;
+    }
+    .credentials .mosaic-btn:nth-child(1) { min-height: 180px; }
+    .credentials .mosaic-btn:nth-child(6),
+    .credentials .mosaic-btn:nth-child(7) { min-height: 130px; }
 
     /* ── Mosaic ──────────────────────────────────────── */
     .mosaic { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
@@ -1265,15 +1275,17 @@
           <div class="cred-item reveal reveal-delay-3"><strong>1:1</strong><span>Weekly check-ins with precise training edits</span></div>
           <div class="cred-item reveal reveal-delay-4"><strong>APP-LED</strong><span>Tracking, messaging, and progression in Pulse</span></div>
         </div>
+
+        <!-- Photos bleed into bottom of card -->
+        <div class="mosaic" aria-label="Coach portfolio gallery">
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/about-me.jpg" aria-label="Open about me photo"><img src="/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-finish.jpg" aria-label="Open Hyrox Singapore finish photo"><img src="/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-farmers.jpg" aria-label="Open Hyrox farmers carry photo"><img src="/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
+          <button class="mosaic-btn" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
+        </div>
       </article>
-      <div class="mosaic" aria-label="Coach portfolio gallery">
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/about-me.jpg" aria-label="Open about me photo"><img src="/images/about-me.jpg" alt="Long Chu portrait" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-finish.jpg" aria-label="Open Hyrox Singapore finish photo"><img src="/images/hyrox-sg-finish.jpg" alt="Hyrox Singapore finish line" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-sg-farmers.jpg" aria-label="Open Hyrox farmers carry photo"><img src="/images/hyrox-sg-farmers.jpg" alt="Hyrox Singapore farmers carry" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-finish.jpg" aria-label="Open Hyrox Bangkok finish photo"><img src="/images/hyrox-bkk-finish.jpg" alt="Hyrox Bangkok finish line" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/hyrox-bkk-indoor.jpg" aria-label="Open Hyrox indoor event photo"><img src="/images/hyrox-bkk-indoor.jpg" alt="Hyrox Bangkok indoor event" loading="lazy"/></button>
-        <button class="mosaic-btn" type="button" data-lightbox-src="/images/boxing-venum.jpg" aria-label="Open boxing photo"><img src="/images/boxing-venum.jpg" alt="Boxing training with Venum gloves" loading="lazy"/></button>
-      </div>
     </div>
   </div>
 </section>
