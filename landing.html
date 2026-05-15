@@ -543,43 +543,56 @@
     }
     .philosophy-content { position: relative; z-index: 2; }
 
-    /* Tab switcher */
-    .feat-tabs {
-      display: flex; gap: 4px; margin-top: 48px;
-      border-bottom: 1px solid oklch(1 0 0 / 0.08);
-    }
-    .feat-tab {
-      background: none; border: none; border-bottom: 2px solid transparent;
-      padding: 12px 24px; margin-bottom: -1px;
-      font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.4px;
-      color: var(--muted); cursor: pointer;
-      display: flex; align-items: center; gap: 8px;
-      transition: color 0.2s;
-    }
-    .feat-tab-num {
-      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-      color: oklch(68% .16 295 / 0.45);
-      transition: color 0.2s;
-    }
-    .feat-tab:hover { color: var(--muted2); }
-    .feat-tab.active { color: var(--fg); border-bottom-color: oklch(68% .16 295); }
-    .feat-tab.active .feat-tab-num { color: oklch(68% .16 295); }
-
-    /* Panels */
-    .feat-panels { margin-top: 52px; }
-    .feat-panel {
-      display: none;
-      grid-template-columns: 1fr 1.15fr;
-      gap: 60px; align-items: center;
-    }
-    .feat-panel.active {
+    /* ── Scroll-driven feature section ──────────────── */
+    .feat-scroll-root {
       display: grid;
-      animation: featFadeIn 0.32s var(--ease) both;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 80px;
+      margin-top: 72px;
+      align-items: start;
     }
-    @keyframes featFadeIn {
-      from { opacity: 0; transform: translateY(14px); }
-      to   { opacity: 1; transform: translateY(0); }
+
+    /* Left sticky text column */
+    .feat-sticky-col {
+      position: sticky;
+      top: 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
     }
+    .feat-sticky-text {
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .feat-sticky-text.feat-out {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    /* Progress dots */
+    .feat-progress-dots {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .fpd {
+      background: none; border: none; cursor: pointer;
+      font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 1.8px;
+      text-transform: uppercase; color: var(--muted); padding: 0;
+      display: flex; align-items: center; gap: 14px;
+      transition: color 0.2s;
+    }
+    .fpd::before {
+      content: ''; display: block;
+      width: 20px; height: 2px;
+      background: oklch(68% .16 295 / 0.22);
+      border-radius: 2px; flex-shrink: 0;
+      transition: width 0.3s var(--ease-out), background 0.3s;
+    }
+    .fpd.active { color: var(--fg); }
+    .fpd.active::before { width: 40px; background: oklch(68% .16 295); }
+    .fpd:hover { color: var(--muted2); }
+
+    /* Shared feature text styles */
     .feat-num {
       font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
       color: oklch(68% .16 295 / 0.60); margin-bottom: 14px;
@@ -589,11 +602,20 @@
       line-height: 1.18; margin-bottom: 18px;
     }
     .feat-desc {
-      font-size: 15px; color: var(--muted2); line-height: 1.82; max-width: 380px;
+      font-size: 15px; color: var(--muted2); line-height: 1.82; max-width: 360px;
     }
 
-    /* Mock card shell */
+    /* Right scroll panels */
+    .feat-scroll-col { display: flex; flex-direction: column; }
+    .feat-scroll-panel {
+      min-height: 85vh;
+      display: flex; align-items: center;
+      padding: 56px 0;
+    }
+    .feat-scroll-panel .feat-info { display: none; }  /* desktop: shown in sticky */
     .feat-mock { width: 100%; }
+
+    /* Mock card shell */
     .mock-card {
       background: oklch(13% 0.02 295);
       border: 1px solid oklch(68% .16 295 / 0.18);
@@ -706,18 +728,17 @@
       from { width: 0 !important; }
       to   { /* let inline style win */ }
     }
-    .feat-panel.anim#feat-0 .mock-node { opacity: 0; animation: nodeSlideIn 0.38s var(--ease) forwards; }
-    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(1) { animation-delay: 0.05s; }
-    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(3) { animation-delay: 0.20s; }
-    .feat-panel.anim#feat-0 .mock-flow .mock-node:nth-child(5) { animation-delay: 0.35s; }
-    .feat-panel.anim#feat-0 .mock-arrow { opacity: 0; animation: arrowFadeIn 0.3s ease forwards; }
-    .feat-panel.anim#feat-0 .mock-flow .mock-arrow:nth-child(2) { animation-delay: 0.12s; }
-    .feat-panel.anim#feat-0 .mock-flow .mock-arrow:nth-child(4) { animation-delay: 0.27s; }
-    .feat-panel.anim#feat-0 .mock-progress-fill {
+    .feat-scroll-panel.anim#feat-sp-0 .mock-node { opacity: 0; animation: nodeSlideIn 0.38s var(--ease) forwards; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-flow .mock-node:nth-child(1) { animation-delay: 0.05s; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-flow .mock-node:nth-child(3) { animation-delay: 0.20s; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-flow .mock-node:nth-child(5) { animation-delay: 0.35s; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-arrow { opacity: 0; animation: arrowFadeIn 0.3s ease forwards; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-flow .mock-arrow:nth-child(2) { animation-delay: 0.12s; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-flow .mock-arrow:nth-child(4) { animation-delay: 0.27s; }
+    .feat-scroll-panel.anim#feat-sp-0 .mock-progress-fill {
       animation: progressGrow 0.7s var(--ease-out) 0.5s both;
     }
 
-    /* Panel 02 — chart line draws, stats slide up */
     @keyframes drawLine {
       from { stroke-dashoffset: 350; }
       to   { stroke-dashoffset: 0; }
@@ -730,89 +751,77 @@
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .feat-panel.anim#feat-1 .mock-chart-wrap polyline {
-      stroke-dasharray: 350;
-      stroke-dashoffset: 350;
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap polyline {
+      stroke-dasharray: 350; stroke-dashoffset: 350;
       animation: drawLine 0.9s var(--ease-out) 0.1s forwards;
     }
-    .feat-panel.anim#feat-1 .mock-chart-wrap path {
-      opacity: 0;
-      animation: arrowFadeIn 0.5s ease 0.7s forwards;
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap path {
+      opacity: 0; animation: arrowFadeIn 0.5s ease 0.7s forwards;
     }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle {
-      opacity: 0;
-      transform-box: fill-box; transform-origin: center;
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle {
+      opacity: 0; transform-box: fill-box; transform-origin: center;
       animation: dotPop 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
     }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(1) { animation-delay: 0.15s; }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(2) { animation-delay: 0.32s; }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(3) { animation-delay: 0.49s; }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(4) { animation-delay: 0.66s; }
-    .feat-panel.anim#feat-1 .mock-chart-wrap circle:nth-of-type(5) { animation-delay: 0.83s; }
-    .feat-panel.anim#feat-1 .mock-stat-item {
-      opacity: 0;
-      animation: statSlideUp 0.4s var(--ease) forwards;
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle:nth-of-type(1) { animation-delay: 0.15s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle:nth-of-type(2) { animation-delay: 0.32s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle:nth-of-type(3) { animation-delay: 0.49s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle:nth-of-type(4) { animation-delay: 0.66s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-chart-wrap circle:nth-of-type(5) { animation-delay: 0.83s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-stat-item {
+      opacity: 0; animation: statSlideUp 0.4s var(--ease) forwards;
     }
-    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(1) { animation-delay: 0.85s; }
-    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(2) { animation-delay: 0.95s; }
-    .feat-panel.anim#feat-1 .mock-stat-item:nth-child(3) { animation-delay: 1.05s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-stat-item:nth-child(1) { animation-delay: 0.85s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-stat-item:nth-child(2) { animation-delay: 0.95s; }
+    .feat-scroll-panel.anim#feat-sp-1 .mock-stat-item:nth-child(3) { animation-delay: 1.05s; }
 
-    /* Panel 03 — rows slide up, sparkline draws */
     @keyframes rowUp {
       from { opacity: 0; transform: translateY(14px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .feat-panel.anim#feat-2 .mock-ex-row {
-      opacity: 0;
-      animation: rowUp 0.35s var(--ease) forwards;
+    .feat-scroll-panel.anim#feat-sp-2 .mock-ex-row {
+      opacity: 0; animation: rowUp 0.35s var(--ease) forwards;
     }
-    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(1) { animation-delay: 0.05s; }
-    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(2) { animation-delay: 0.15s; }
-    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(3) { animation-delay: 0.25s; }
-    .feat-panel.anim#feat-2 .mock-ex-row:nth-child(4) { animation-delay: 0.35s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap polyline {
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
+    .feat-scroll-panel.anim#feat-sp-2 .mock-ex-row:nth-child(1) { animation-delay: 0.05s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-ex-row:nth-child(2) { animation-delay: 0.15s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-ex-row:nth-child(3) { animation-delay: 0.25s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-ex-row:nth-child(4) { animation-delay: 0.35s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap polyline {
+      stroke-dasharray: 300; stroke-dashoffset: 300;
       animation: drawLine 0.8s var(--ease-out) 0.5s forwards;
     }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle {
-      opacity: 0;
-      transform-box: fill-box; transform-origin: center;
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle {
+      opacity: 0; transform-box: fill-box; transform-origin: center;
       animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
     }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(1) { animation-delay: 0.55s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(2) { animation-delay: 0.64s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(3) { animation-delay: 0.73s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(4) { animation-delay: 0.82s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(5) { animation-delay: 0.91s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(6) { animation-delay: 1.00s; }
-    .feat-panel.anim#feat-2 .mock-sparkline-wrap circle:nth-of-type(7) { animation-delay: 1.09s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(1) { animation-delay: 0.55s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(2) { animation-delay: 0.64s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(3) { animation-delay: 0.73s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(4) { animation-delay: 0.82s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(5) { animation-delay: 0.91s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(6) { animation-delay: 1.00s; }
+    .feat-scroll-panel.anim#feat-sp-2 .mock-sparkline-wrap circle:nth-of-type(7) { animation-delay: 1.09s; }
 
-    /* Responsive */
+    /* Mobile: stacked layout */
     @media (max-width: 860px) {
-      .feat-panel { gap: 36px; }
-      .feat-panel.active { grid-template-columns: 1fr; }
-      .feat-panels { margin-top: 36px; }
-      .feat-tabs { overflow-x: auto; padding-bottom: 0; gap: 0; }
-      .feat-tab { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
-      .feat-info { text-align: center; }
-      .feat-num { text-align: center; }
-      .feat-desc { max-width: 300px; margin: 0 auto; font-size: 14px; }
-      .feat-mock { max-width: 420px; margin: 0 auto; width: 100%; }
+      .feat-scroll-root { grid-template-columns: 1fr; gap: 0; margin-top: 48px; }
+      .feat-sticky-col { display: none; }
+      .feat-scroll-panel {
+        min-height: auto; padding: 32px 0 12px;
+        flex-direction: column; align-items: flex-start;
+      }
+      .feat-scroll-panel .feat-info { display: block; margin-bottom: 24px; }
+      .feat-info .feat-num, .feat-info .feat-title { text-align: left; }
+      .feat-desc { max-width: 100%; font-size: 14px; }
+      .feat-mock { max-width: 420px; width: 100%; }
     }
     @media (max-width: 480px) {
-      /* Smaller nodes so all 3 fit on one screen */
-      .mock-node { min-width: 82px; padding: 10px 10px; border-radius: 10px; }
+      .mock-node { min-width: 82px; padding: 10px; border-radius: 10px; }
       .mock-node-name { font-size: 10px; }
       .mock-node-sets { font-size: 9px; }
       .mock-node-kg, .mock-node-kg-input { font-size: 10px; }
       .mock-arrow { font-size: 11px; padding-top: 14px; }
       .mock-flow { gap: 6px; }
       .mock-card { padding: 18px 16px; border-radius: 14px; }
-      /* Tabs fill width evenly */
-      .feat-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
-      .feat-tab { justify-content: center; padding: 10px 8px; }
-      .feat-tab-num { display: none; }
     }
 
     /* ── Hero SVG flow animation ───────────────────────── */
@@ -1372,146 +1381,150 @@
   <div class="container philosophy-content">
     <p class="section-eyebrow reveal">Key Features</p>
 
-    <!-- Tab switcher -->
-    <div class="feat-tabs" role="tablist" aria-label="App features">
-      <button class="feat-tab active" onclick="switchFeat(0)" role="tab" aria-selected="true" aria-controls="feat-0" id="feat-tab-0">
-        <span class="feat-tab-num">01</span>Program
-      </button>
-      <button class="feat-tab" onclick="switchFeat(1)" role="tab" aria-selected="false" aria-controls="feat-1" id="feat-tab-1">
-        <span class="feat-tab-num">02</span>Progress
-      </button>
-      <button class="feat-tab" onclick="switchFeat(2)" role="tab" aria-selected="false" aria-controls="feat-2" id="feat-tab-2">
-        <span class="feat-tab-num">03</span>Strength
-      </button>
-    </div>
+    <div class="feat-scroll-root">
 
-    <!-- Feature panels -->
-    <div class="feat-panels">
-
-      <!-- Panel 01: Exercise flow -->
-      <div class="feat-panel active anim" id="feat-0" role="tabpanel" aria-labelledby="feat-tab-0">
-        <div class="feat-info">
-          <div class="feat-num">01</div>
-          <h3 class="feat-title">Personalized Program</h3>
-          <p class="feat-desc">Every session is designed just for you — exercises, sets, tempo, and coach cues. See the full workout flow at a glance.</p>
+      <!-- LEFT: sticky text column (desktop) -->
+      <div class="feat-sticky-col">
+        <div class="feat-sticky-text" id="feat-sticky">
+          <div class="feat-num" id="fst-num">01</div>
+          <h3 class="feat-title" id="fst-title">Personalized Program</h3>
+          <p class="feat-desc" id="fst-desc">Every session is designed just for you — exercises, sets, tempo, and coach cues. See the full workout flow at a glance.</p>
         </div>
-        <div class="feat-mock">
-          <div class="mock-card">
-            <div class="mock-label">MONDAY — PUSH DAY</div>
-            <div class="mock-flow">
-              <div class="mock-node">
-                <div class="mock-node-top"><span class="mock-node-num">01</span><span class="mock-node-check">✓</span></div>
-                <div class="mock-node-name done-txt">Bench Press</div>
-                <div class="mock-node-sets">4 × 8 · 2-0-1</div>
-                <div class="mock-node-kg">80 kg</div>
-              </div>
-              <div class="mock-arrow">→</div>
-              <div class="mock-node active-node">
-                <div class="mock-node-top"><span class="mock-node-num">02</span><span class="mock-node-check-empty"></span></div>
-                <div class="mock-node-name">Incline DB Press</div>
-                <div class="mock-node-sets">3 × 10</div>
-                <div class="mock-node-kg-input">— kg</div>
-              </div>
-              <div class="mock-arrow">→</div>
-              <div class="mock-node">
-                <div class="mock-node-top"><span class="mock-node-num">03</span><span class="mock-node-check-empty"></span></div>
-                <div class="mock-node-name">Cable Fly</div>
-                <div class="mock-node-sets">3 × 12</div>
-                <div class="mock-node-kg-input">— kg</div>
-              </div>
-            </div>
-            <div class="mock-progress-bar"><div class="mock-progress-fill" style="width:33%"></div></div>
-            <div class="mock-progress-label">33% complete · 2 exercises left</div>
-          </div>
-        </div>
+        <nav class="feat-progress-dots" aria-label="Feature navigation">
+          <button class="fpd active" data-idx="0">Program</button>
+          <button class="fpd" data-idx="1">Progress</button>
+          <button class="fpd" data-idx="2">Strength</button>
+        </nav>
       </div>
 
-      <!-- Panel 02: Progress tracking -->
-      <div class="feat-panel" id="feat-1" role="tabpanel" aria-labelledby="feat-tab-1">
-        <div class="feat-info">
-          <div class="feat-num">02</div>
-          <h3 class="feat-title">Real Progress Tracking</h3>
-          <p class="feat-desc">Measured from day one. 4-week checkpoints compare weight, body fat, and muscle mass — visualized clearly at every stage.</p>
-        </div>
-        <div class="feat-mock">
-          <div class="mock-card">
-            <div class="mock-label">BODY COMPOSITION</div>
-            <div class="mock-chart-wrap">
-              <svg viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
-                <line x1="0" y1="30"  x2="280" y2="30"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                <line x1="0" y1="60"  x2="280" y2="60"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                <line x1="0" y1="90"  x2="280" y2="90"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-                <polyline points="20,85 80,78 140,68 200,55 260,44" stroke="oklch(72% .18 295)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                <path d="M20,85 80,78 140,68 200,55 260,44 260,110 20,110Z" fill="oklch(72% .18 295 / 0.08)"/>
-                <circle cx="20"  cy="85" r="3.5" fill="oklch(72% .18 295)"/>
-                <circle cx="80"  cy="78" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
-                <circle cx="140" cy="68" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
-                <circle cx="200" cy="55" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
-                <circle cx="260" cy="44" r="3.5" fill="oklch(72% .18 295)"/>
-                <text x="20"  y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">Baseline</text>
-                <text x="80"  y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W4</text>
-                <text x="140" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W8</text>
-                <text x="200" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W12</text>
-                <text x="260" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W16</text>
-              </svg>
-            </div>
-            <div class="mock-stat-row">
-              <div class="mock-stat-item"><div class="mock-stat-val green">−4.2 kg</div><div class="mock-stat-lbl">Body weight</div></div>
-              <div class="mock-stat-item"><div class="mock-stat-val green">−3.1%</div><div class="mock-stat-lbl">Body fat</div></div>
-              <div class="mock-stat-item"><div class="mock-stat-val accent">+1.8 kg</div><div class="mock-stat-lbl">Muscle mass</div></div>
+      <!-- RIGHT: scrollable mock panels -->
+      <div class="feat-scroll-col">
+
+        <!-- Panel 01: Exercise flow -->
+        <div class="feat-scroll-panel" id="feat-sp-0" data-feat="0">
+          <div class="feat-info">
+            <div class="feat-num">01</div>
+            <h3 class="feat-title">Personalized Program</h3>
+            <p class="feat-desc">Every session is designed just for you — exercises, sets, tempo, and coach cues.</p>
+          </div>
+          <div class="feat-mock">
+            <div class="mock-card">
+              <div class="mock-label">MONDAY — PUSH DAY</div>
+              <div class="mock-flow">
+                <div class="mock-node">
+                  <div class="mock-node-top"><span class="mock-node-num">01</span><span class="mock-node-check">✓</span></div>
+                  <div class="mock-node-name done-txt">Bench Press</div>
+                  <div class="mock-node-sets">4 × 8 · 2-0-1</div>
+                  <div class="mock-node-kg">80 kg</div>
+                </div>
+                <div class="mock-arrow">→</div>
+                <div class="mock-node active-node">
+                  <div class="mock-node-top"><span class="mock-node-num">02</span><span class="mock-node-check-empty"></span></div>
+                  <div class="mock-node-name">Incline DB Press</div>
+                  <div class="mock-node-sets">3 × 10</div>
+                  <div class="mock-node-kg-input">— kg</div>
+                </div>
+                <div class="mock-arrow">→</div>
+                <div class="mock-node">
+                  <div class="mock-node-top"><span class="mock-node-num">03</span><span class="mock-node-check-empty"></span></div>
+                  <div class="mock-node-name">Cable Fly</div>
+                  <div class="mock-node-sets">3 × 12</div>
+                  <div class="mock-node-kg-input">— kg</div>
+                </div>
+              </div>
+              <div class="mock-progress-bar"><div class="mock-progress-fill" style="width:33%"></div></div>
+              <div class="mock-progress-label">33% complete · 2 exercises left</div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Panel 03: Strength progression -->
-      <div class="feat-panel" id="feat-2" role="tabpanel" aria-labelledby="feat-tab-2">
-        <div class="feat-info">
-          <div class="feat-num">03</div>
-          <h3 class="feat-title">Strength Progression</h3>
-          <p class="feat-desc">Every exercise logs kg session by session. Compare this week vs last — know instantly if you're progressing or need to adjust.</p>
-        </div>
-        <div class="feat-mock">
-          <div class="mock-card">
-            <div class="mock-label">SQUAT — PROGRESSION</div>
-            <div class="mock-ex-list">
-              <div class="mock-ex-row">
-                <div class="mock-ex-name">Back Squat</div>
-                <div class="mock-ex-right"><span class="mock-badge up">↑ +5kg</span><span class="mock-ex-kg">95 kg</span></div>
+        <!-- Panel 02: Progress tracking -->
+        <div class="feat-scroll-panel" id="feat-sp-1" data-feat="1">
+          <div class="feat-info">
+            <div class="feat-num">02</div>
+            <h3 class="feat-title">Real Progress Tracking</h3>
+            <p class="feat-desc">Measured from day one. 4-week checkpoints compare weight, body fat, and muscle mass.</p>
+          </div>
+          <div class="feat-mock">
+            <div class="mock-card">
+              <div class="mock-label">BODY COMPOSITION</div>
+              <div class="mock-chart-wrap">
+                <svg viewBox="0 0 280 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+                  <line x1="0" y1="30"  x2="280" y2="30"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  <line x1="0" y1="60"  x2="280" y2="60"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  <line x1="0" y1="90"  x2="280" y2="90"  stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  <polyline points="20,85 80,78 140,68 200,55 260,44" stroke="oklch(72% .18 295)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <path d="M20,85 80,78 140,68 200,55 260,44 260,110 20,110Z" fill="oklch(72% .18 295 / 0.08)"/>
+                  <circle cx="20"  cy="85" r="3.5" fill="oklch(72% .18 295)"/>
+                  <circle cx="80"  cy="78" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
+                  <circle cx="140" cy="68" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
+                  <circle cx="200" cy="55" r="3"   fill="oklch(72% .18 295 / 0.6)"/>
+                  <circle cx="260" cy="44" r="3.5" fill="oklch(72% .18 295)"/>
+                  <text x="20"  y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">Baseline</text>
+                  <text x="80"  y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W4</text>
+                  <text x="140" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W8</text>
+                  <text x="200" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W12</text>
+                  <text x="260" y="105" font-size="8" fill="rgba(255,255,255,0.35)" text-anchor="middle" font-family="Figtree,sans-serif">W16</text>
+                </svg>
               </div>
-              <div class="mock-ex-row">
-                <div class="mock-ex-name">Romanian DL</div>
-                <div class="mock-ex-right"><span class="mock-badge up">↑ +2.5kg</span><span class="mock-ex-kg">70 kg</span></div>
+              <div class="mock-stat-row">
+                <div class="mock-stat-item"><div class="mock-stat-val green">−4.2 kg</div><div class="mock-stat-lbl">Body weight</div></div>
+                <div class="mock-stat-item"><div class="mock-stat-val green">−3.1%</div><div class="mock-stat-lbl">Body fat</div></div>
+                <div class="mock-stat-item"><div class="mock-stat-val accent">+1.8 kg</div><div class="mock-stat-lbl">Muscle mass</div></div>
               </div>
-              <div class="mock-ex-row">
-                <div class="mock-ex-name">Leg Press</div>
-                <div class="mock-ex-right"><span class="mock-badge same">→ 120kg</span><span class="mock-ex-kg">120 kg</span></div>
-              </div>
-              <div class="mock-ex-row">
-                <div class="mock-ex-name">Bulgarian SS</div>
-                <div class="mock-ex-right"><span class="mock-badge down">↓ −2.5kg</span><span class="mock-ex-kg">30 kg</span></div>
-              </div>
-            </div>
-            <div class="mock-sparkline-wrap">
-              <svg viewBox="0 0 280 50" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
-                <polyline points="20,38 60,34 100,28 140,24 180,18 220,14 260,10" stroke="oklch(72% .20 145)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="20"  cy="38" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="60"  cy="34" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="100" cy="28" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="140" cy="24" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="180" cy="18" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="220" cy="14" r="3" fill="rgba(255,255,255,0.20)"/>
-                <circle cx="260" cy="10" r="4" fill="oklch(72% .20 145)"/>
-              </svg>
-              <div class="mock-spark-labels"><span>W1: 70kg</span><span style="color:oklch(72% .20 145);font-weight:800;">W7: 95kg ↑</span></div>
             </div>
           </div>
         </div>
-      </div>
 
-    </div><!-- /feat-panels -->
+        <!-- Panel 03: Strength progression -->
+        <div class="feat-scroll-panel" id="feat-sp-2" data-feat="2">
+          <div class="feat-info">
+            <div class="feat-num">03</div>
+            <h3 class="feat-title">Strength Progression</h3>
+            <p class="feat-desc">Every exercise logs kg session by session. Compare this week vs last — know instantly if you're progressing.</p>
+          </div>
+          <div class="feat-mock">
+            <div class="mock-card">
+              <div class="mock-label">SQUAT — PROGRESSION</div>
+              <div class="mock-ex-list">
+                <div class="mock-ex-row">
+                  <div class="mock-ex-name">Back Squat</div>
+                  <div class="mock-ex-right"><span class="mock-badge up">↑ +5kg</span><span class="mock-ex-kg">95 kg</span></div>
+                </div>
+                <div class="mock-ex-row">
+                  <div class="mock-ex-name">Romanian DL</div>
+                  <div class="mock-ex-right"><span class="mock-badge up">↑ +2.5kg</span><span class="mock-ex-kg">70 kg</span></div>
+                </div>
+                <div class="mock-ex-row">
+                  <div class="mock-ex-name">Leg Press</div>
+                  <div class="mock-ex-right"><span class="mock-badge same">→ 120kg</span><span class="mock-ex-kg">120 kg</span></div>
+                </div>
+                <div class="mock-ex-row">
+                  <div class="mock-ex-name">Bulgarian SS</div>
+                  <div class="mock-ex-right"><span class="mock-badge down">↓ −2.5kg</span><span class="mock-ex-kg">30 kg</span></div>
+                </div>
+              </div>
+              <div class="mock-sparkline-wrap">
+                <svg viewBox="0 0 280 50" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+                  <polyline points="20,38 60,34 100,28 140,24 180,18 220,14 260,10" stroke="oklch(72% .20 145)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="20"  cy="38" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="60"  cy="34" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="100" cy="28" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="140" cy="24" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="180" cy="18" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="220" cy="14" r="3" fill="rgba(255,255,255,0.20)"/>
+                  <circle cx="260" cy="10" r="4" fill="oklch(72% .20 145)"/>
+                </svg>
+                <div class="mock-spark-labels"><span>W1: 70kg</span><span style="color:oklch(72% .20 145);font-weight:800;">W7: 95kg ↑</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <div style="text-align:center;margin-top:52px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+      </div><!-- /feat-scroll-col -->
+    </div><!-- /feat-scroll-root -->
+
+    <div style="text-align:center;margin-top:64px;display:flex;flex-direction:column;align-items:center;gap:16px;">
       <a class="btn-hero ghost" href="/index.html">Open App →</a>
       <button class="btn-shiny" onclick="openPulseFreeModal()">⚡ Get Your Free Week</button>
     </div>
@@ -1961,21 +1974,68 @@
     initSlider('services-slider', 'services-dots');
   })();
 
-  // ── Feature showcase tab switcher ──────────────────
-  function switchFeat(index) {
-    var tabs   = document.querySelectorAll('.feat-tab');
-    var panels = document.querySelectorAll('.feat-panel');
-    tabs.forEach(function (t, i) {
-      t.classList.toggle('active', i === index);
-      t.setAttribute('aria-selected', i === index ? 'true' : 'false');
+  // ── Feature showcase — scroll-driven sticky text ──
+  (function () {
+    var featData = [
+      { num: '01', title: 'Personalized Program',   desc: 'Every session is designed just for you — exercises, sets, tempo, and coach cues. See the full workout flow at a glance.' },
+      { num: '02', title: 'Real Progress Tracking', desc: 'Measured from day one. 4-week checkpoints compare weight, body fat, and muscle mass — visualized clearly at every stage.' },
+      { num: '03', title: 'Strength Progression',   desc: 'Every exercise logs kg session by session. Compare this week vs last — know instantly if you\'re progressing or need to adjust.' }
+    ];
+    var activeFeat = 0;
+
+    function updateStickyText(idx) {
+      if (idx === activeFeat) return;
+      activeFeat = idx;
+      var sticky = document.getElementById('feat-sticky');
+      if (!sticky) return;
+      sticky.classList.add('feat-out');
+      setTimeout(function () {
+        document.getElementById('fst-num').textContent   = featData[idx].num;
+        document.getElementById('fst-title').textContent = featData[idx].title;
+        document.getElementById('fst-desc').textContent  = featData[idx].desc;
+        sticky.classList.remove('feat-out');
+      }, 220);
+      document.querySelectorAll('.fpd').forEach(function (btn, i) {
+        btn.classList.toggle('active', i === idx);
+      });
+    }
+
+    // Dot buttons → scroll to panel
+    document.querySelectorAll('.fpd').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.dataset.idx, 10);
+        var panel = document.getElementById('feat-sp-' + idx);
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     });
-    panels.forEach(function (p) { p.classList.remove('active', 'anim'); });
-    var target = panels[index];
-    if (!target) return;
-    target.classList.add('active');
-    target.offsetHeight; // force reflow so animations restart
-    target.classList.add('anim');
-  }
+
+    // IntersectionObserver: update sticky text + trigger animations
+    var panels = document.querySelectorAll('.feat-scroll-panel');
+    if (!panels.length) return;
+
+    // Animation observer — fires once per panel
+    var animIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('anim');
+        animIo.unobserve(entry.target);
+      });
+    }, { threshold: 0.30 });
+
+    // Sticky text observer — persists for scroll-back support
+    var textIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var idx = parseInt(entry.target.dataset.feat, 10);
+        updateStickyText(idx);
+      });
+    }, { threshold: 0.50 });
+
+    panels.forEach(function (p) {
+      animIo.observe(p);
+      textIo.observe(p);
+    });
+  })();
 </script>
 
 <!-- ── PULSE FREE MODAL ─────────────────────────────────────────────── -->
