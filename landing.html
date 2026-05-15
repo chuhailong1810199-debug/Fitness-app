@@ -1046,16 +1046,30 @@
       border-radius: var(--r-md); border: 1px solid var(--border);
     }
 
-    /* ── Scroll reveal ──────────────────────────────── */
+    /* ── Scroll reveal — Apple-style stagger ────────── */
     .reveal {
       opacity: 0;
-      transform: translateY(22px);
-      transition: opacity 0.65s var(--ease-out), transform 0.65s var(--ease-out);
+      transform: translateY(28px);
+      filter: blur(4px);
+      transition: opacity 0.72s var(--ease-out), transform 0.72s var(--ease-out), filter 0.72s var(--ease-out);
+      will-change: opacity, transform, filter;
     }
-    .reveal.visible { opacity: 1; transform: none; }
-    .reveal-delay-1 { transition-delay: 0.10s; }
-    .reveal-delay-2 { transition-delay: 0.20s; }
-    .reveal-delay-3 { transition-delay: 0.30s; }
+    .reveal.visible { opacity: 1; transform: none; filter: blur(0px); }
+    .reveal-delay-1 { transition-delay: 0.08s; }
+    .reveal-delay-2 { transition-delay: 0.16s; }
+    .reveal-delay-3 { transition-delay: 0.24s; }
+    .reveal-delay-4 { transition-delay: 0.32s; }
+    .reveal-delay-5 { transition-delay: 0.40s; }
+    .reveal-delay-6 { transition-delay: 0.48s; }
+    /* Eyebrow slides in from left instead of up */
+    .section-eyebrow.reveal {
+      transform: translateX(-16px);
+      filter: blur(3px);
+    }
+    .section-eyebrow.reveal.visible { transform: none; filter: blur(0px); }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+    }
 
     /* ── Responsive ─────────────────────────────────── */
     @media (max-width: 1024px) {
@@ -1211,7 +1225,7 @@
 <section id="about">
   <div class="container">
     <p class="section-eyebrow reveal">Coach Profile</p>
-    <h2 class="section-title reveal reveal-delay-1">About Long Chu</h2>
+    <h2 class="section-title reveal reveal-delay-2">About Long Chu</h2>
     <div class="about-grid">
       <article class="credentials">
         <h3 class="service-title">Credentials & Track Record</h3>
@@ -1240,10 +1254,10 @@
         </div>
 
         <div class="cred-grid">
-          <div class="cred-item"><strong>HYROX</strong><span>Singapore & Bangkok finisher</span></div>
-          <div class="cred-item"><strong>8+ YRS</strong><span>Strength and body recomposition coaching</span></div>
-          <div class="cred-item"><strong>1:1</strong><span>Weekly check-ins with precise training edits</span></div>
-          <div class="cred-item"><strong>APP-LED</strong><span>Tracking, messaging, and progression in Pulse</span></div>
+          <div class="cred-item reveal reveal-delay-1"><strong>HYROX</strong><span>Singapore & Bangkok finisher</span></div>
+          <div class="cred-item reveal reveal-delay-2"><strong>8+ YRS</strong><span>Strength and body recomposition coaching</span></div>
+          <div class="cred-item reveal reveal-delay-3"><strong>1:1</strong><span>Weekly check-ins with precise training edits</span></div>
+          <div class="cred-item reveal reveal-delay-4"><strong>APP-LED</strong><span>Tracking, messaging, and progression in Pulse</span></div>
         </div>
       </article>
       <div class="mosaic" aria-label="Coach portfolio gallery">
@@ -1289,13 +1303,13 @@
 
 <section id="services">
   <div class="container">
-    <div class="services-header reveal">
-      <p class="section-eyebrow">Coaching Services</p>
-      <h2 class="section-title">Choose Your Path</h2>
+    <div class="services-header">
+      <p class="section-eyebrow reveal">Coaching Services</p>
+      <h2 class="section-title reveal reveal-delay-1">Choose Your Path</h2>
     </div>
     <div class="card-slider-wrap">
       <div class="card-slider" id="services-slider">
-        <article class="service-card">
+        <article class="service-card reveal reveal-delay-2">
           <h3 class="service-title">Hybrid Performance</h3>
           <p class="service-desc">Built for athletes balancing strength with race conditioning. Weekly progression is tuned around your recovery and schedule.</p>
           <ul class="service-list">
@@ -1305,7 +1319,7 @@
           </ul>
           <a class="btn-hero primary" href="#cta" data-service-select="hybrid-performance">Apply for Coaching</a>
         </article>
-        <article class="service-card">
+        <article class="service-card reveal reveal-delay-3">
           <h3 class="service-title">Body Recomposition</h3>
           <p class="service-desc">For busy professionals who want visible physique change while preserving performance and energy.</p>
           <ul class="service-list">
@@ -1315,7 +1329,7 @@
           </ul>
           <a class="btn-hero primary" href="#cta" data-service-select="body-recomp">Start Recomp Plan</a>
         </article>
-        <article class="service-card">
+        <article class="service-card reveal reveal-delay-4">
           <h3 class="service-title">Lifestyle Accountability</h3>
           <p class="service-desc">A coaching layer for consistency: habits, routines, and adherence support that turns plans into results.</p>
           <ul class="service-list">
@@ -1356,7 +1370,7 @@
 
 <section id="philosophy">
   <div class="container philosophy-content">
-    <p class="section-eyebrow">Key Features</p>
+    <p class="section-eyebrow reveal">Key Features</p>
 
     <!-- Tab switcher -->
     <div class="feat-tabs" role="tablist" aria-label="App features">
@@ -1537,9 +1551,9 @@
 <section id="cta">
   <div class="container">
     <div class="cta-content">
-      <p class="section-eyebrow">Work with Coach Long</p>
-      <h2 class="cta-title">Book Your Coaching Spot</h2>
-      <p class="cta-sub">Tell me your current level and target outcome. I’ll review your details and follow up with the best service fit.</p>
+      <p class="section-eyebrow reveal">Work with Coach Long</p>
+      <h2 class="cta-title reveal reveal-delay-1">Book Your Coaching Spot</h2>
+      <p class="cta-sub reveal reveal-delay-2">Tell me your current level and target outcome. I’ll review your details and follow up with the best service fit.</p>
 
       <form id="leadForm" class="lead-form" novalidate>
         <div class="form-grid">
@@ -1832,18 +1846,39 @@
     });
   })();
 
-  // ── Scroll reveal ──────────────────────────────────
+  // ── Scroll reveal — Apple-style stagger ─────────────
   (function () {
     const els = document.querySelectorAll('.reveal');
     if (!els.length) return;
-    const io = new IntersectionObserver(function (entries) {
+
+    // Auto-assign stagger delays for sibling groups that don't already have them
+    var delayClasses = ['reveal-delay-1','reveal-delay-2','reveal-delay-3','reveal-delay-4','reveal-delay-5','reveal-delay-6'];
+    var groups = {};
+    els.forEach(function (el) {
+      var parent = el.parentElement;
+      var pid = parent ? (parent.id || parent.className.toString().substring(0, 40)) : 'root';
+      if (!groups[pid]) groups[pid] = [];
+      groups[pid].push(el);
+    });
+    Object.values(groups).forEach(function (group) {
+      if (group.length < 2) return;
+      var hasDelay = group.some(function (el) {
+        return delayClasses.some(function (c) { return el.classList.contains(c); });
+      });
+      if (hasDelay) return; // already manually staggered
+      group.forEach(function (el, i) {
+        if (i > 0 && i <= delayClasses.length) el.classList.add(delayClasses[i - 1]);
+      });
+    });
+
+    var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -48px 0px' });
     els.forEach(function (el) { io.observe(el); });
   })();
 
